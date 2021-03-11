@@ -1,5 +1,5 @@
-apiVersion: sample.template.crossplane.io/v1alpha1
-kind: MyType
+apiVersion: zone.cloudflare.crossplane.io/v1alpha1
+kind: Zone
 metadata:
   name: example
 spec:

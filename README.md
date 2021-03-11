@@ -1,13 +1,11 @@
-# provider-template
+# provider-cloudflare
 
-`provider-template` is a minimal [Crossplane](https://crossplane.io/) Provider
-that is meant to be used as a template for implementing new Providers. It comes
-with the following features that are meant to be refactored:
+`provider-cloudflare` is a [Crossplane](https://crossplane.io/) Provider
+that manages Cloudflare resources via their V4 API (`cloudflare-go`). It comes
+with the following resources:
 
-- A `ProviderConfig` type that only points to a credentials `Secret`.
-- A `MyType` resource type that serves as an example managed resource.
-- A managed resource controller that reconciles `MyType` objects and simply
-  prints their configuration in its `Observe` method.
+- A `Zone` resource type that manages Cloudflare Zones.
+
 
 ## Developing
 
