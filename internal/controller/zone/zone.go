@@ -18,7 +18,6 @@ package zone
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,8 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
+	rtv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -38,6 +39,7 @@ import (
 	apisv1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
 	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
+	zones "github.com/benagricola/provider-cloudflare/internal/clients/zones"
 )
 
 const (
@@ -46,7 +48,17 @@ const (
 	errGetPC        = "cannot get ProviderConfig"
 	errGetCreds     = "cannot get credentials"
 
-	errNewClient = "cannot create new Service"
+	errNewClient = "cannot create new Cloudflare API client"
+
+	errAccountLookup = "cannot lookup account details"
+	errZoneLookup    = "cannot lookup zone"
+	errZoneCreation  = "cannot create zone"
+	errZoneUpdate    = "cannot update zone"
+	errZoneDeletion  = "cannot delete zone"
+
+	maxConcurrency = 5
+
+	zoneStatusActive = "active"
 )
 
 // Setup adds a controller that reconciles Zone managed resources.
@@ -54,7 +66,8 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.ZoneGroupKind)
 
 	o := controller.Options{
-		RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
+		MaxConcurrentReconciles: maxConcurrency,
 	}
 
 	r := managed.NewReconciler(mgr,
@@ -78,7 +91,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 type connector struct {
 	kube                  client.Client
 	usage                 resource.Tracker
-	newCloudflareClientFn func(cfg clients.Config) *cloudflare.API
+	newCloudflareClientFn func(cfg clients.Config) (*cloudflare.API, error)
 }
 
 // Connect typically produces an ExternalClient by:1
@@ -111,20 +124,19 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	api := c.newCloudflareClientFn(*config)
-	u, err := api.UserDetails(ctx)
+
+	api, err := c.newCloudflareClientFn(*config)
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
-	// Print user details
-	fmt.Printf("%s: %s", u.ID, u.Email)
+
 	return &external{api: api}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an
 // external resource to ensure it reflects the managed resource's desired state.
 type external struct {
-	api interface{}
+	api *cloudflare.API
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
@@ -133,23 +145,25 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotZone)
 	}
 
-	// These fmt statements should be removed in the real implementation.
-	fmt.Printf("Observing: %+v", cr)
+	z, err := zones.LookupZoneByIDOrName(ctx, *c.api, cr.Status.AtProvider.ID, meta.GetExternalName(cr))
+	if err != nil {
+		if zones.IsZoneNotFound(err) {
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
+		return managed.ExternalObservation{ResourceExists: false},
+			errors.Wrap(err, errZoneLookup)
+	}
+
+	cr.Status.AtProvider = zones.GenerateObservation(z)
+
+	if cr.Status.AtProvider.Status == zoneStatusActive {
+		cr.Status.SetConditions(rtv1.Available())
+	}
 
 	return managed.ExternalObservation{
-		// Return false when the external resource does not exist. This lets
-		// the managed resource reconciler know that it needs to call Create to
-		// (re)create the resource, or that it has successfully been deleted.
-		ResourceExists: true,
-
-		// Return false when the external resource exists, but it not up to date
-		// with the desired managed resource state. This lets the managed
-		// resource reconciler know that it needs to call Update.
-		ResourceUpToDate: true,
-
-		// Return any details that may be required to connect to the external
-		// resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
+		ResourceExists:          true,
+		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, cr.Status.AtProvider),
+		ResourceUpToDate:        zones.UpToDate(&cr.Spec.ForProvider, cr.Status.AtProvider),
 	}, nil
 }
 
@@ -159,13 +173,43 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotZone)
 	}
 
-	fmt.Printf("Creating: %+v", cr)
+	var (
+		account cloudflare.Account
+		err     error
+	)
 
-	return managed.ExternalCreation{
-		// Optionally return any details that may be required to connect to the
-		// external resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
-	}, nil
+	// Get account if user specified one
+	if cr.Spec.ForProvider.AccountID != nil {
+		account, _, err = c.api.Account(ctx, *cr.Spec.ForProvider.AccountID)
+		if err != nil {
+			return managed.ExternalCreation{}, errors.Wrap(err, errAccountLookup)
+		}
+	}
+
+	// This has a default set by CRD, so should not happen,
+	// but we sanity check anyway to avoid a nil pointer
+	// dereference calling CreateZone below.
+	if cr.Spec.ForProvider.JumpStart == nil ||
+		cr.Spec.ForProvider.Type == nil {
+		return managed.ExternalCreation{}, errors.New(errZoneCreation)
+	}
+
+	cr.SetConditions(rtv1.Creating())
+
+	zone, err := c.api.CreateZone(
+		ctx,
+		meta.GetExternalName(cr),
+		*cr.Spec.ForProvider.JumpStart,
+		account,
+		*cr.Spec.ForProvider.Type,
+	)
+
+	// Cloudflare returns an empty Zone when it throws an error.
+	// Generating an observation here will do nothing (but also
+	// not error).
+	cr.Status.AtProvider = zones.GenerateObservation(zone)
+
+	return managed.ExternalCreation{}, errors.Wrap(err, errZoneCreation)
 }
 
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -174,13 +218,11 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotZone)
 	}
 
-	fmt.Printf("Updating: %+v", cr)
-
-	return managed.ExternalUpdate{
-		// Optionally return any details that may be required to connect to the
-		// external resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
-	}, nil
+	return managed.ExternalUpdate{},
+		errors.Wrap(
+			zones.UpdateZone(ctx, c.api, &cr.Spec.ForProvider, &cr.Status.AtProvider),
+			errZoneUpdate,
+		)
 }
 
 func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
@@ -188,8 +230,6 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotZone)
 	}
-
-	fmt.Printf("Deleting: %+v", cr)
-
-	return nil
+	_, err := c.api.DeleteZone(ctx, cr.Status.AtProvider.ID)
+	return errors.Wrap(err, errZoneDeletion)
 }

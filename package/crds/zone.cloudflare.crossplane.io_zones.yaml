@@ -22,7 +22,7 @@ spec:
     - jsonPath: .status.bindingPhase
       name: STATUS
       type: string
-    - jsonPath: .status.atProvider.state
+    - jsonPath: .status.atProvider.status
       name: STATE
       type: string
     - jsonPath: .spec.classRef.name
@@ -56,10 +56,30 @@ spec:
               forProvider:
                 description: ZoneParameters are the configurable fields of a Zone.
                 properties:
-                  configurableField:
+                  accountId:
+                    description: AccountID is the account ID under which this Zone will be created.
                     type: string
-                required:
-                - configurableField
+                  jumpStart:
+                    description: JumpStart enables attempting to import existing DNS records when a new Zone is created
+                    type: boolean
+                  paused:
+                    description: Paused indicates if the zone is only using Cloudflare DNS services.
+                    type: boolean
+                  planId:
+                    description: PlanID indicates the plan that this Zone will be subscribed to.
+                    type: string
+                  type:
+                    default: full
+                    description: Type indicates the type of this zone - partial (partner-hosted or CNAME only) or full.
+                    enum:
+                    - full
+                    - partial
+                    type: string
+                  vanityNameServers:
+                    description: VanityNameServers lists an array of domains to use for custom nameservers.
+                    items:
+                      type: string
+                    type: array
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -101,7 +121,53 @@ spec:
               atProvider:
                 description: ZoneObservation are the observable fields of a Zone.
                 properties:
-                  observableField:
+                  accountId:
+                    type: string
+                  accountName:
+                    type: string
+                  betas:
+                    items:
+                      type: string
+                    type: array
+                  deactivationReason:
+                    type: string
+                  developmentMode:
+                    type: integer
+                  id:
+                    type: string
+                  nameServers:
+                    items:
+                      type: string
+                    type: array
+                  originalDNSHost:
+                    type: string
+                  originalNameServers:
+                    items:
+                      type: string
+                    type: array
+                  originalRegistrar:
+                    type: string
+                  paused:
+                    type: boolean
+                  permissions:
+                    items:
+                      type: string
+                    type: array
+                  plan:
+                    type: string
+                  planId:
+                    type: string
+                  planPending:
+                    type: string
+                  planPendingId:
+                    type: string
+                  status:
+                    type: string
+                  vanityNameServers:
+                    items:
+                      type: string
+                    type: array
+                  verificationKey:
                     type: string
                 type: object
               conditions:

@@ -1,9 +1,11 @@
 apiVersion: zone.cloudflare.crossplane.io/v1alpha1
 kind: Zone
 metadata:
-  name: example
+  name: example.com 
 spec:
   forProvider:
-    configurableField: test
+    paused: true
+    jumpStart: true
+    
   providerConfigRef:
     name: example

@@ -24,12 +24,62 @@ import (
 
 // ZoneParameters are the configurable fields of a Zone.
 type ZoneParameters struct {
-	ConfigurableField string `json:"configurableField"`
+	// AccountID is the account ID under which this Zone will be
+	// created.
+	// +immutable
+	// +optional
+	AccountID *string `json:"accountId,omitempty"`
+
+	// JumpStart enables attempting to import existing DNS records
+	// when a new Zone is created
+	// +immutable
+	// +optional
+	JumpStart *bool `json:"jumpStart,omitempty"`
+
+	// Paused indicates if the zone is only using Cloudflare DNS services.
+	// +optional
+	Paused *bool `json:"paused,omitempty"`
+
+	// PlanID indicates the plan that this Zone will be subscribed
+	// to.
+	// +optional
+	PlanID *string `json:"planId,omitempty"`
+
+	// Type indicates the type of this zone - partial (partner-hosted
+	// or CNAME only) or full.
+	// +kubebuilder:validation:Enum=full;partial
+	// +kubebuilder:default=full
+	// +immutable
+	// +optional
+	Type *string `json:"type,omitempty"`
+
+	// VanityNameServers lists an array of domains to use for custom
+	// nameservers.
+	// +optional
+	VanityNameServers []string `json:"vanityNameServers,omitempty"`
 }
 
 // ZoneObservation are the observable fields of a Zone.
 type ZoneObservation struct {
-	ObservableField string `json:"observableField,omitempty"`
+	AccountID         string   `json:"accountId,omitempty"`
+	AccountName       string   `json:"accountName,omitempty"`
+	ID                string   `json:"id,omitempty"`
+	DevMode           int      `json:"developmentMode,omitempty"`
+	OriginalNS        []string `json:"originalNameServers,omitempty"`
+	OriginalRegistrar string   `json:"originalRegistrar,omitempty"`
+	OriginalDNSHost   string   `json:"originalDNSHost,omitempty"`
+	NameServers       []string `json:"nameServers,omitempty"`
+	Paused            bool     `json:"paused,omitempty"`
+	Permissions       []string `json:"permissions,omitempty"`
+	PlanID            string   `json:"planId,omitempty"`
+	Plan              string   `json:"plan,omitempty"`
+	PlanPending       string   `json:"planPending,omitempty"`
+	PlanPendingID     string   `json:"planPendingId,omitempty"`
+	Status            string   `json:"status,omitempty"`
+	Betas             []string `json:"betas,omitempty"`
+	DeactReason       string   `json:"deactivationReason,omitempty"`
+	VerificationKey   string   `json:"verificationKey,omitempty"`
+	VanityNameServers []string `json:"vanityNameServers,omitempty"`
 }
 
 // A ZoneSpec defines the desired state of a Zone.
@@ -46,10 +96,10 @@ type ZoneStatus struct {
 
 // +kubebuilder:object:root=true
 
-// A Zone is an example API type
+// A Zone is a set of common settings applied to one or more domains.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
-// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
+// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
