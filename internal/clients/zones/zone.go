@@ -208,8 +208,8 @@ func LateInitializeSettings(current, desired ZoneSettingsMap, initOn *v1alpha1.Z
 	return li
 }
 
-// LoadSettingsForZone loads Zone settings from the cloudflare API, then
-// sets them into a ZoneSettings object based on a cf_field tag.
+// LoadSettingsForZone loads Zone settings from the cloudflare API
+// and returns a ZoneSettingsMap.
 func LoadSettingsForZone(ctx context.Context,
 	api cloudflare.API, zoneID string) (ZoneSettingsMap, error) {
 
@@ -397,14 +397,13 @@ func GetChangedSettings(current, desired ZoneSettingsMap) []cloudflare.ZoneSetti
 	out := []cloudflare.ZoneSetting{}
 	for k, nv := range desired {
 		cv := current[k]
-		// If the current value matches the desired value,
-		// delete it from the output settings map
-
+		// If the current value and new value are not the same,
+		// append a ZoneSetting entry to the output list, in
+		// preparation for updating.
 		if cv != nv {
 			zs := cloudflare.ZoneSetting{
 				ID:       k,
 				Value:    nv,
-				Editable: true,
 			}
 			out = append(out, zs)
 		}
