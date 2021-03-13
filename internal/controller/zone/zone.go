@@ -19,6 +19,7 @@ package zone
 import (
 	"context"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -50,11 +51,12 @@ const (
 
 	errNewClient = "cannot create new Cloudflare API client"
 
-	errAccountLookup = "cannot lookup account details"
-	errZoneLookup    = "cannot lookup zone"
-	errZoneCreation  = "cannot create zone"
-	errZoneUpdate    = "cannot update zone"
-	errZoneDeletion  = "cannot delete zone"
+	errAccountLookup   = "cannot lookup account details"
+	errZoneLookup      = "cannot lookup zone"
+	errZoneObservation = "cannot observe zone"
+	errZoneCreation    = "cannot create zone"
+	errZoneUpdate      = "cannot update zone"
+	errZoneDeletion    = "cannot delete zone"
 
 	maxConcurrency = 5
 
@@ -139,13 +141,15 @@ type external struct {
 	api *cloudflare.API
 }
 
-func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
+func (c *external) Observe(ctx context.Context,
+	mg resource.Managed) (managed.ExternalObservation, error) {
+
 	cr, ok := mg.(*v1alpha1.Zone)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotZone)
 	}
 
-	z, err := zones.LookupZoneByIDOrName(ctx, *c.api, cr.Status.AtProvider.ID, meta.GetExternalName(cr))
+	z, err := zones.LookupZoneByIDOrName(ctx, *c.api, meta.GetExternalName(cr))
 	if err != nil {
 		if zones.IsZoneNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -154,16 +158,27 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 			errors.Wrap(err, errZoneLookup)
 	}
 
-	cr.Status.AtProvider = zones.GenerateObservation(z)
+	cr.Status.AtProvider = zones.GenerateObservation(*z)
 
 	if cr.Status.AtProvider.Status == zoneStatusActive {
 		cr.Status.SetConditions(rtv1.Available())
 	}
 
+	observedSettings, err := zones.LoadSettingsForZone(ctx, *c.api, z.ID)
+
+	if err != nil {
+		return managed.ExternalObservation{ResourceExists: false},
+			errors.Wrap(err, errZoneObservation)
+	}
+
+	desiredSettings := zones.ZoneToSettingsMap(&cr.Spec.ForProvider.Settings)
+
 	return managed.ExternalObservation{
-		ResourceExists:          true,
-		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, cr.Status.AtProvider),
-		ResourceUpToDate:        zones.UpToDate(&cr.Spec.ForProvider, cr.Status.AtProvider),
+		ResourceExists: true,
+		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, cr.Status.AtProvider,
+			observedSettings, desiredSettings),
+		ResourceUpToDate: zones.UpToDate(&cr.Spec.ForProvider, cr.Status.AtProvider) &&
+			cmp.Equal(observedSettings, desiredSettings),
 	}, nil
 }
 
@@ -203,13 +218,14 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		account,
 		*cr.Spec.ForProvider.Type,
 	)
+	if err != nil {
+		return managed.ExternalCreation{}, errors.Wrap(err, errZoneCreation)
+	}
 
-	// Cloudflare returns an empty Zone when it throws an error.
-	// Generating an observation here will do nothing (but also
-	// not error).
-	cr.Status.AtProvider = zones.GenerateObservation(zone)
+	// Update the external name with the ID of the new Zone
+	meta.SetExternalName(cr, zone.ID)
 
-	return managed.ExternalCreation{}, errors.Wrap(err, errZoneCreation)
+	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -218,11 +234,15 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotZone)
 	}
 
-	return managed.ExternalUpdate{},
-		errors.Wrap(
-			zones.UpdateZone(ctx, c.api, &cr.Spec.ForProvider, &cr.Status.AtProvider),
-			errZoneUpdate,
-		)
+	return managed.ExternalUpdate{}, errors.Wrap(
+		zones.UpdateZone(
+			ctx,
+			c.api,
+			meta.GetExternalName(cr),
+			&cr.Spec.ForProvider,
+			&cr.Status.AtProvider,
+		),
+		errZoneUpdate)
 }
 
 func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
@@ -230,6 +250,6 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotZone)
 	}
-	_, err := c.api.DeleteZone(ctx, cr.Status.AtProvider.ID)
+	_, err := c.api.DeleteZone(ctx, meta.GetExternalName(cr))
 	return errors.Wrap(err, errZoneDeletion)
 }

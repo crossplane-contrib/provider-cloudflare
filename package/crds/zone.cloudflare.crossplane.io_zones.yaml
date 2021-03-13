@@ -34,7 +34,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A Zone is an example API type
+        description: A Zone is a set of common settings applied to one or more domains.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -68,6 +68,225 @@ spec:
                   planId:
                     description: PlanID indicates the plan that this Zone will be subscribed to.
                     type: string
+                  settings:
+                    description: Settings contains a Zone settings that can be applied to this zone.
+                    properties:
+                      advancedDdos:
+                        description: AdvancedDDOS enables or disables Advanced DDoS mitigation
+                        type: boolean
+                      alwaysOnline:
+                        description: AlwaysOnline enables or disables Always Online
+                        type: boolean
+                      alwaysUseHttps:
+                        description: AlwaysUseHTTPS enables or disables Always use HTTPS
+                        type: boolean
+                      automaticHttpsRewrites:
+                        description: AutomaticHTTPSRewrites enables or disables Automatic HTTPS Rewrites
+                        type: boolean
+                      brotli:
+                        description: Brotli enables or disables Brotli
+                        type: boolean
+                      browserCacheTtl:
+                        description: BrowserCacheTTL configures the browser cache ttl. 0 means respect existing headers
+                        enum:
+                        - 0
+                        - 30
+                        - 60
+                        - 300
+                        - 1200
+                        - 1800
+                        - 3600
+                        - 7200
+                        - 10800
+                        - 14400
+                        - 18000
+                        - 28800
+                        - 43200
+                        - 57600
+                        - 72000
+                        - 86400
+                        - 172800
+                        - 259200
+                        - 345600
+                        - 432000
+                        - 691200
+                        - 1382400
+                        - 2073600
+                        - 2678400
+                        - 5356800
+                        - 16070400
+                        - 31536000
+                        type: integer
+                      browserCheck:
+                        description: BrowserCheck enables or disables Browser check
+                        type: boolean
+                      cacheLevel:
+                        description: CacheLevel configures the cache level
+                        enum:
+                        - bypass
+                        - basic
+                        - simplified
+                        - aggressive
+                        - cache_everything
+                        type: string
+                      challengeTtl:
+                        description: ChallengeTTL configures the edge cache ttl
+                        enum:
+                        - 300
+                        - 900
+                        - 1800
+                        - 2700
+                        - 3600
+                        - 7200
+                        - 10800
+                        - 14400
+                        - 28800
+                        - 57600
+                        - 86400
+                        - 604800
+                        - 2592000
+                        - 31536000
+                        type: integer
+                      cnameFlattening:
+                        description: CnameFlattening configures CNAME flattening
+                        enum:
+                        - flatten_at_root
+                        - flatten_all
+                        - flatten_none
+                        type: string
+                      developmentMode:
+                        description: DevelopmentMode enables or disables Development mode
+                        type: boolean
+                      edgeCacheTtl:
+                        description: EdgeCacheTTL configures the edge cache ttl
+                        type: integer
+                      emailObfuscation:
+                        description: EmailObfuscation enables or disables Email obfuscation
+                        type: boolean
+                      hotlinkProtection:
+                        description: HotlinkProtection enables or disables Hotlink protection
+                        type: boolean
+                      http2:
+                        description: HTTP2 enables or disables HTTP2
+                        type: boolean
+                      http3:
+                        description: HTTP3 enables or disables HTTP3
+                        type: boolean
+                      ipGeolocation:
+                        description: IPGeolocation enables or disables IP Geolocation
+                        type: boolean
+                      ipv6:
+                        description: IPv6 enables or disables IPv6
+                        type: boolean
+                      logToCloudflare:
+                        description: LogToCloudflare enables or disables Logging to cloudflare
+                        type: boolean
+                      maxUpload:
+                        description: MaxUpload configures the maximum upload payload size
+                        type: integer
+                      minTLSVersion:
+                        description: MinTLSVersion configures the minimum TLS version
+                        enum:
+                        - "1.0"
+                        - "1.1"
+                        - "1.2"
+                        - "1.3"
+                        type: string
+                      mirage:
+                        description: Mirage enables or disables Mirage
+                        type: boolean
+                      opportunisticEncryption:
+                        description: OpportunisticEncryption enables or disables Opportunistic encryption
+                        type: boolean
+                      opportunisticOnion:
+                        description: OpportunisticOnion enables or disables Opportunistic onion
+                        type: boolean
+                      orangeToOrange:
+                        description: OrangeToOrange enables or disables Orange to orange
+                        type: boolean
+                      originErrorPagePassThru:
+                        description: OriginErrorPagePassThru enables or disables Mirage
+                        type: boolean
+                      polish:
+                        description: Polish configures the Polish setting
+                        enum:
+                        - "off"
+                        - lossless
+                        - lossy
+                        type: string
+                      prefetchPreload:
+                        description: PrefetchPreload enables or disables Prefetch preload
+                        type: boolean
+                      privacyPass:
+                        description: PrivacyPass enables or disables Privacy pass
+                        type: boolean
+                      pseudoIpv4:
+                        description: PseudoIPv4 configures the Pseudo IPv4 setting
+                        enum:
+                        - "off"
+                        - add_header
+                        - overwrite_header
+                        type: string
+                      responseBuffering:
+                        description: ResponseBuffering enables or disables Response buffering
+                        type: boolean
+                      rocketLoader:
+                        description: RocketLoader enables or disables Rocket loader
+                        type: boolean
+                      securityLevel:
+                        description: SecurityLevel configures the Security level
+                        enum:
+                        - "off"
+                        - essentially_off
+                        - low
+                        - medium
+                        - high
+                        - under_attack
+                        type: string
+                      serverSideExclude:
+                        description: ServerSideExclude enables or disables Server side exclude
+                        type: boolean
+                      sortQueryStringForCache:
+                        description: SortQueryStringForCache enables or disables Sort query string for cache
+                        type: boolean
+                      ssl:
+                        description: SSL configures the SSL mode
+                        enum:
+                        - "off"
+                        - flexible
+                        - full
+                        - strict
+                        - origin_pull
+                        type: string
+                      tls13:
+                        description: TLS13 configures TLS 1.3
+                        enum:
+                        - "off"
+                        - "on"
+                        - zrt
+                        type: string
+                      tlsClientAuth:
+                        description: TLSClientAuth enables or disables TLS client authentication
+                        type: boolean
+                      trueClientIPHeader:
+                        description: TrueClientIPHeader enables or disables True client IP Header
+                        type: boolean
+                      visitorIP:
+                        description: VisitorIP enables or disables Visitor IP
+                        type: boolean
+                      waf:
+                        description: WAF enables or disables the Web application firewall
+                        type: boolean
+                      webP:
+                        description: WebP enables or disables WebP
+                        type: boolean
+                      webSockets:
+                        description: WebSockets enables or disables Web sockets
+                        type: boolean
+                      zeroRtt:
+                        description: ZeroRTT enables or disables Zero RTT
+                        type: boolean
+                    type: object
                   type:
                     default: full
                     description: Type indicates the type of this zone - partial (partner-hosted or CNAME only) or full.
@@ -121,53 +340,64 @@ spec:
               atProvider:
                 description: ZoneObservation are the observable fields of a Zone.
                 properties:
-                  accountId:
+                  account:
+                    description: AccountName is the account name that this zone exists under
                     type: string
-                  accountName:
+                  accountId:
+                    description: AccountID is the account ID that this zone exists under
                     type: string
                   betas:
+                    description: Betas indicates the betas available on this Zone.
                     items:
                       type: string
                     type: array
                   deactivationReason:
+                    description: DeactReason indicates the deactivation reason on this Zone.
                     type: string
-                  developmentMode:
+                  devModeTimer:
+                    description: DevMode indicates the number of seconds left in dev mode (if positive), otherwise the number of seconds since dev mode expired.
                     type: integer
-                  id:
-                    type: string
                   nameServers:
+                    description: NameServers lists the Name servers that are assigned to this Zone.
                     items:
                       type: string
                     type: array
                   originalDNSHost:
+                    description: OriginalDNSHost indicates the original DNS host when this Zone was created.
                     type: string
                   originalNameServers:
+                    description: OriginalNS lists the original nameservers when this Zone was created.
                     items:
                       type: string
                     type: array
                   originalRegistrar:
+                    description: OriginalRegistrar indicates the original registrar when this Zone was created.
                     type: string
                   paused:
+                    description: Paused indicates if the Zone is paused or not.
                     type: boolean
-                  permissions:
-                    items:
-                      type: string
-                    type: array
                   plan:
+                    description: Plan indicates the name of the plan assigned to this Zone.
                     type: string
                   planId:
+                    description: PlanID indicates the billing plan ID assigned to this Zone.
                     type: string
                   planPending:
+                    description: PlanPending indicates the name of the pending plan assigned to this Zone.
                     type: string
                   planPendingId:
+                    description: PlanPendingID indicates the ID of the pending plan assigned to this Zone.
                     type: string
                   status:
+                    description: Status indicates the status of this Zone.
                     type: string
                   vanityNameServers:
+                    description: VanityNameServers lists the currently assigned vanity name server addresses.
                     items:
                       type: string
                     type: array
                   verificationKey:
+                    description: VerificationKey indicates the Verification key set on this Zone.
                     type: string
                 type: object
               conditions:
