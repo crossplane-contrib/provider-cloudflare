@@ -25,8 +25,14 @@ spec:
     - jsonPath: .status.atProvider.status
       name: STATE
       type: string
-    - jsonPath: .spec.classRef.name
-      name: CLASS
+    - jsonPath: .status.atProvider.accountId
+      name: ACCOUNT
+      type: string
+    - jsonPath: .status.atProvider.plan
+      name: PLAN
+      type: string
+    - jsonPath: .status.atProvider.paused
+      name: PAUSED
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
