@@ -402,8 +402,8 @@ func GetChangedSettings(current, desired ZoneSettingsMap) []cloudflare.ZoneSetti
 		// preparation for updating.
 		if cv != nv {
 			zs := cloudflare.ZoneSetting{
-				ID:       k,
-				Value:    nv,
+				ID:    k,
+				Value: nv,
 			}
 			out = append(out, zs)
 		}
