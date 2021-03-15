@@ -19,9 +19,10 @@ package zone
 import (
 	"context"
 
+	"github.com/cloudflare/cloudflare-go"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
+
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,23 +36,16 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/cloudflare/cloudflare-go"
-
-	apisv1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
 	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	zones "github.com/benagricola/provider-cloudflare/internal/clients/zones"
 )
 
 const (
-	errNotZone      = "managed resource is not a Zone custom resource"
-	errTrackPCUsage = "cannot track ProviderConfig usage"
-	errGetPC        = "cannot get ProviderConfig"
-	errGetCreds     = "cannot get credentials"
+	errNotZone = "managed resource is not a Zone custom resource"
 
-	errNewClient = "cannot create new Cloudflare API client"
+	errClientConfig = "error getting client config"
 
-	errAccountLookup   = "cannot lookup account details"
 	errZoneLookup      = "cannot lookup zone"
 	errZoneObservation = "cannot observe zone"
 	errZoneCreation    = "cannot create zone"
@@ -76,8 +70,8 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		resource.ManagedKind(v1alpha1.ZoneGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
 			kube:                  mgr.GetClient(),
-			usage:                 resource.NewProviderConfigUsageTracker(mgr.GetClient(), &apisv1alpha1.ProviderConfigUsage{}),
-			newCloudflareClientFn: clients.NewClient}),
+			newCloudflareClientFn: zones.NewClient,
+		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
@@ -92,56 +86,33 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 // is called.
 type connector struct {
 	kube                  client.Client
-	usage                 resource.Tracker
-	newCloudflareClientFn func(cfg clients.Config) (*cloudflare.API, error)
+	newCloudflareClientFn func(cfg clients.Config) zones.Client
 }
 
-// Connect typically produces an ExternalClient by:1
-// 1. Tracking that the managed resource is using a ProviderConfig.
-// 2. Getting the managed resource's ProviderConfig.
-// 3. Getting the credentials specified by the ProviderConfig.
-// 4. Using the credentials to form a client.
+// Connect produces a valid configuration for a Cloudflare API
+// instance, and returns it as an external client.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1alpha1.Zone)
+	_, ok := mg.(*v1alpha1.Zone)
 	if !ok {
 		return nil, errors.New(errNotZone)
 	}
 
-	if err := c.usage.Track(ctx, mg); err != nil {
-		return nil, errors.Wrap(err, errTrackPCUsage)
-	}
-
-	pc := &apisv1alpha1.ProviderConfig{}
-	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.GetProviderConfigReference().Name}, pc); err != nil {
-		return nil, errors.Wrap(err, errGetPC)
-	}
-
-	cd := pc.Spec.Credentials
-	data, err := resource.CommonCredentialExtractor(ctx, cd.Source, c.kube, cd.CommonCredentialSelectors)
+	// Get client configuration
+	config, err := clients.GetConfig(ctx, c.kube, mg)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+		return nil, errors.Wrap(err, errClientConfig)
 	}
 
-	config, err := clients.GetConfig(data)
-	if err != nil {
-		return nil, errors.Wrap(err, errNewClient)
-	}
-
-	api, err := c.newCloudflareClientFn(*config)
-	if err != nil {
-		return nil, errors.Wrap(err, errNewClient)
-	}
-
-	return &external{api: api}, nil
+	return &external{client: c.newCloudflareClientFn(*config)}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an
 // external resource to ensure it reflects the managed resource's desired state.
 type external struct {
-	api *cloudflare.API
+	client zones.Client
 }
 
-func (c *external) Observe(ctx context.Context,
+func (e *external) Observe(ctx context.Context,
 	mg resource.Managed) (managed.ExternalObservation, error) {
 
 	cr, ok := mg.(*v1alpha1.Zone)
@@ -149,7 +120,7 @@ func (c *external) Observe(ctx context.Context,
 		return managed.ExternalObservation{}, errors.New(errNotZone)
 	}
 
-	z, err := zones.LookupZoneByIDOrName(ctx, *c.api, meta.GetExternalName(cr))
+	z, err := zones.LookupZoneByIDOrName(ctx, e.client, meta.GetExternalName(cr))
 	if err != nil {
 		if zones.IsZoneNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -164,7 +135,7 @@ func (c *external) Observe(ctx context.Context,
 		cr.Status.SetConditions(rtv1.Available())
 	}
 
-	observedSettings, err := zones.LoadSettingsForZone(ctx, *c.api, z.ID)
+	observedSettings, err := zones.LoadSettingsForZone(ctx, e.client, z.ID)
 
 	if err != nil {
 		return managed.ExternalObservation{ResourceExists: false},
@@ -182,7 +153,7 @@ func (c *external) Observe(ctx context.Context,
 	}, nil
 }
 
-func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.Zone)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotZone)
@@ -193,11 +164,10 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		err     error
 	)
 
-	// Get account if user specified one
+	// Configure account if user specified one
 	if cr.Spec.ForProvider.AccountID != nil {
-		account, _, err = c.api.Account(ctx, *cr.Spec.ForProvider.AccountID)
-		if err != nil {
-			return managed.ExternalCreation{}, errors.Wrap(err, errAccountLookup)
+		account = cloudflare.Account{
+			ID: *cr.Spec.ForProvider.AccountID,
 		}
 	}
 
@@ -211,7 +181,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.SetConditions(rtv1.Creating())
 
-	zone, err := c.api.CreateZone(
+	zone, err := e.client.CreateZone(
 		ctx,
 		meta.GetExternalName(cr),
 		*cr.Spec.ForProvider.JumpStart,
@@ -228,7 +198,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
-func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*v1alpha1.Zone)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotZone)
@@ -237,7 +207,7 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalUpdate{}, errors.Wrap(
 		zones.UpdateZone(
 			ctx,
-			c.api,
+			e.client,
 			meta.GetExternalName(cr),
 			&cr.Spec.ForProvider,
 			&cr.Status.AtProvider,
@@ -245,11 +215,11 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		errZoneUpdate)
 }
 
-func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	cr, ok := mg.(*v1alpha1.Zone)
 	if !ok {
 		return errors.New(errNotZone)
 	}
-	_, err := c.api.DeleteZone(ctx, meta.GetExternalName(cr))
+	_, err := e.client.DeleteZone(ctx, meta.GetExternalName(cr))
 	return errors.Wrap(err, errZoneDeletion)
 }

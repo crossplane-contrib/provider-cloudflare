@@ -27,13 +27,13 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 
 	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 )
 
 const (
 	errLoadSettings   = "error loading settings"
-	errSetPaused      = "error setting (un)pause"
+	errUpdateZone     = "error updating zone"
 	errSetPlan        = "error setting plan"
-	errSetVanityNS    = "error setting vanity nameservers"
 	errUpdateSettings = "error updating settings"
 
 	// Hardcoded string in cloudflare-go library.
@@ -110,24 +110,42 @@ func IsZoneNotFound(err error) bool {
 	return errStr == errZoneNotFound || strings.Contains(errStr, errZoneInvalidID)
 }
 
+// Client is a Cloudflare API client that implements methods for working
+// with Zones.
+type Client interface {
+	CreateZone(ctx context.Context, name string, jumpstart bool, account cloudflare.Account, zoneType string) (cloudflare.Zone, error)
+	DeleteZone(ctx context.Context, zoneID string) (cloudflare.ZoneID, error)
+	EditZone(ctx context.Context, zoneID string, zoneOpts cloudflare.ZoneOptions) (cloudflare.Zone, error)
+	UpdateZoneSettings(ctx context.Context, zoneID string, cs []cloudflare.ZoneSetting) (*cloudflare.ZoneSettingResponse, error)
+	ZoneDetails(ctx context.Context, zoneID string) (cloudflare.Zone, error)
+	ZoneIDByName(zoneName string) (string, error)
+	ZoneSetPlan(ctx context.Context, zoneID string, planType string) error
+	ZoneSettings(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error)
+}
+
+// NewClient returns a new Cloudflare API client for working with Zones.
+func NewClient(cfg clients.Config) Client {
+	return clients.NewClient(cfg)
+}
+
 // LookupZoneByIDOrName looks up a Zone by ID, if supplied,
 // looking up by Name if not.
-func LookupZoneByIDOrName(ctx context.Context, api cloudflare.API,
+func LookupZoneByIDOrName(ctx context.Context, client Client,
 	zoneIDOrName string) (*cloudflare.Zone, error) {
 
 	// Lookup Zone by ID, return if no error
-	zone, err := api.ZoneDetails(ctx, zoneIDOrName)
+	zone, err := client.ZoneDetails(ctx, zoneIDOrName)
 	if err == nil {
 		return &zone, nil
 	}
 
 	// Otherwise, try to get the zone ID from the name and
 	// retrieve the zone.
-	zoneID, err := api.ZoneIDByName(zoneIDOrName)
+	zoneID, err := client.ZoneIDByName(zoneIDOrName)
 	if err != nil {
 		return nil, err
 	}
-	zone, err = api.ZoneDetails(ctx, zoneID)
+	zone, err = client.ZoneDetails(ctx, zoneID)
 	return &zone, err
 }
 
@@ -211,10 +229,10 @@ func LateInitializeSettings(current, desired ZoneSettingsMap, initOn *v1alpha1.Z
 // LoadSettingsForZone loads Zone settings from the cloudflare API
 // and returns a ZoneSettingsMap.
 func LoadSettingsForZone(ctx context.Context,
-	api cloudflare.API, zoneID string) (ZoneSettingsMap, error) {
+	client Client, zoneID string) (ZoneSettingsMap, error) {
 
 	// Get settings
-	sr, err := api.ZoneSettings(ctx, zoneID)
+	sr, err := client.ZoneSettings(ctx, zoneID)
 	if err != nil {
 		return nil, errors.Wrap(err, errLoadSettings)
 	}
@@ -233,89 +251,57 @@ func LoadSettingsForZone(ctx context.Context,
 	return sbk, nil
 }
 
-func toBoolean(in interface{}) *bool {
-	if v, ok := in.(string); ok {
-		o := true
-		if v == cfsBoolTrue {
-			return &o
-		}
-		if v == cfsBoolFalse {
-			o = false
-			return &o
-		}
-	}
-	return nil
-}
-
-func toNumber(in interface{}) *int {
-	switch cv := in.(type) {
-	case int:
-		return &cv
-	case float64:
-		o := int(cv)
-		return &o
-	default:
-	}
-	return nil
-}
-
-func toString(in interface{}) *string {
-	if v, ok := in.(string); ok {
-		return &v
-	}
-	return nil
-}
-
 // SettingsMapToZone uses static definitions to map each setting
 // to its' value on a ZoneSettings instance.
 func SettingsMapToZone(sm ZoneSettingsMap, zs *v1alpha1.ZoneSettings) {
-	zs.ZeroRTT = toBoolean(sm[cfsZeroRTT])
-	zs.AdvancedDDOS = toBoolean(sm[cfsAdvancedDDOS])
-	zs.AlwaysOnline = toBoolean(sm[cfsAlwaysOnline])
-	zs.AlwaysUseHTTPS = toBoolean(sm[cfsAlwaysUseHTTPS])
-	zs.AutomaticHTTPSRewrites = toBoolean(sm[cfsAutomaticHTTPSRewrites])
-	zs.Brotli = toBoolean(sm[cfsBrotli])
-	zs.BrowserCacheTTL = toNumber(sm[cfsBrowserCacheTTL])
-	zs.BrowserCheck = toBoolean(sm[cfsBrowserCheck])
-	zs.CacheLevel = toString(sm[cfsCacheLevel])
-	zs.ChallengeTTL = toNumber(sm[cfsChallengeTTL])
-	zs.CnameFlattening = toString(sm[cfsCnameFlattening])
-	zs.DevelopmentMode = toBoolean(sm[cfsDevelopmentMode])
-	zs.EdgeCacheTTL = toNumber(sm[cfsEdgeCacheTTL])
-	zs.EmailObfuscation = toBoolean(sm[cfsEmailObfuscation])
-	zs.HotlinkProtection = toBoolean(sm[cfsHotlinkProtection])
-	zs.HTTP2 = toBoolean(sm[cfsHTTP2])
-	zs.HTTP3 = toBoolean(sm[cfsHTTP3])
-	zs.IPGeolocation = toBoolean(sm[cfsIPGeolocation])
-	zs.IPv6 = toBoolean(sm[cfsIPv6])
-	zs.LogToCloudflare = toBoolean(sm[cfsLogToCloudflare])
-	zs.MaxUpload = toNumber(sm[cfsMaxUpload])
-	zs.MinTLSVersion = toString(sm[cfsMinTLSVersion])
-	zs.Mirage = toBoolean(sm[cfsMirage])
-	zs.OpportunisticEncryption = toBoolean(sm[cfsOpportunisticEncryption])
-	zs.OpportunisticOnion = toBoolean(sm[cfsOpportunisticOnion])
-	zs.OrangeToOrange = toBoolean(sm[cfsOrangeToOrange])
-	zs.OriginErrorPagePassThru = toBoolean(sm[cfsOriginErrorPagePassThru])
-	zs.Polish = toString(sm[cfsPolish])
-	zs.PrefetchPreload = toBoolean(sm[cfsPrefetchPreload])
-	zs.PrivacyPass = toBoolean(sm[cfsPrivacyPass])
-	zs.PseudoIPv4 = toString(sm[cfsPseudoIPv4])
-	zs.ResponseBuffering = toBoolean(sm[cfsResponseBuffering])
-	zs.RocketLoader = toBoolean(sm[cfsRocketLoader])
-	zs.SecurityLevel = toString(sm[cfsSecurityLevel])
-	zs.ServerSideExclude = toBoolean(sm[cfsServerSideExclude])
-	zs.SortQueryStringForCache = toBoolean(sm[cfsSortQueryStringForCache])
-	zs.SSL = toString(sm[cfsSSL])
-	zs.TLS13 = toString(sm[cfsTLS13])
-	zs.TLSClientAuth = toBoolean(sm[cfsTLSClientAuth])
-	zs.TrueClientIPHeader = toBoolean(sm[cfsTrueClientIPHeader])
-	zs.VisitorIP = toBoolean(sm[cfsVisitorIP])
-	zs.WAF = toBoolean(sm[cfsWAF])
-	zs.WebP = toBoolean(sm[cfsWebP])
-	zs.WebSockets = toBoolean(sm[cfsWebSockets])
+	zs.ZeroRTT = clients.ToBoolean(sm[cfsZeroRTT])
+	zs.AdvancedDDOS = clients.ToBoolean(sm[cfsAdvancedDDOS])
+	zs.AlwaysOnline = clients.ToBoolean(sm[cfsAlwaysOnline])
+	zs.AlwaysUseHTTPS = clients.ToBoolean(sm[cfsAlwaysUseHTTPS])
+	zs.AutomaticHTTPSRewrites = clients.ToBoolean(sm[cfsAutomaticHTTPSRewrites])
+	zs.Brotli = clients.ToBoolean(sm[cfsBrotli])
+	zs.BrowserCacheTTL = clients.ToNumber(sm[cfsBrowserCacheTTL])
+	zs.BrowserCheck = clients.ToBoolean(sm[cfsBrowserCheck])
+	zs.CacheLevel = clients.ToString(sm[cfsCacheLevel])
+	zs.ChallengeTTL = clients.ToNumber(sm[cfsChallengeTTL])
+	zs.CnameFlattening = clients.ToString(sm[cfsCnameFlattening])
+	zs.DevelopmentMode = clients.ToBoolean(sm[cfsDevelopmentMode])
+	zs.EdgeCacheTTL = clients.ToNumber(sm[cfsEdgeCacheTTL])
+	zs.EmailObfuscation = clients.ToBoolean(sm[cfsEmailObfuscation])
+	zs.HotlinkProtection = clients.ToBoolean(sm[cfsHotlinkProtection])
+	zs.HTTP2 = clients.ToBoolean(sm[cfsHTTP2])
+	zs.HTTP3 = clients.ToBoolean(sm[cfsHTTP3])
+	zs.IPGeolocation = clients.ToBoolean(sm[cfsIPGeolocation])
+	zs.IPv6 = clients.ToBoolean(sm[cfsIPv6])
+	zs.LogToCloudflare = clients.ToBoolean(sm[cfsLogToCloudflare])
+	zs.MaxUpload = clients.ToNumber(sm[cfsMaxUpload])
+	zs.MinTLSVersion = clients.ToString(sm[cfsMinTLSVersion])
+	zs.Mirage = clients.ToBoolean(sm[cfsMirage])
+	zs.OpportunisticEncryption = clients.ToBoolean(sm[cfsOpportunisticEncryption])
+	zs.OpportunisticOnion = clients.ToBoolean(sm[cfsOpportunisticOnion])
+	zs.OrangeToOrange = clients.ToBoolean(sm[cfsOrangeToOrange])
+	zs.OriginErrorPagePassThru = clients.ToBoolean(sm[cfsOriginErrorPagePassThru])
+	zs.Polish = clients.ToString(sm[cfsPolish])
+	zs.PrefetchPreload = clients.ToBoolean(sm[cfsPrefetchPreload])
+	zs.PrivacyPass = clients.ToBoolean(sm[cfsPrivacyPass])
+	zs.PseudoIPv4 = clients.ToString(sm[cfsPseudoIPv4])
+	zs.ResponseBuffering = clients.ToBoolean(sm[cfsResponseBuffering])
+	zs.RocketLoader = clients.ToBoolean(sm[cfsRocketLoader])
+	zs.SecurityLevel = clients.ToString(sm[cfsSecurityLevel])
+	zs.ServerSideExclude = clients.ToBoolean(sm[cfsServerSideExclude])
+	zs.SortQueryStringForCache = clients.ToBoolean(sm[cfsSortQueryStringForCache])
+	zs.SSL = clients.ToString(sm[cfsSSL])
+	zs.TLS13 = clients.ToString(sm[cfsTLS13])
+	zs.TLSClientAuth = clients.ToBoolean(sm[cfsTLSClientAuth])
+	zs.TrueClientIPHeader = clients.ToBoolean(sm[cfsTrueClientIPHeader])
+	zs.VisitorIP = clients.ToBoolean(sm[cfsVisitorIP])
+	zs.WAF = clients.ToBoolean(sm[cfsWAF])
+	zs.WebP = clients.ToBoolean(sm[cfsWebP])
+	zs.WebSockets = clients.ToBoolean(sm[cfsWebSockets])
 }
 
 func mapSetBool(sm ZoneSettingsMap, key string, value *bool) {
+	// Ignore nil pointers
 	if value == nil {
 		return
 	}
@@ -327,6 +313,7 @@ func mapSetBool(sm ZoneSettingsMap, key string, value *bool) {
 }
 
 func mapSetString(sm ZoneSettingsMap, key string, value *string) {
+	// Ignore nil pointers
 	if value == nil {
 		return
 	}
@@ -334,6 +321,7 @@ func mapSetString(sm ZoneSettingsMap, key string, value *string) {
 }
 
 func mapSetNumber(sm ZoneSettingsMap, key string, value *int) {
+	// Ignore nil pointers
 	if value == nil {
 		return
 	}
@@ -437,43 +425,46 @@ func UpToDate(spec *v1alpha1.ZoneParameters, o v1alpha1.ZoneObservation) bool {
 }
 
 // UpdateZone updates mutable values on a Zone
-func UpdateZone(ctx context.Context, api *cloudflare.API, zoneID string, spec *v1alpha1.ZoneParameters, o *v1alpha1.ZoneObservation) error { //nolint:gocyclo
-
-	var zone cloudflare.Zone
-	var err error
+func UpdateZone(ctx context.Context, client Client, zoneID string, spec *v1alpha1.ZoneParameters, o *v1alpha1.ZoneObservation) error { //nolint:gocyclo
+	zo := cloudflare.ZoneOptions{}
+	u := false
 
 	if spec.Paused != nil && *spec.Paused != o.Paused {
-		zone, err = api.ZoneSetPaused(ctx, zoneID, *spec.Paused)
-		if err != nil {
-			return errors.Wrap(err, errSetPaused)
-		}
-		o.Paused = zone.Paused
+		zo.Paused = spec.Paused
+		u = true
 	}
 
-	// ZoneSetPlan does not return a copy of the updated zone
-	// So we can't update the Plan until the next reconcile.
-	// We compare to pending ID here as well because when we
-	// set a plan, it won't necessarily be activated right
-	// away. As long as the plan we requested is in the
-	// pending plan, we're happy.
+	if !cmp.Equal(spec.VanityNameServers, o.VanityNameServers) {
+		zo.VanityNS = spec.VanityNameServers
+		u = true
+	}
+
+	// Update zone options if necessary
+	if u {
+		zone, err := client.EditZone(ctx, zoneID, zo)
+		if err != nil {
+			return errors.Wrap(err, errUpdateZone)
+		}
+		// Update observation with returned values
+		o.Paused = zone.Paused
+		o.VanityNameServers = zone.VanityNS
+	}
+
+	// ZoneSetPlan appears to use a zone subscriptions endpoint
+	// Rather than just EditZone, so we implement it separately.
+	// We only update if the requested plan is not the current plan
+	// OR the pending plan, as it may take a long time for the plan
+	// change to take effect.
 	if spec.PlanID != nil && *spec.PlanID != o.PlanID &&
 		spec.PlanID != &o.PlanPendingID {
-		err = api.ZoneSetPlan(ctx, zoneID, *spec.PlanID)
+		err := client.ZoneSetPlan(ctx, zoneID, *spec.PlanID)
 		if err != nil {
 			return errors.Wrap(err, errSetPlan)
 		}
 	}
 
-	if !cmp.Equal(spec.VanityNameServers, o.VanityNameServers) {
-		zone, err = api.ZoneSetVanityNS(ctx, zoneID, spec.VanityNameServers)
-		if err != nil {
-			return errors.Wrap(err, errSetVanityNS)
-		}
-		o.VanityNameServers = zone.VanityNS
-	}
-
 	// We don't store observed settings so look them up before changing.
-	curSettings, err := LoadSettingsForZone(ctx, *api, zoneID)
+	curSettings, err := LoadSettingsForZone(ctx, client, zoneID)
 	if err != nil {
 		return errors.Wrap(err, errUpdateSettings)
 	}
@@ -486,6 +477,6 @@ func UpdateZone(ctx context.Context, api *cloudflare.API, zoneID string, spec *v
 	}
 
 	// One or more settings were changed, so update them and return.
-	_, err = api.UpdateZoneSettings(ctx, zoneID, cs)
+	_, err = client.UpdateZoneSettings(ctx, zoneID, cs)
 	return errors.Wrap(err, errUpdateSettings)
 }
