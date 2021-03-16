@@ -76,7 +76,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o).
-		For(&v1alpha1.Record{}).
+		For(&v1alpha1.DNSRecord{}).
 		Complete(r)
 }
 
@@ -90,7 +90,7 @@ type connector struct {
 // Connect produces a valid configuration for a Cloudflare API
 // instance, and returns it as an external client.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	_, ok := mg.(*v1alpha1.Record)
+	_, ok := mg.(*v1alpha1.DNSRecord)
 	if !ok {
 		return nil, errors.New(errNotDNSRecord)
 	}
@@ -111,7 +111,7 @@ type external struct {
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha1.Record)
+	cr, ok := mg.(*v1alpha1.DNSRecord)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotDNSRecord)
 	}
@@ -148,7 +148,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.Record)
+	cr, ok := mg.(*v1alpha1.DNSRecord)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotDNSRecord)
 	}
@@ -191,7 +191,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.Record)
+	cr, ok := mg.(*v1alpha1.DNSRecord)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotDNSRecord)
 	}
@@ -208,7 +208,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.Record)
+	cr, ok := mg.(*v1alpha1.DNSRecord)
 	if !ok {
 		return errors.New(errNotDNSRecord)
 	}
