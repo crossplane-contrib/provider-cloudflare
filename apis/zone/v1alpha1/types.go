@@ -243,7 +243,7 @@ type ZoneParameters struct {
 	// you will have no DNSRecord instances representing records
 	// created in this manner, and you will have to import them
 	// manually if you want to manage them with Crossplane.
-	// +kubebuilder:validation:default=false
+	// +kubebuilder:default=false
 	// +immutable
 	// +optional
 	JumpStart bool `json:"jumpStart"`
