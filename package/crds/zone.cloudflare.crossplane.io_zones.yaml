@@ -407,9 +407,6 @@ spec:
                   verificationKey:
                     description: VerificationKey indicates the Verification key set on this Zone.
                     type: string
-                  zoneId:
-                    description: ZoneID is the Cloudflare generated ID of the zone
-                    type: string
                 type: object
               conditions:
                 description: Conditions of the resource.

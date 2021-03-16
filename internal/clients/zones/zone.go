@@ -131,7 +131,6 @@ func NewClient(cfg clients.Config) Client {
 // GenerateObservation creates an observation of a cloudflare Zone
 func GenerateObservation(in cloudflare.Zone) v1alpha1.ZoneObservation {
 	return v1alpha1.ZoneObservation{
-		ZoneID:            in.ID,
 		AccountID:         in.Account.ID,
 		Account:           in.Account.Name,
 		DevModeTimer:      in.DevMode,
