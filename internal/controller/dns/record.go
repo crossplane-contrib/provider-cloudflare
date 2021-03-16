@@ -58,7 +58,7 @@ const (
 
 // Setup adds a controller that reconciles DNSRecord managed resources.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1alpha1.RecordGroupKind)
+	name := managed.ControllerName(v1alpha1.DNSRecordGroupKind)
 
 	o := controller.Options{
 		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
@@ -66,7 +66,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	}
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.RecordGroupVersionKind),
+		resource.ManagedKind(v1alpha1.DNSRecordGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
 			kube:                  mgr.GetClient(),
 			newCloudflareClientFn: records.NewClient}),
