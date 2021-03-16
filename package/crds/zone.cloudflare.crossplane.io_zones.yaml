@@ -31,9 +31,6 @@ spec:
     - jsonPath: .status.atProvider.plan
       name: PLAN
       type: string
-    - jsonPath: .status.atProvider.paused
-      name: PAUSED
-      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date

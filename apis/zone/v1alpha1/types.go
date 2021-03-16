@@ -363,7 +363,6 @@ type ZoneStatus struct {
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
 // +kubebuilder:printcolumn:name="ACCOUNT",type="string",JSONPath=".status.atProvider.accountId"
 // +kubebuilder:printcolumn:name="PLAN",type="string",JSONPath=".status.atProvider.plan"
-// +kubebuilder:printcolumn:name="PAUSED",type="string",JSONPath=".status.atProvider.paused"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
 type Zone struct {

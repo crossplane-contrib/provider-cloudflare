@@ -31,7 +31,6 @@ import (
 	rtv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -212,7 +211,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		zones.UpdateZone(
 			ctx,
 			e.client,
-			meta.GetExternalName(cr),
+			cr.Status.AtProvider.ZoneID,
 			&cr.Spec.ForProvider,
 		),
 		errZoneUpdate)
@@ -224,6 +223,6 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotZone)
 	}
 	cr.SetConditions(rtv1.Deleting())
-	_, err := e.client.DeleteZone(ctx, meta.GetExternalName(cr))
+	_, err := e.client.DeleteZone(ctx, cr.Status.AtProvider.ZoneID)
 	return errors.Wrap(err, errZoneDeletion)
 }
