@@ -31,6 +31,7 @@ import (
 	rtv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -72,7 +73,10 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 			newCloudflareClientFn: zones.NewClient,
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
-		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		// Do not initialize external-name field.
+		managed.WithInitializers(),
+	)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -119,13 +123,13 @@ func (e *external) Observe(ctx context.Context,
 		return managed.ExternalObservation{}, errors.New(errNotZone)
 	}
 
-	// Zone does not exist if we're not tracking an ID
-	id := cr.Status.AtProvider.ZoneID
-	if id == "" {
+	// Zone does not exist if we dont have an ID stored in external-name
+	zid := meta.GetExternalName(cr)
+	if zid == "" {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
-	z, err := e.client.ZoneDetails(ctx, id)
+	z, err := e.client.ZoneDetails(ctx, zid)
 	if err != nil {
 		if zones.IsZoneNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -197,8 +201,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	cr.Status.AtProvider = zones.GenerateObservation(z)
+	meta.SetExternalName(cr, z.ID)
 
-	return managed.ExternalCreation{}, nil
+	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -207,11 +212,17 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotZone)
 	}
 
+	zid := meta.GetExternalName(cr)
+	// Update should never be called on a nonexistent resource
+	if zid == "" {
+		return managed.ExternalUpdate{}, errors.New(errZoneUpdate)
+	}
+
 	return managed.ExternalUpdate{}, errors.Wrap(
 		zones.UpdateZone(
 			ctx,
 			e.client,
-			cr.Status.AtProvider.ZoneID,
+			zid,
 			&cr.Spec.ForProvider,
 		),
 		errZoneUpdate)
@@ -222,7 +233,12 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotZone)
 	}
+	zid := meta.GetExternalName(cr)
+	// Delete should never be called on a nonexistent resource
+	if zid == "" {
+		return errors.New(errZoneDeletion)
+	}
 	cr.SetConditions(rtv1.Deleting())
-	_, err := e.client.DeleteZone(ctx, cr.Status.AtProvider.ZoneID)
+	_, err := e.client.DeleteZone(ctx, zid)
 	return errors.Wrap(err, errZoneDeletion)
 }

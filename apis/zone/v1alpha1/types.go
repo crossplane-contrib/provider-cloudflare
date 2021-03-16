@@ -19,9 +19,6 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/crossplane/crossplane-runtime/pkg/reference"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
-
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
@@ -243,7 +240,7 @@ type ZoneParameters struct {
 	// you will have no DNSRecord instances representing records
 	// created in this manner, and you will have to import them
 	// manually if you want to manage them with Crossplane.
-	// +kubebuilder:validation:default=false
+	// +kubebuilder:default=false
 	// +immutable
 	// +optional
 	JumpStart bool `json:"jumpStart"`
@@ -278,9 +275,6 @@ type ZoneParameters struct {
 
 // ZoneObservation are the observable fields of a Zone.
 type ZoneObservation struct {
-	// ZoneID is the Cloudflare generated ID of the zone
-	ZoneID string `json:"zoneId,omitempty"`
-
 	// AccountID is the account ID that this zone exists under
 	AccountID string `json:"accountId,omitempty"`
 
@@ -380,18 +374,4 @@ type ZoneList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Zone `json:"items"`
-}
-
-// ExtractZoneID provides an extraction value function
-// that can be used by other resources to refer to the
-// Zone ID when using a reference or a selector to a
-// Zone.
-func ExtractZoneID() reference.ExtractValueFn {
-	return func(mg resource.Managed) string {
-		r, ok := mg.(*Zone)
-		if !ok {
-			return ""
-		}
-		return r.Status.AtProvider.ZoneID
-	}
 }
