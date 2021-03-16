@@ -120,7 +120,13 @@ func (e *external) Observe(ctx context.Context,
 		return managed.ExternalObservation{}, errors.New(errNotZone)
 	}
 
-	z, err := zones.LookupZoneByIDOrName(ctx, e.client, meta.GetExternalName(cr))
+	// Zone does not exist if we're not tracking an ID
+	id := cr.Status.AtProvider.ZoneID
+	if id == "" {
+		return managed.ExternalObservation{ResourceExists: false}, nil
+	}
+
+	z, err := e.client.ZoneDetails(ctx, id)
 	if err != nil {
 		if zones.IsZoneNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -129,7 +135,7 @@ func (e *external) Observe(ctx context.Context,
 			errors.Wrap(err, errZoneLookup)
 	}
 
-	cr.Status.AtProvider = zones.GenerateObservation(*z)
+	cr.Status.AtProvider = zones.GenerateObservation(z)
 
 	if cr.Status.AtProvider.Status == zoneStatusActive {
 		cr.Status.SetConditions(rtv1.Available())
@@ -146,9 +152,9 @@ func (e *external) Observe(ctx context.Context,
 
 	return managed.ExternalObservation{
 		ResourceExists: true,
-		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, cr.Status.AtProvider,
+		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, z,
 			observedSettings, desiredSettings),
-		ResourceUpToDate: zones.UpToDate(&cr.Spec.ForProvider, cr.Status.AtProvider) &&
+		ResourceUpToDate: zones.UpToDate(&cr.Spec.ForProvider, z) &&
 			cmp.Equal(observedSettings, desiredSettings),
 	}, nil
 }
@@ -174,17 +180,16 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	// This has a default set by CRD, so should not happen,
 	// but we sanity check anyway to avoid a nil pointer
 	// dereference calling CreateZone below.
-	if cr.Spec.ForProvider.JumpStart == nil ||
-		cr.Spec.ForProvider.Type == nil {
+	if cr.Spec.ForProvider.Type == nil {
 		return managed.ExternalCreation{}, errors.New(errZoneCreation)
 	}
 
 	cr.SetConditions(rtv1.Creating())
 
-	zone, err := e.client.CreateZone(
+	z, err := e.client.CreateZone(
 		ctx,
-		meta.GetExternalName(cr),
-		*cr.Spec.ForProvider.JumpStart,
+		cr.Spec.ForProvider.Name,
+		cr.Spec.ForProvider.JumpStart,
 		account,
 		*cr.Spec.ForProvider.Type,
 	)
@@ -192,10 +197,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.Wrap(err, errZoneCreation)
 	}
 
-	// Update the external name with the ID of the new Zone
-	meta.SetExternalName(cr, zone.ID)
+	cr.Status.AtProvider = zones.GenerateObservation(z)
 
-	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
+	return managed.ExternalCreation{}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -210,7 +214,6 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 			e.client,
 			meta.GetExternalName(cr),
 			&cr.Spec.ForProvider,
-			&cr.Status.AtProvider,
 		),
 		errZoneUpdate)
 }
@@ -220,6 +223,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotZone)
 	}
+	cr.SetConditions(rtv1.Deleting())
 	_, err := e.client.DeleteZone(ctx, meta.GetExternalName(cr))
 	return errors.Wrap(err, errZoneDeletion)
 }

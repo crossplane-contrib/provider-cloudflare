@@ -66,8 +66,13 @@ spec:
                     description: AccountID is the account ID under which this Zone will be created.
                     type: string
                   jumpStart:
-                    description: JumpStart enables attempting to import existing DNS records when a new Zone is created
+                    description: 'JumpStart enables attempting to import existing DNS records when a new Zone is created. WARNING: JumpStart causes Cloudflare to automatically create DNS records without the involvement of Crossplane. This means you will have no DNSRecord instances representing records created in this manner, and you will have to import them manually if you want to manage them with Crossplane.'
                     type: boolean
+                  name:
+                    description: Name is the name of the Zone, which should be a valid domain.
+                    format: hostname
+                    maxLength: 253
+                    type: string
                   paused:
                     description: Paused indicates if the zone is only using Cloudflare DNS services.
                     type: boolean
@@ -305,6 +310,8 @@ spec:
                     items:
                       type: string
                     type: array
+                required:
+                - name
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -346,11 +353,11 @@ spec:
               atProvider:
                 description: ZoneObservation are the observable fields of a Zone.
                 properties:
-                  account:
-                    description: AccountName is the account name that this zone exists under
-                    type: string
                   accountId:
                     description: AccountID is the account ID that this zone exists under
+                    type: string
+                  accountName:
+                    description: AccountName is the account name that this zone exists under
                     type: string
                   betas:
                     description: Betas indicates the betas available on this Zone.
@@ -361,7 +368,7 @@ spec:
                     description: DeactReason indicates the deactivation reason on this Zone.
                     type: string
                   devModeTimer:
-                    description: DevMode indicates the number of seconds left in dev mode (if positive), otherwise the number of seconds since dev mode expired.
+                    description: DevModeTimer indicates the number of seconds left in dev mode (if positive), otherwise the number of seconds since dev mode expired.
                     type: integer
                   nameServers:
                     description: NameServers lists the Name servers that are assigned to this Zone.
@@ -379,9 +386,6 @@ spec:
                   originalRegistrar:
                     description: OriginalRegistrar indicates the original registrar when this Zone was created.
                     type: string
-                  paused:
-                    description: Paused indicates if the Zone is paused or not.
-                    type: boolean
                   plan:
                     description: Plan indicates the name of the plan assigned to this Zone.
                     type: string
@@ -404,6 +408,9 @@ spec:
                     type: array
                   verificationKey:
                     description: VerificationKey indicates the Verification key set on this Zone.
+                    type: string
+                  zoneId:
+                    description: ZoneID is the Cloudflare generated ID of the zone
                     type: string
                 type: object
               conditions:

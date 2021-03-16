@@ -126,11 +126,6 @@ func (in *ZoneParameters) DeepCopyInto(out *ZoneParameters) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.JumpStart != nil {
-		in, out := &in.JumpStart, &out.JumpStart
-		*out = new(bool)
-		**out = **in
-	}
 	if in.Paused != nil {
 		in, out := &in.Paused, &out.Paused
 		*out = new(bool)

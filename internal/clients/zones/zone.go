@@ -128,38 +128,17 @@ func NewClient(cfg clients.Config) Client {
 	return clients.NewClient(cfg)
 }
 
-// LookupZoneByIDOrName looks up a Zone by ID, if supplied,
-// looking up by Name if not.
-func LookupZoneByIDOrName(ctx context.Context, client Client,
-	zoneIDOrName string) (*cloudflare.Zone, error) {
-
-	// Lookup Zone by ID, return if no error
-	zone, err := client.ZoneDetails(ctx, zoneIDOrName)
-	if err == nil {
-		return &zone, nil
-	}
-
-	// Otherwise, try to get the zone ID from the name and
-	// retrieve the zone.
-	zoneID, err := client.ZoneIDByName(zoneIDOrName)
-	if err != nil {
-		return nil, err
-	}
-	zone, err = client.ZoneDetails(ctx, zoneID)
-	return &zone, err
-}
-
 // GenerateObservation creates an observation of a cloudflare Zone
 func GenerateObservation(in cloudflare.Zone) v1alpha1.ZoneObservation {
 	return v1alpha1.ZoneObservation{
+		ZoneID:            in.ID,
 		AccountID:         in.Account.ID,
 		Account:           in.Account.Name,
-		DevMode:           in.DevMode,
+		DevModeTimer:      in.DevMode,
 		OriginalNS:        in.OriginalNS,
 		OriginalRegistrar: in.OriginalRegistrar,
 		OriginalDNSHost:   in.OriginalDNSHost,
 		NameServers:       in.NameServers,
-		Paused:            in.Paused,
 		PlanID:            in.Plan.ID,
 		Plan:              in.Plan.Name,
 		PlanPendingID:     in.PlanPending.ID,
@@ -173,7 +152,7 @@ func GenerateObservation(in cloudflare.Zone) v1alpha1.ZoneObservation {
 }
 
 // LateInitialize initializes ZoneParameters based on the remote resource
-func LateInitialize(spec *v1alpha1.ZoneParameters, o v1alpha1.ZoneObservation,
+func LateInitialize(spec *v1alpha1.ZoneParameters, z cloudflare.Zone,
 	current, desired ZoneSettingsMap) bool {
 
 	if spec == nil {
@@ -182,19 +161,19 @@ func LateInitialize(spec *v1alpha1.ZoneParameters, o v1alpha1.ZoneObservation,
 
 	li := false
 	if spec.AccountID == nil {
-		spec.AccountID = &o.AccountID
+		spec.AccountID = &z.Account.ID
 		li = true
 	}
 	if spec.Paused == nil {
-		spec.Paused = &o.Paused
+		spec.Paused = &z.Paused
 		li = true
 	}
 	if spec.PlanID == nil {
-		spec.PlanID = &o.PlanID
+		spec.PlanID = &z.Plan.ID
 		li = true
 	}
 	if spec.VanityNameServers == nil {
-		spec.VanityNameServers = o.VanityNameServers
+		spec.VanityNameServers = z.VanityNS
 		li = true
 	}
 
@@ -401,23 +380,25 @@ func GetChangedSettings(current, desired ZoneSettingsMap) []cloudflare.ZoneSetti
 
 // UpToDate checks if the remote resource is up to date with the
 // requested resource parameters.
-func UpToDate(spec *v1alpha1.ZoneParameters, o v1alpha1.ZoneObservation) bool {
+func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone) bool {
 	if spec == nil {
 		return false
 	}
 
 	// Check if mutable fields are up to date with resource
-	if *spec.Paused != o.Paused {
+	if *spec.Paused != z.Paused {
 		return false
 	}
+
 	// We only detect the resource as not up to date if the requested
 	// plan is not the current plan or the pending plan.
 	// Since it can take a month for the plan to change from pending
 	// to active.
-	if *spec.PlanID != o.PlanID && *spec.PlanID != o.PlanPendingID {
+	if spec.PlanID != nil && *spec.PlanID != z.Plan.ID && *spec.PlanID != z.PlanPending.ID {
 		return false
 	}
-	if !cmp.Equal(spec.VanityNameServers, o.VanityNameServers) {
+
+	if !cmp.Equal(spec.VanityNameServers, z.VanityNS) {
 		return false
 	}
 
@@ -425,29 +406,32 @@ func UpToDate(spec *v1alpha1.ZoneParameters, o v1alpha1.ZoneObservation) bool {
 }
 
 // UpdateZone updates mutable values on a Zone
-func UpdateZone(ctx context.Context, client Client, zoneID string, spec *v1alpha1.ZoneParameters, o *v1alpha1.ZoneObservation) error { //nolint:gocyclo
+func UpdateZone(ctx context.Context, client Client, zoneID string, spec *v1alpha1.ZoneParameters) error { //nolint:gocyclo
+	// Get current zone status
+	z, err := client.ZoneDetails(ctx, zoneID)
+	if err != nil {
+		return errors.Wrap(err, errUpdateZone)
+	}
+
 	zo := cloudflare.ZoneOptions{}
 	u := false
 
-	if spec.Paused != nil && *spec.Paused != o.Paused {
+	if spec.Paused != nil && *spec.Paused != z.Paused {
 		zo.Paused = spec.Paused
 		u = true
 	}
 
-	if !cmp.Equal(spec.VanityNameServers, o.VanityNameServers) {
+	if !cmp.Equal(spec.VanityNameServers, z.VanityNS) {
 		zo.VanityNS = spec.VanityNameServers
 		u = true
 	}
 
 	// Update zone options if necessary
 	if u {
-		zone, err := client.EditZone(ctx, zoneID, zo)
+		_, err := client.EditZone(ctx, zoneID, zo)
 		if err != nil {
 			return errors.Wrap(err, errUpdateZone)
 		}
-		// Update observation with returned values
-		o.Paused = zone.Paused
-		o.VanityNameServers = zone.VanityNS
 	}
 
 	// ZoneSetPlan appears to use a zone subscriptions endpoint
@@ -455,8 +439,8 @@ func UpdateZone(ctx context.Context, client Client, zoneID string, spec *v1alpha
 	// We only update if the requested plan is not the current plan
 	// OR the pending plan, as it may take a long time for the plan
 	// change to take effect.
-	if spec.PlanID != nil && *spec.PlanID != o.PlanID &&
-		spec.PlanID != &o.PlanPendingID {
+	if spec.PlanID != nil && *spec.PlanID != z.Plan.ID &&
+		spec.PlanID != &z.PlanPending.ID {
 		err := client.ZoneSetPlan(ctx, zoneID, *spec.PlanID)
 		if err != nil {
 			return errors.Wrap(err, errSetPlan)

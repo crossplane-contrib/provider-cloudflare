@@ -19,6 +19,9 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
@@ -214,6 +217,13 @@ type ZoneSettings struct {
 
 // ZoneParameters are the configurable fields of a Zone.
 type ZoneParameters struct {
+	// Name is the name of the Zone, which should be a valid
+	// domain.
+	// +kubebuilder:validation:Format=hostname
+	// +kubebuilder:validation:MaxLength=253
+	// +immutable
+	Name string `json:"name"`
+
 	// AccountID is the account ID under which this Zone will be
 	// created.
 	// +immutable
@@ -227,10 +237,16 @@ type ZoneParameters struct {
 	// JumpStart enabled?
 
 	// JumpStart enables attempting to import existing DNS records
-	// when a new Zone is created
+	// when a new Zone is created.
+	// WARNING: JumpStart causes Cloudflare to automatically create
+	// DNS records without the involvement of Crossplane. This means
+	// you will have no DNSRecord instances representing records
+	// created in this manner, and you will have to import them
+	// manually if you want to manage them with Crossplane.
+	// +kubebuilder:validation:default=false
 	// +immutable
 	// +optional
-	JumpStart *bool `json:"jumpStart,omitempty"`
+	JumpStart bool `json:"jumpStart"`
 
 	// Paused indicates if the zone is only using Cloudflare DNS services.
 	// +optional
@@ -262,16 +278,19 @@ type ZoneParameters struct {
 
 // ZoneObservation are the observable fields of a Zone.
 type ZoneObservation struct {
+	// ZoneID is the Cloudflare generated ID of the zone
+	ZoneID string `json:"zoneId,omitempty"`
+
 	// AccountID is the account ID that this zone exists under
 	AccountID string `json:"accountId,omitempty"`
 
 	// AccountName is the account name that this zone exists under
-	Account string `json:"account,omitempty"`
+	Account string `json:"accountName,omitempty"`
 
-	// DevMode indicates the number of seconds left
+	// DevModeTimer indicates the number of seconds left
 	// in dev mode (if positive), otherwise the number
 	// of seconds since dev mode expired.
-	DevMode int `json:"devModeTimer,omitempty"`
+	DevModeTimer int `json:"devModeTimer,omitempty"`
 
 	// OriginalNS lists the original nameservers when
 	// this Zone was created.
@@ -288,9 +307,6 @@ type ZoneObservation struct {
 	// NameServers lists the Name servers that are assigned
 	// to this Zone.
 	NameServers []string `json:"nameServers,omitempty"`
-
-	// Paused indicates if the Zone is paused or not.
-	Paused bool `json:"paused,omitempty"`
 
 	// PlanID indicates the billing plan ID assigned
 	// to this Zone.
@@ -365,4 +381,18 @@ type ZoneList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Zone `json:"items"`
+}
+
+// ExtractZoneID provides an extraction value function
+// that can be used by other resources to refer to the
+// Zone ID when using a reference or a selector to a
+// Zone.
+func ExtractZoneID() reference.ExtractValueFn {
+	return func(mg resource.Managed) string {
+		r, ok := mg.(*Zone)
+		if !ok {
+			return ""
+		}
+		return r.Status.AtProvider.ZoneID
+	}
 }
