@@ -133,7 +133,7 @@ func (dr *DNSRecord) ResolveReferences(ctx context.Context, c client.Reader) err
 		Reference:    dr.Spec.ForProvider.ZoneRef,
 		Selector:     dr.Spec.ForProvider.ZoneSelector,
 		To:           reference.To{Managed: &v1alpha1.Zone{}, List: &v1alpha1.ZoneList{}},
-		Extract:      v1alpha1.ExtractZoneID(),
+		Extract:      reference.ExternalName(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "spec.forProvider.zone")
