@@ -114,7 +114,7 @@ func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
 		return false
 	}
 
-	if spec.Proxied != nil && spec.Proxied != o.Proxied {
+	if spec.Proxied != nil && o.Proxied != nil && *spec.Proxied != *o.Proxied {
 		return false
 	}
 
