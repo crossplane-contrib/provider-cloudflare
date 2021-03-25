@@ -6,10 +6,10 @@ spec:
   forProvider:
     zoneSelector:
       matchLabels:
-        identifier: baggy
+        identifier: dns-record
     name: crossplane
-    content: 103.1.195.233
-    proxied: true
+    content: 192.168.0.1
+    proxied: false
 
   providerConfigRef:
     name: example

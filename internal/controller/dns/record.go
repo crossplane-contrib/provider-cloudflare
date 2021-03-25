@@ -161,6 +161,10 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errDNSRecordCreation)
 	}
 
+	if cr.Spec.ForProvider.Type == nil {
+		return managed.ExternalCreation{}, errors.New(errDNSRecordCreation)
+	}
+
 	// TODO: Add validation here for priority (only required for specific record types)
 
 	cr.SetConditions(rtv1.Creating())
@@ -217,7 +221,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errDNSRecordDeletion)
 	}
 
-	err := e.client.DeleteDNSRecord(ctx, *cr.Spec.ForProvider.Zone, meta.GetExternalName(cr))
-
-	return errors.Wrap(err, errDNSRecordDeletion)
+	return errors.Wrap(
+		e.client.DeleteDNSRecord(ctx, *cr.Spec.ForProvider.Zone, meta.GetExternalName(cr)),
+		errDNSRecordDeletion)
 }
