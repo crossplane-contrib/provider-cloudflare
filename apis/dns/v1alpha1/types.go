@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RecordParameters are the configurable fields of a DNS Record.
+// DNSRecordParameters are the configurable fields of a DNS Record.
 type DNSRecordParameters struct {
 	// Type is the type of DNS record.
 	// +kubebuilder:validation:Enum=A;AAAA;CAA;CNAME;TXT;SRV;LOC;MX;NS;SPF;CERT;DNSKEY;DS;NAPTR;SMIMEA;SSHFP;TLSA;URI

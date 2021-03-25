@@ -54,7 +54,7 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: RecordParameters are the configurable fields of a DNS Record.
+                description: DNSRecordParameters are the configurable fields of a DNS Record.
                 properties:
                   content:
                     description: Content of the DNS Record
