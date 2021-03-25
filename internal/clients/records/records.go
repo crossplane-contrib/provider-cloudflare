@@ -89,7 +89,7 @@ func LateInitialize(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) 
 // requested resource parameters.
 func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
 	if spec == nil {
-		return false
+		return true
 	}
 
 	// Check if mutable fields are up to date with resource
