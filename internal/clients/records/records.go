@@ -23,6 +23,7 @@ import (
 	"github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	"github.com/cloudflare/cloudflare-go"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -59,8 +60,8 @@ func GenerateObservation(in cloudflare.DNSRecord) v1alpha1.DNSRecordObservation 
 		Proxiable:  in.Proxiable,
 		Zone:       in.ZoneName,
 		Locked:     in.Locked,
-		CreatedOn:  in.CreatedOn.String(),
-		ModifiedOn: in.ModifiedOn.String(),
+		CreatedOn:  &metav1.Time{Time: in.CreatedOn},
+		ModifiedOn: &metav1.Time{Time: in.ModifiedOn},
 	}
 }
 
@@ -117,7 +118,7 @@ func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
 		return false
 	}
 
-	if spec.Priority != nil && spec.Priority != o.Priority {
+	if spec.Priority != nil && o.Priority != nil && *spec.Priority != *o.Priority {
 		return false
 	}
 

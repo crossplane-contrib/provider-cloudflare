@@ -168,10 +168,12 @@ spec:
                 description: DNSRecordObservation are the observable fields of a DNSRecord.
                 properties:
                   createdOn:
+                    format: date-time
                     type: string
                   locked:
                     type: boolean
                   modifiedOn:
+                    format: date-time
                     type: string
                   proxiable:
                     type: boolean

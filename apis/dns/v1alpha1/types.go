@@ -78,11 +78,11 @@ type DNSRecordParameters struct {
 
 // DNSRecordObservation are the observable fields of a DNSRecord.
 type DNSRecordObservation struct {
-	Proxiable  bool   `json:"proxiable,omitempty"`
-	Zone       string `json:"zone,omitempty"`
-	Locked     bool   `json:"locked,omitempty"`
-	CreatedOn  string `json:"createdOn,omitempty"`
-	ModifiedOn string `json:"modifiedOn,omitempty"`
+	Proxiable  bool         `json:"proxiable,omitempty"`
+	Zone       string       `json:"zone,omitempty"`
+	Locked     bool         `json:"locked,omitempty"`
+	CreatedOn  *metav1.Time `json:"createdOn,omitempty"`
+	ModifiedOn *metav1.Time `json:"modifiedOn,omitempty"`
 }
 
 // A DNSRecordSpec defines the desired state of a DNSRecord.
@@ -127,7 +127,7 @@ type DNSRecordList struct {
 func (dr *DNSRecord) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, dr)
 
-	// Resolve spec.forProvider.database
+	// Resolve spec.forProvider.zone
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
 		CurrentValue: reference.FromPtrValue(dr.Spec.ForProvider.Zone),
 		Reference:    dr.Spec.ForProvider.ZoneRef,
