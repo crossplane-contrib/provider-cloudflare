@@ -1,0 +1,15 @@
+apiVersion: dns.cloudflare.crossplane.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: apex
+spec:
+  forProvider:
+    zoneSelector:
+      matchLabels:
+        identifier: dns-record
+    name: crossplane
+    content: 192.168.0.1
+    proxied: false
+
+  providerConfigRef:
+    name: example

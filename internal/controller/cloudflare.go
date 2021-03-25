@@ -23,6 +23,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
 	"github.com/benagricola/provider-cloudflare/internal/controller/config"
+	record "github.com/benagricola/provider-cloudflare/internal/controller/dns"
 	"github.com/benagricola/provider-cloudflare/internal/controller/zone"
 )
 
@@ -32,6 +33,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter) error{
 		config.Setup,
 		zone.Setup,
+		record.Setup,
 	} {
 		if err := setup(mgr, l, wl); err != nil {
 			return err
