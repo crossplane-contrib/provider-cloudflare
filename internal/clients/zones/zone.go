@@ -380,8 +380,9 @@ func GetChangedSettings(current, desired ZoneSettingsMap) []cloudflare.ZoneSetti
 // UpToDate checks if the remote resource is up to date with the
 // requested resource parameters.
 func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone) bool {
+	// If we don't have a spec, we _must_ be up to date.
 	if spec == nil {
-		return false
+		return true
 	}
 
 	// Check if mutable fields are up to date with resource
