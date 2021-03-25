@@ -29,8 +29,6 @@ import (
 const (
 	// Cloudflare returns this code when a record isnt found
 	errRecordNotFound = "81044"
-
-	errRecordUpdate = "cannot update record"
 )
 
 // Client is a Cloudflare API client that implements methods for working
@@ -87,7 +85,11 @@ func LateInitialize(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) 
 
 // UpToDate checks if the remote resource is up to date with the
 // requested resource parameters.
-func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
+func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool { //nolint:gocyclo
+	// NOTE(bagricola): The complexity here is simply repeated
+	// if statements checking for updated fields. You should think
+	// before adding further complexity to this method, but adding
+	// more field checks is not an issue.
 	if spec == nil {
 		return true
 	}
