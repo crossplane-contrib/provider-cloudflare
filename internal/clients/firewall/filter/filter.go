@@ -1,0 +1,163 @@
+/*
+Copyright 2021 The Crossplane Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package filter
+
+import (
+	"context"
+	"strings"
+
+	"github.com/pkg/errors"
+
+	"github.com/cloudflare/cloudflare-go"
+
+	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
+	clients "github.com/benagricola/provider-cloudflare/internal/clients"
+)
+
+const (
+	errUpdateFilter = "error updating filter"
+)
+
+// Client is a Cloudflare API client that implements methods for working
+// with Firewall rules.
+type Client interface {
+	// Note there is no singular CreateFilter in cloudflare-go
+	CreateFilters(ctx context.Context, zoneID string, firewallFilters []cloudflare.Filter) ([]cloudflare.Filter, error)
+	UpdateFilter(ctx context.Context, zoneID string, firewallFilter cloudflare.Filter) (cloudflare.Filter, error)
+	DeleteFilter(ctx context.Context, zoneID, firewallFilterID string) error
+	Filter(ctx context.Context, zoneID, filterID string) (cloudflare.Filter, error)
+}
+
+// NewClient returns a new Cloudflare API client for working with Firewall rules.
+func NewClient(cfg clients.Config) Client {
+	return clients.NewClient(cfg)
+}
+
+// IsFilterNotFound returns true if the passed error indicates
+// a Filter was not found.
+func IsFilterNotFound(err error) bool {
+	return strings.Contains(err.Error(), "HTTP status 404")
+}
+
+// GenerateObservation creates an observation of a cloudflare Filter
+func GenerateObservation(in cloudflare.Filter) v1alpha1.FilterObservation {
+	return v1alpha1.FilterObservation{}
+}
+
+// LateInitialize initializes FilterParameters based on the remote resource
+func LateInitialize(spec *v1alpha1.FilterParameters, r cloudflare.Filter) bool {
+
+	if spec == nil {
+		return false
+	}
+
+	li := false
+
+	if spec.Paused == nil {
+		spec.Paused = &r.Paused
+		li = true
+	}
+
+	return li
+}
+
+// UpToDate checks if the remote resource is up to date with the
+// requested resource parameters.
+func UpToDate(spec *v1alpha1.FilterParameters, f cloudflare.Filter) bool { //nolint:gocyclo
+	// If we don't have a spec, we _must_ be up to date.
+	if spec == nil {
+		return true
+	}
+
+	// Check if mutable fields are up to date with resource
+	if strings.TrimSpace(spec.Expression) != f.Expression {
+		return false
+	}
+
+	if spec.Description != nil && *spec.Description != f.Description {
+		return false
+	}
+
+	if spec.Paused != nil && *spec.Paused != f.Paused {
+		return false
+	}
+
+	return true
+}
+
+// CreateFilter creates a new Filter
+func CreateFilter(ctx context.Context, client Client, spec *v1alpha1.FilterParameters) (*cloudflare.Filter, error) {
+	f := cloudflare.Filter{
+		Expression: strings.TrimSpace(spec.Expression),
+	}
+
+	if spec.Description != nil {
+		f.Description = *spec.Description
+	}
+	if spec.Paused != nil {
+		f.Paused = *spec.Paused
+	}
+
+	res, err := client.CreateFilters(
+		ctx,
+		*spec.Zone,
+		[]cloudflare.Filter{f},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res) != 1 {
+		return nil, err
+	}
+	return &res[0], nil
+}
+
+// UpdateFilter updates mutable values on a Filter
+func UpdateFilter(ctx context.Context, client Client, ruleID string, spec *v1alpha1.FilterParameters) error { //nolint:gocyclo
+	// Get current firewall rule status
+	f, err := client.Filter(ctx, *spec.Zone, ruleID)
+	if err != nil {
+		return errors.Wrap(err, errUpdateFilter)
+	}
+
+	u := false
+
+	if spec.Expression != f.Expression {
+		f.Expression = spec.Expression
+		u = true
+	}
+
+	if spec.Description != nil && *spec.Description != f.Description {
+		f.Description = *spec.Description
+		u = true
+	}
+
+	if spec.Paused != nil && *spec.Paused != f.Paused {
+		f.Paused = *spec.Paused
+		u = true
+	}
+
+	if !u {
+		return nil
+	}
+
+	// Update Filter
+	_, err = client.UpdateFilter(ctx, *spec.Zone, f)
+	return err
+}

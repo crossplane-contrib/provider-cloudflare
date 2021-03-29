@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package record
+package filter
 
 import (
 	"context"
@@ -33,32 +33,28 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/cloudflare/cloudflare-go"
-
-	"github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
+	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	records "github.com/benagricola/provider-cloudflare/internal/clients/records"
+	filter "github.com/benagricola/provider-cloudflare/internal/clients/firewall/filter"
 )
 
 const (
-	errNotRecord = "managed resource is not a Record custom resource"
+	errNotFilter = "managed resource is not a Filter custom resource"
 
 	errClientConfig = "error getting client config"
 
-	errRecordLookup   = "cannot lookup record"
-	errRecordCreation = "cannot create record"
-	errRecordUpdate   = "cannot update record"
-	errRecordDeletion = "cannot delete record"
-	errRecordNoZone   = "no zone found"
+	errFilterLookup   = "cannot lookup filter"
+	errFilterCreation = "cannot create filter"
+	errFilterUpdate   = "cannot update filter"
+	errFilterDeletion = "cannot delete filter"
+	errNoZone         = "no zone found"
 
 	maxConcurrency = 5
-
-	// recordStatusActive = "active"
 )
 
-// Setup adds a controller that reconciles Record managed resources.
+// Setup adds a controller that reconciles Filter managed resources.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1alpha1.RecordGroupKind)
+	name := managed.ControllerName(v1alpha1.FilterGroupKind)
 
 	o := controller.Options{
 		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
@@ -66,10 +62,10 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	}
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.RecordGroupVersionKind),
+		resource.ManagedKind(v1alpha1.FilterGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
 			kube:                  mgr.GetClient(),
-			newCloudflareClientFn: records.NewClient}),
+			newCloudflareClientFn: filter.NewClient}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		// Do not initialize external-name field.
@@ -79,7 +75,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o).
-		For(&v1alpha1.Record{}).
+		For(&v1alpha1.Filter{}).
 		Complete(r)
 }
 
@@ -87,15 +83,15 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 // is called.
 type connector struct {
 	kube                  client.Client
-	newCloudflareClientFn func(cfg clients.Config) records.Client
+	newCloudflareClientFn func(cfg clients.Config) filter.Client
 }
 
 // Connect produces a valid configuration for a Cloudflare API
 // instance, and returns it as an external client.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	_, ok := mg.(*v1alpha1.Record)
+	_, ok := mg.(*v1alpha1.Filter)
 	if !ok {
-		return nil, errors.New(errNotRecord)
+		return nil, errors.New(errNotFilter)
 	}
 
 	// Get client configuration
@@ -110,119 +106,100 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 // An ExternalClient observes, then either creates, updates, or deletes an
 // external resource to ensure it reflects the managed resource's desired state.
 type external struct {
-	client records.Client
+	client filter.Client
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha1.Record)
+	cr, ok := mg.(*v1alpha1.Filter)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errNotRecord)
+		return managed.ExternalObservation{}, errors.New(errNotFilter)
 	}
 
-	// Record does not exist if we dont have an ID stored in external-name
-	rid := meta.GetExternalName(cr)
-	if rid == "" {
+	// Filter does not exist if we dont have an ID stored in external-name
+	fid := meta.GetExternalName(cr)
+	if fid == "" {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
-		return managed.ExternalObservation{}, errors.New(errRecordNoZone)
+		return managed.ExternalObservation{}, errors.New(errNoZone)
 	}
 
-	record, err := e.client.DNSRecord(ctx, *cr.Spec.ForProvider.Zone, rid)
+	f, err := e.client.Filter(ctx, *cr.Spec.ForProvider.Zone, fid)
 
 	if err != nil {
-		return managed.ExternalObservation{},
-			errors.Wrap(resource.Ignore(records.IsRecordNotFound, err), errRecordLookup)
+		// Been deleted or doesnt exist
+		if filter.IsFilterNotFound(err) {
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
+		return managed.ExternalObservation{}, errors.Wrap(err, errFilterLookup)
 	}
 
-	cr.Status.AtProvider = records.GenerateObservation(record)
+	cr.Status.AtProvider = filter.GenerateObservation(f)
 
 	cr.SetConditions(rtv1.Available())
 
 	return managed.ExternalObservation{
 		ResourceExists:          true,
-		ResourceUpToDate:        records.UpToDate(&cr.Spec.ForProvider, record),
-		ResourceLateInitialized: records.LateInitialize(&cr.Spec.ForProvider, record),
+		ResourceUpToDate:        filter.UpToDate(&cr.Spec.ForProvider, f),
+		ResourceLateInitialized: filter.LateInitialize(&cr.Spec.ForProvider, f),
 	}, nil
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.Record)
+	cr, ok := mg.(*v1alpha1.Filter)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotRecord)
+		return managed.ExternalCreation{}, errors.New(errNotFilter)
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
-		return managed.ExternalCreation{},
-			errors.Wrap(errors.New(errRecordNoZone), errRecordCreation)
+		return managed.ExternalCreation{}, errors.New(errNoZone)
 	}
-
-	if cr.Spec.ForProvider.TTL == nil {
-		return managed.ExternalCreation{}, errors.New(errRecordCreation)
-	}
-
-	if cr.Spec.ForProvider.Type == nil {
-		return managed.ExternalCreation{}, errors.New(errRecordCreation)
-	}
-
-	// TODO: Add validation here for priority (only required for specific record types)
 
 	cr.SetConditions(rtv1.Creating())
 
-	res, err := e.client.CreateDNSRecord(
-		ctx,
-		*cr.Spec.ForProvider.Zone,
-		cloudflare.DNSRecord{
-			Type:     *cr.Spec.ForProvider.Type,
-			Name:     cr.Spec.ForProvider.Name,
-			TTL:      *cr.Spec.ForProvider.TTL,
-			Content:  cr.Spec.ForProvider.Content,
-			Proxied:  cr.Spec.ForProvider.Proxied,
-			Priority: cr.Spec.ForProvider.Priority,
-		},
-	)
+	nr, err := filter.CreateFilter(ctx, e.client, &cr.Spec.ForProvider)
 
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errRecordCreation)
+		return managed.ExternalCreation{}, errors.Wrap(err, errFilterCreation)
 	}
 
-	cr.Status.AtProvider = records.GenerateObservation(res.Result)
+	cr.Status.AtProvider = filter.GenerateObservation(*nr)
 
-	// Update the external name with the ID of the new DNS Record
-	meta.SetExternalName(cr, res.Result.ID)
+	// Update the external name with the ID of the new Rule
+	meta.SetExternalName(cr, nr.ID)
 
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.Record)
+	cr, ok := mg.(*v1alpha1.Filter)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotRecord)
+		return managed.ExternalUpdate{}, errors.New(errNotFilter)
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
-		return managed.ExternalUpdate{}, errors.Wrap(errors.New(errRecordNoZone), errRecordUpdate)
+		return managed.ExternalUpdate{}, errors.Wrap(errors.New(errNoZone), errFilterUpdate)
 	}
 
 	return managed.ExternalUpdate{},
 		errors.Wrap(
-			records.UpdateRecord(ctx, e.client, meta.GetExternalName(cr), &cr.Spec.ForProvider),
-			errRecordUpdate,
+			filter.UpdateFilter(ctx, e.client, meta.GetExternalName(cr), &cr.Spec.ForProvider),
+			errFilterUpdate,
 		)
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.Record)
+	cr, ok := mg.(*v1alpha1.Filter)
 	if !ok {
-		return errors.New(errNotRecord)
+		return errors.New(errNotFilter)
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
-		return errors.Wrap(errors.New(errRecordNoZone), errRecordDeletion)
+		return errors.Wrap(errors.New(errNoZone), errFilterDeletion)
 	}
 
 	return errors.Wrap(
-		e.client.DeleteDNSRecord(ctx, *cr.Spec.ForProvider.Zone, meta.GetExternalName(cr)),
-		errRecordDeletion)
+		e.client.DeleteFilter(ctx, *cr.Spec.ForProvider.Zone, meta.GetExternalName(cr)),
+		errFilterDeletion)
 }

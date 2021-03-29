@@ -1,0 +1,16 @@
+apiVersion: firewall.cloudflare.crossplane.io/v1alpha1
+kind: FirewallRule
+metadata:
+  name: challenge-wordpress-logins 
+spec:
+  forProvider:
+    action: challenge
+    description: Challenge wordpress login URLs
+    priority: 1
+    zoneRef:
+      name: example
+    filterRef:
+      name: wordpress-logins
+    
+  providerConfigRef:
+    name: example

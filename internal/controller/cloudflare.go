@@ -24,7 +24,9 @@ import (
 
 	"github.com/benagricola/provider-cloudflare/internal/controller/config"
 	record "github.com/benagricola/provider-cloudflare/internal/controller/dns"
-	"github.com/benagricola/provider-cloudflare/internal/controller/zone"
+	filter "github.com/benagricola/provider-cloudflare/internal/controller/firewall/filter"
+	rule "github.com/benagricola/provider-cloudflare/internal/controller/firewall/rule"
+	zone "github.com/benagricola/provider-cloudflare/internal/controller/zone"
 )
 
 // Setup creates all Template controllers with the supplied logger and adds them to
@@ -32,6 +34,8 @@ import (
 func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter) error{
 		config.Setup,
+		rule.Setup,
+		filter.Setup,
 		zone.Setup,
 		record.Setup,
 	} {

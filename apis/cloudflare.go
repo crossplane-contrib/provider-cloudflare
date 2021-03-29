@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	dnsv1alpha1 "github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
+	firewallv1alpha1 "github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
 	cloudflarev1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
 	zonev1alpha1 "github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 )
@@ -31,6 +32,7 @@ func init() {
 		cloudflarev1alpha1.SchemeBuilder.AddToScheme,
 		dnsv1alpha1.SchemeBuilder.AddToScheme,
 		zonev1alpha1.SchemeBuilder.AddToScheme,
+		firewallv1alpha1.SchemeBuilder.AddToScheme,
 	)
 }
 
