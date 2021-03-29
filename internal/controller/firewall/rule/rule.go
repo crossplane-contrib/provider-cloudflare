@@ -138,7 +138,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	cr.Status.AtProvider = rule.GenerateObservation(r)
 
-	cr.SetConditions(rtv1.Available())
+	cr.Status.SetConditions(rtv1.Available())
 
 	return managed.ExternalObservation{
 		ResourceExists:          true,
@@ -161,8 +161,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNoFilter)
 	}
 
-	cr.SetConditions(rtv1.Creating())
-
 	nr, err := rule.CreateFirewallRule(ctx, e.client, &cr.Spec.ForProvider)
 
 	if err != nil {
@@ -170,6 +168,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	cr.Status.AtProvider = rule.GenerateObservation(*nr)
+	cr.Status.SetConditions(rtv1.Available())
 
 	// Update the external name with the ID of the new Rule
 	meta.SetExternalName(cr, nr.ID)

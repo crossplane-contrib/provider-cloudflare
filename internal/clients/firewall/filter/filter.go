@@ -77,7 +77,7 @@ func LateInitialize(spec *v1alpha1.FilterParameters, r cloudflare.Filter) bool {
 
 // UpToDate checks if the remote resource is up to date with the
 // requested resource parameters.
-func UpToDate(spec *v1alpha1.FilterParameters, f cloudflare.Filter) bool { //nolint:gocyclo
+func UpToDate(spec *v1alpha1.FilterParameters, f cloudflare.Filter) bool {
 	// If we don't have a spec, we _must_ be up to date.
 	if spec == nil {
 		return true
@@ -136,25 +136,14 @@ func UpdateFilter(ctx context.Context, client Client, ruleID string, spec *v1alp
 		return errors.Wrap(err, errUpdateFilter)
 	}
 
-	u := false
+	f.Expression = strings.TrimSpace(spec.Expression)
 
-	if spec.Expression != f.Expression {
-		f.Expression = spec.Expression
-		u = true
-	}
-
-	if spec.Description != nil && *spec.Description != f.Description {
+	if spec.Description != nil {
 		f.Description = *spec.Description
-		u = true
 	}
 
-	if spec.Paused != nil && *spec.Paused != f.Paused {
+	if spec.Paused != nil {
 		f.Paused = *spec.Paused
-		u = true
-	}
-
-	if !u {
-		return nil
 	}
 
 	// Update Filter

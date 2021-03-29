@@ -19,8 +19,11 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.bindingPhase
-      name: STATUS
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -108,7 +111,8 @@ spec:
                   priority:
                     description: Priority is the priority of this Firewall Rule, that controls processing order. Rules without a priority set will be sequenced after rules with a priority set.
                     format: int32
-                    minimum: 0
+                    maximum: 2147483647
+                    minimum: 1
                     type: integer
                   zone:
                     description: ZoneID this Firewall Rule is for.
@@ -176,13 +180,6 @@ spec:
             properties:
               atProvider:
                 description: FirewallRuleObservation are the observable fields of a FirewallRule.
-                properties:
-                  createdOn:
-                    format: date-time
-                    type: string
-                  modifiedOn:
-                    format: date-time
-                    type: string
                 type: object
               conditions:
                 description: Conditions of the resource.

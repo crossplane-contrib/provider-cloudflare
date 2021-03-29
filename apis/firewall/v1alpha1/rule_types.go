@@ -67,10 +67,17 @@ type FirewallRuleParameters struct {
 	// +optional
 	Paused *bool `json:"paused,omitempty"`
 
+	// NOTE(bagricola): Cloudflare's API documentation says this has a range of
+	// 0 - 2147483647 - but in reality, you get an error trying to set it to 0 and
+	// it seems you can set it HIGHER than 2147483647.
+	// I'm going off their API documentation here, except setting the minimum to
+	// 1 to avoid the 400 error that causes.
+
 	// Priority is the priority of this Firewall Rule, that controls
 	// processing order. Rules without a priority set will be sequenced
 	// after rules with a priority set.
-	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=2147483647
 	// +optional
 	Priority *int32 `json:"priority,omitempty"`
 
@@ -91,10 +98,7 @@ type FirewallRuleParameters struct {
 }
 
 // FirewallRuleObservation are the observable fields of a FirewallRule.
-type FirewallRuleObservation struct {
-	CreatedOn  *metav1.Time `json:"createdOn,omitempty"`
-	ModifiedOn *metav1.Time `json:"modifiedOn,omitempty"`
-}
+type FirewallRuleObservation struct{}
 
 // A FirewallRuleSpec defines the desired state of a FirewallRule.
 type FirewallRuleSpec struct {
@@ -112,7 +116,8 @@ type FirewallRuleStatus struct {
 
 // A FirewallRule is a set of common settings applied to one or more domains.
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
 type FirewallRule struct {

@@ -24,8 +24,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/cloudflare/cloudflare-go"
 
 	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
@@ -59,10 +57,7 @@ func IsRuleNotFound(err error) bool {
 
 // GenerateObservation creates an observation of a cloudflare FirewallRule
 func GenerateObservation(in cloudflare.FirewallRule) v1alpha1.FirewallRuleObservation {
-	return v1alpha1.FirewallRuleObservation{
-		CreatedOn:  &metav1.Time{Time: in.CreatedOn},
-		ModifiedOn: &metav1.Time{Time: in.ModifiedOn},
-	}
+	return v1alpha1.FirewallRuleObservation{}
 }
 
 func productsToBypassProducts(products []string) []v1alpha1.FirewallRuleBypassProduct {
@@ -97,6 +92,14 @@ func LateInitialize(spec *v1alpha1.FirewallRuleParameters, r cloudflare.Firewall
 		spec.Paused = &r.Paused
 		li = true
 	}
+	if spec.Priority == nil {
+		// Priority should be a whole number
+		if p, ok := r.Priority.(float64); ok {
+			in := int32(p)
+			spec.Priority = &in
+			li = true
+		}
+	}
 
 	return li
 }
@@ -114,7 +117,12 @@ func UpToDate(spec *v1alpha1.FirewallRuleParameters, r cloudflare.FirewallRule) 
 		return false
 	}
 
-	if !cmp.Equal(spec.BypassProducts, productsToBypassProducts(r.Products)) {
+	cbp := productsToBypassProducts(r.Products)
+
+	// IF bypassProducts IS NOT a nil slice AND is not equal to current products
+	// OR if bypassProducts IS a nil slice AND there is more than 0 current products.
+	if (spec.BypassProducts != nil && !cmp.Equal(spec.BypassProducts, cbp)) ||
+		(spec.BypassProducts == nil && len(cbp) > 0) {
 		return false
 	}
 
@@ -130,8 +138,15 @@ func UpToDate(spec *v1alpha1.FirewallRuleParameters, r cloudflare.FirewallRule) 
 		return false
 	}
 
-	if spec.Priority != nil && *spec.Priority != r.Priority {
-		return false
+	if spec.Priority != nil {
+		if p, ok := r.Priority.(float64); ok {
+			if int32(p) != *spec.Priority {
+				return false
+			}
+		} else {
+			// Remote value is unset but requested value is set
+			return false
+		}
 	}
 
 	return true
@@ -181,40 +196,25 @@ func UpdateFirewallRule(ctx context.Context, client Client, ruleID string, spec 
 		return errors.Wrap(err, errUpdateFirewallRule)
 	}
 
-	u := false
+	r.Action = spec.Action
+	r.Products = bypassProductsToProducts(spec.BypassProducts)
 
-	if spec.Action != r.Action {
-		r.Action = spec.Action
-		u = true
-	}
-
-	if !cmp.Equal(spec.BypassProducts, productsToBypassProducts(r.Products)) {
-		r.Products = bypassProductsToProducts(spec.BypassProducts)
-		u = true
-	}
-
-	if spec.Description != nil && *spec.Description != r.Description {
+	if spec.Description != nil {
 		r.Description = *spec.Description
-		u = true
 	}
 
-	if spec.Filter != nil && *spec.Filter != r.Filter.ID {
+	if spec.Filter != nil {
 		r.Filter.ID = *spec.Filter
-		u = true
 	}
 
-	if spec.Paused != nil && *spec.Paused != r.Paused {
+	if spec.Paused != nil {
 		r.Paused = *spec.Paused
-		u = true
 	}
 
-	if spec.Priority != nil && *spec.Priority != r.Priority {
+	if spec.Priority != nil {
 		r.Priority = *spec.Priority
-		u = true
-	}
-
-	if !u {
-		return nil
+	} else {
+		r.Priority = nil
 	}
 
 	// Update firewall rule
