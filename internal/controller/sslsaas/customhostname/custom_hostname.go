@@ -1,0 +1,232 @@
+/*
+Copyright 2021 The Crossplane Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package customhostname
+
+import (
+	"context"
+
+	"github.com/pkg/errors"
+	"k8s.io/client-go/util/workqueue"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	rtv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/event"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+
+	"github.com/cloudflare/cloudflare-go"
+
+	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
+	clients "github.com/benagricola/provider-cloudflare/internal/clients"
+	customHostnames "github.com/benagricola/provider-cloudflare/internal/clients/sslsaas/customhostnames"
+)
+
+const (
+	errNotCustomHostname = "managed resource is not a Custom Hostname custom resource"
+
+	errClientConfig = "error getting client config"
+
+	errCustomHostnameLookup   = "cannot lookup custom hostname"
+	errCustomHostnameCreation = "cannot create custom hostname"
+	errCustomHostnameUpdate   = "cannot update record"
+	errCustomHostnameDeletion = "cannot delete record"
+	errCustomHostnameNoZone   = "cannot create custom hostname no zone found"
+
+	maxConcurrency = 5
+)
+
+// Setup adds a controller that reconciles CustomHostname managed resources.
+func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+	name := managed.ControllerName(v1alpha1.CustomHostnameGroupKind)
+
+	o := controller.Options{
+		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
+		MaxConcurrentReconciles: maxConcurrency,
+	}
+
+	r := managed.NewReconciler(mgr,
+		resource.ManagedKind(v1alpha1.CustomHostnameGroupVersionKind),
+		managed.WithExternalConnecter(&connector{
+			kube:                  mgr.GetClient(),
+			newCloudflareClientFn: customHostnames.NewClient}),
+		managed.WithLogger(l.WithValues("controller", name)),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		// Do not initialize external-name field.
+		managed.WithInitializers(),
+	)
+
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		WithOptions(o).
+		For(&v1alpha1.CustomHostname{}).
+		Complete(r)
+}
+
+// A connector is expected to produce an ExternalClient when its Connect method
+// is called.
+type connector struct {
+	kube                  client.Client
+	newCloudflareClientFn func(cfg clients.Config) customHostnames.Client
+}
+
+// Connect produces a valid configuration for a Cloudflare API
+// instance, and returns it as an external client.
+func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
+	_, ok := mg.(*v1alpha1.CustomHostname)
+	if !ok {
+		return nil, errors.New(errNotCustomHostname)
+	}
+
+	// Get client configuration
+	config, err := clients.GetConfig(ctx, c.kube, mg)
+	if err != nil {
+		return nil, errors.Wrap(err, errClientConfig)
+	}
+
+	return &external{client: c.newCloudflareClientFn(*config)}, nil
+}
+
+// An ExternalClient observes, then either creates, updates, or deletes an
+// external resource to ensure it reflects the managed resource's desired state.
+type external struct {
+	client customHostnames.Client
+}
+
+func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
+	cr, ok := mg.(*v1alpha1.CustomHostname)
+	if !ok {
+		return managed.ExternalObservation{}, errors.New(errNotCustomHostname)
+	}
+
+	if cr.Spec.ForProvider.Zone == nil {
+		return managed.ExternalObservation{}, errors.New(errCustomHostnameNoZone)
+	}
+
+	// Custom Hostname does not exist if we dont have an ID stored in external-name
+	chid := meta.GetExternalName(cr)
+	if chid == "" {
+		return managed.ExternalObservation{ResourceExists: false}, nil
+	}
+
+	ch, err := e.client.CustomHostname(ctx, *cr.Spec.ForProvider.Zone, chid)
+
+	if err != nil {
+		if customHostnames.IsCustomHostnameNotFound(err) {
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
+		return managed.ExternalObservation{}, errors.Wrap(err, errCustomHostnameLookup)
+	}
+
+	cr.Status.AtProvider = customHostnames.GenerateObservation(ch)
+
+	return managed.ExternalObservation{
+		ResourceExists:   true,
+		ResourceUpToDate: customHostnames.UpToDate(&cr.Spec.ForProvider, ch),
+	}, nil
+}
+
+func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+
+	cr, ok := mg.(*v1alpha1.CustomHostname)
+	if !ok {
+		return managed.ExternalCreation{}, errors.New(errNotCustomHostname)
+	}
+
+	if cr.Spec.ForProvider.Zone == nil {
+		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreation)
+	}
+
+	if cr.Spec.ForProvider.Hostname == nil {
+		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreation)
+	}
+
+	sslSettings := cloudflare.CustomHostnameSSLSettings{
+		HTTP2:         *cr.Spec.ForProvider.SSL.Settings.HTTP2,
+		TLS13:         *cr.Spec.ForProvider.SSL.Settings.TLS13,
+		MinTLSVersion: *cr.Spec.ForProvider.SSL.Settings.MinTLSVersion,
+		Ciphers:       cr.Spec.ForProvider.SSL.Settings.Ciphers,
+	}
+
+	ssl := cloudflare.CustomHostnameSSL{
+		Method:            *cr.Spec.ForProvider.SSL.Method,
+		Type:              *cr.Spec.ForProvider.SSL.Type,
+		CustomCertificate: *cr.Spec.ForProvider.SSL.CustomCertificate,
+		CustomKey:         *cr.Spec.ForProvider.SSL.CustomKey,
+		Wildcard:          *cr.Spec.ForProvider.SSL.Wildcard,
+		Settings:          sslSettings,
+	}
+
+	cr.SetConditions(rtv1.Creating())
+
+	rch, err := e.client.CreateCustomHostname(
+		ctx,
+		*cr.Spec.ForProvider.Zone,
+		cloudflare.CustomHostname{
+			Hostname: *cr.Spec.ForProvider.Hostname,
+			SSL:      ssl,
+		},
+	)
+
+	if err != nil {
+		return managed.ExternalCreation{}, errors.Wrap(err, errCustomHostnameCreation)
+	}
+
+	cr.Status.AtProvider = customHostnames.GenerateObservation(rch.Result)
+	meta.SetExternalName(cr, rch.Result.ID)
+
+	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
+
+}
+
+func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+	cr, ok := mg.(*v1alpha1.CustomHostname)
+	if !ok {
+		return managed.ExternalUpdate{}, errors.New(errNotCustomHostname)
+	}
+
+	if cr.Spec.ForProvider.Zone == nil {
+		return managed.ExternalUpdate{}, errors.New(errCustomHostnameUpdate)
+	}
+
+	er := customHostnames.UpdateCustomHostname(ctx, e.client, meta.GetExternalName(cr), &cr.Spec.ForProvider)
+
+	return managed.ExternalUpdate{},
+		errors.Wrap(
+			er,
+			errCustomHostnameUpdate,
+		)
+}
+
+func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
+	cr, ok := mg.(*v1alpha1.CustomHostname)
+	if !ok {
+		return errors.New(errNotCustomHostname)
+	}
+
+	if cr.Spec.ForProvider.Zone == nil {
+		return errors.New(errCustomHostnameDeletion)
+	}
+
+	return errors.Wrap(
+		e.client.DeleteCustomHostname(ctx, *cr.Spec.ForProvider.Zone, meta.GetExternalName(cr)),
+		errCustomHostnameDeletion)
+}

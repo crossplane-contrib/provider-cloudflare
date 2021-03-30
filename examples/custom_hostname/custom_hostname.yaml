@@ -1,0 +1,11 @@
+apiVersion: sslsaas.cloudflare.crossplane.io/v1alpha1
+kind: CustomHostname
+metadata:
+  name: example
+spec:
+  forProvider:
+    zone: 123
+    hostname: client.customhostname.com
+
+  providerConfigRef:
+    name: example

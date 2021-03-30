@@ -26,6 +26,8 @@ import (
 	record "github.com/benagricola/provider-cloudflare/internal/controller/dns"
 	filter "github.com/benagricola/provider-cloudflare/internal/controller/firewall/filter"
 	rule "github.com/benagricola/provider-cloudflare/internal/controller/firewall/rule"
+	customhostname "github.com/benagricola/provider-cloudflare/internal/controller/sslsaas/customhostname"
+	fallbackorigin "github.com/benagricola/provider-cloudflare/internal/controller/sslsaas/fallbackorigin"
 	zone "github.com/benagricola/provider-cloudflare/internal/controller/zone"
 )
 
@@ -36,8 +38,10 @@ func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter) error {
 		config.Setup,
 		rule.Setup,
 		filter.Setup,
+		customhostname.Setup,
 		zone.Setup,
 		record.Setup,
+		fallbackorigin.Setup,
 	} {
 		if err := setup(mgr, l, wl); err != nil {
 			return err
