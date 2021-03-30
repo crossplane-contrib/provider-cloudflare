@@ -178,13 +178,10 @@ func CreateRule(ctx context.Context, client Client, spec *v1alpha1.RuleParameter
 		[]cloudflare.FirewallRule{r},
 	)
 
-	if err != nil {
+	if err != nil || len(res) != 1 {
 		return nil, err
 	}
 
-	if len(res) != 1 {
-		return nil, err
-	}
 	return &res[0], nil
 }
 

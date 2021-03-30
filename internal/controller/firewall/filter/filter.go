@@ -128,11 +128,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	f, err := e.client.Filter(ctx, *cr.Spec.ForProvider.Zone, fid)
 
 	if err != nil {
-		// Been deleted or doesnt exist
-		if filter.IsFilterNotFound(err) {
-			return managed.ExternalObservation{ResourceExists: false}, nil
-		}
-		return managed.ExternalObservation{}, errors.Wrap(err, errFilterLookup)
+		return managed.ExternalObservation{},
+			errors.Wrap(resource.Ignore(filter.IsFilterNotFound, err), errFilterLookup)
 	}
 
 	cr.Status.AtProvider = filter.GenerateObservation(f)

@@ -59,7 +59,7 @@ type FilterParameters struct {
 	ZoneSelector *xpv1.Selector `json:"zoneSelector,omitempty"`
 }
 
-// FilterObservation are the observable fields of a Filter.
+// FilterObservation is the observable fields of a Filter.
 type FilterObservation struct{}
 
 // A FilterSpec defines the desired state of a Filter.
@@ -76,7 +76,8 @@ type FilterStatus struct {
 
 // +kubebuilder:object:root=true
 
-// A Filter is a set of common settings applied to one or more domains.
+// A Filter is a matching expression that can be referenced by one or more
+// firewall rules.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
@@ -99,7 +100,7 @@ type FilterList struct {
 	Items           []Filter `json:"items"`
 }
 
-// ResolveReferences of this DNS Record
+// ResolveReferences of this Filter
 func (f *Filter) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, f)
 

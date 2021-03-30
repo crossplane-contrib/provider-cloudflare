@@ -139,12 +139,13 @@ func (e *external) Observe(ctx context.Context,
 
 	if cr.Status.AtProvider.Status == zoneStatusActive {
 		cr.Status.SetConditions(rtv1.Available())
+	} else {
+		cr.Status.SetConditions(rtv1.Unavailable())
 	}
 
 	observedSettings, err := zones.LoadSettingsForZone(ctx, e.client, z.ID)
-
 	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false},
+		return managed.ExternalObservation{ResourceExists: true},
 			errors.Wrap(err, errZoneObservation)
 	}
 
@@ -184,8 +185,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errZoneCreation)
 	}
 
-	cr.SetConditions(rtv1.Creating())
-
 	z, err := e.client.CreateZone(
 		ctx,
 		cr.Spec.ForProvider.Name,
@@ -198,6 +197,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	cr.Status.AtProvider = zones.GenerateObservation(z)
+
 	meta.SetExternalName(cr, z.ID)
 
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
@@ -230,12 +230,14 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotZone)
 	}
+
 	zid := meta.GetExternalName(cr)
+
 	// Delete should never be called on a nonexistent resource
 	if zid == "" {
 		return errors.New(errZoneDeletion)
 	}
-	cr.SetConditions(rtv1.Deleting())
+
 	_, err := e.client.DeleteZone(ctx, zid)
 	return errors.Wrap(err, errZoneDeletion)
 }

@@ -97,7 +97,7 @@ type RuleParameters struct {
 	ZoneSelector *xpv1.Selector `json:"zoneSelector,omitempty"`
 }
 
-// RuleObservation are the observable fields of a Rule.
+// RuleObservation is the observable fields of a Rule.
 type RuleObservation struct{}
 
 // A RuleSpec defines the desired state of a Rule.
@@ -114,7 +114,7 @@ type RuleStatus struct {
 
 // +kubebuilder:object:root=true
 
-// A Rule is a firewall filter applied in a particular order to a Zone.
+// A Rule applies a firewall filter in a particular order to a Zone.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
@@ -137,7 +137,7 @@ type RuleList struct {
 	Items           []Rule `json:"items"`
 }
 
-// ResolveReferences of this DNS Record
+// ResolveReferences of this Rule
 func (fr *Rule) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, fr)
 
