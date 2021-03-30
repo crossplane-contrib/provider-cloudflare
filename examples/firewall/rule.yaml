@@ -1,5 +1,5 @@
 apiVersion: firewall.cloudflare.crossplane.io/v1alpha1
-kind: FirewallRule
+kind: Rule
 metadata:
   name: challenge-wordpress-logins 
 spec:

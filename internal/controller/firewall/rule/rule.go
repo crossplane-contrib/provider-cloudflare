@@ -39,23 +39,23 @@ import (
 )
 
 const (
-	errNotFirewallRule = "managed resource is not a FirewallRule custom resource"
+	errNotRule = "managed resource is not a Rule custom resource"
 
 	errClientConfig = "error getting client config"
 
-	errFirewallRuleLookup   = "cannot lookup firewall rule"
-	errFirewallRuleCreation = "cannot create firewall rule"
-	errFirewallRuleUpdate   = "cannot update firewall rule"
-	errFirewallRuleDeletion = "cannot delete firewall rule"
-	errNoZone               = "no zone found"
-	errNoFilter             = "no filter found"
+	errRuleLookup   = "cannot lookup firewall rule"
+	errRuleCreation = "cannot create firewall rule"
+	errRuleUpdate   = "cannot update firewall rule"
+	errRuleDeletion = "cannot delete firewall rule"
+	errNoZone       = "no zone found"
+	errNoFilter     = "no filter found"
 
 	maxConcurrency = 5
 )
 
-// Setup adds a controller that reconciles FirewallRule managed resources.
+// Setup adds a controller that reconciles Rule managed resources.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1alpha1.FirewallRuleGroupKind)
+	name := managed.ControllerName(v1alpha1.RuleGroupKind)
 
 	o := controller.Options{
 		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
@@ -63,7 +63,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	}
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.FirewallRuleGroupVersionKind),
+		resource.ManagedKind(v1alpha1.RuleGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
 			kube:                  mgr.GetClient(),
 			newCloudflareClientFn: rule.NewClient}),
@@ -76,7 +76,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o).
-		For(&v1alpha1.FirewallRule{}).
+		For(&v1alpha1.Rule{}).
 		Complete(r)
 }
 
@@ -90,9 +90,9 @@ type connector struct {
 // Connect produces a valid configuration for a Cloudflare API
 // instance, and returns it as an external client.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	_, ok := mg.(*v1alpha1.FirewallRule)
+	_, ok := mg.(*v1alpha1.Rule)
 	if !ok {
-		return nil, errors.New(errNotFirewallRule)
+		return nil, errors.New(errNotRule)
 	}
 
 	// Get client configuration
@@ -111,9 +111,9 @@ type external struct {
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha1.FirewallRule)
+	cr, ok := mg.(*v1alpha1.Rule)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errNotFirewallRule)
+		return managed.ExternalObservation{}, errors.New(errNotRule)
 	}
 
 	// Rule does not exist if we dont have an ID stored in external-name
@@ -129,11 +129,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	r, err := e.client.FirewallRule(ctx, *cr.Spec.ForProvider.Zone, rid)
 
 	if err != nil {
-		// Been deleted or doesnt exist
-		if rule.IsRuleNotFound(err) {
-			return managed.ExternalObservation{ResourceExists: false}, nil
-		}
-		return managed.ExternalObservation{}, errors.Wrap(err, errFirewallRuleLookup)
+		return managed.ExternalObservation{},
+			errors.Wrap(resource.Ignore(rule.IsRuleNotFound, err), errRuleLookup)
 	}
 
 	cr.Status.AtProvider = rule.GenerateObservation(r)
@@ -148,9 +145,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.FirewallRule)
+	cr, ok := mg.(*v1alpha1.Rule)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotFirewallRule)
+		return managed.ExternalCreation{}, errors.New(errNotRule)
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
@@ -161,14 +158,13 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNoFilter)
 	}
 
-	nr, err := rule.CreateFirewallRule(ctx, e.client, &cr.Spec.ForProvider)
+	nr, err := rule.CreateRule(ctx, e.client, &cr.Spec.ForProvider)
 
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errFirewallRuleCreation)
+		return managed.ExternalCreation{}, errors.Wrap(err, errRuleCreation)
 	}
 
 	cr.Status.AtProvider = rule.GenerateObservation(*nr)
-	cr.Status.SetConditions(rtv1.Available())
 
 	// Update the external name with the ID of the new Rule
 	meta.SetExternalName(cr, nr.ID)
@@ -177,33 +173,33 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.FirewallRule)
+	cr, ok := mg.(*v1alpha1.Rule)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotFirewallRule)
+		return managed.ExternalUpdate{}, errors.New(errNotRule)
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
-		return managed.ExternalUpdate{}, errors.Wrap(errors.New(errNoZone), errFirewallRuleUpdate)
+		return managed.ExternalUpdate{}, errors.Wrap(errors.New(errNoZone), errRuleUpdate)
 	}
 
 	return managed.ExternalUpdate{},
 		errors.Wrap(
-			rule.UpdateFirewallRule(ctx, e.client, meta.GetExternalName(cr), &cr.Spec.ForProvider),
-			errFirewallRuleUpdate,
+			rule.UpdateRule(ctx, e.client, meta.GetExternalName(cr), &cr.Spec.ForProvider),
+			errRuleUpdate,
 		)
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.FirewallRule)
+	cr, ok := mg.(*v1alpha1.Rule)
 	if !ok {
-		return errors.New(errNotFirewallRule)
+		return errors.New(errNotRule)
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
-		return errors.Wrap(errors.New(errNoZone), errFirewallRuleDeletion)
+		return errors.Wrap(errors.New(errNoZone), errRuleDeletion)
 	}
 
 	return errors.Wrap(
 		e.client.DeleteFirewallRule(ctx, *cr.Spec.ForProvider.Zone, meta.GetExternalName(cr)),
-		errFirewallRuleDeletion)
+		errRuleDeletion)
 }

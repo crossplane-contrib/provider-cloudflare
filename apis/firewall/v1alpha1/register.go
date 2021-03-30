@@ -37,12 +37,12 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// FirewallRule type metadata.
+// Rule type metadata.
 var (
-	FirewallRuleKind             = reflect.TypeOf(FirewallRule{}).Name()
-	FirewallRuleGroupKind        = schema.GroupKind{Group: Group, Kind: FirewallRuleKind}.String()
-	FirewallRuleKindAPIVersion   = FirewallRuleKind + "." + SchemeGroupVersion.String()
-	FirewallRuleGroupVersionKind = SchemeGroupVersion.WithKind(FirewallRuleKind)
+	RuleKind             = reflect.TypeOf(Rule{}).Name()
+	RuleGroupKind        = schema.GroupKind{Group: Group, Kind: RuleKind}.String()
+	RuleKindAPIVersion   = RuleKind + "." + SchemeGroupVersion.String()
+	RuleGroupVersionKind = SchemeGroupVersion.WithKind(RuleKind)
 )
 
 // Filter type metadata.
@@ -54,6 +54,6 @@ var (
 )
 
 func init() {
-	SchemeBuilder.Register(&FirewallRule{}, &FirewallRuleList{})
+	SchemeBuilder.Register(&Rule{}, &RuleList{})
 	SchemeBuilder.Register(&Filter{}, &FilterList{})
 }

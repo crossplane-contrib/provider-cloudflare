@@ -164,8 +164,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.Status.AtProvider = filter.GenerateObservation(*nr)
 
-	cr.Status.SetConditions(rtv1.Available())
-
 	// Update the external name with the ID of the new Rule
 	meta.SetExternalName(cr, nr.ID)
 

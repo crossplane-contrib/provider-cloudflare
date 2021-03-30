@@ -29,13 +29,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-// FirewallRuleBypassProduct identifies a product that will be
+// RuleBypassProduct identifies a product that will be
 // bypassed when the bypass action is used.
 // +kubebuilder:validation:Enum=zoneLockdown;uaBlock;bic;hot;securityLevel;rateLimit;waf
-type FirewallRuleBypassProduct string
+type RuleBypassProduct string
 
-// FirewallRuleParameters are the configurable fields of a FirewallRule.
-type FirewallRuleParameters struct {
+// RuleParameters are the configurable fields of a Rule.
+type RuleParameters struct {
 	// Action is the action to apply to a matching request.
 	// +kubebuilder:validation:Enum=block;challenge;js_challenge;allow;log;bypass
 	Action string `json:"action"`
@@ -43,7 +43,7 @@ type FirewallRuleParameters struct {
 	// BypassProducts lists the products by identifier that should be
 	// bypassed when the bypass action is used.
 	// +optional
-	BypassProducts []FirewallRuleBypassProduct `json:"bypassProducts,omitempty"`
+	BypassProducts []RuleBypassProduct `json:"bypassProducts,omitempty"`
 
 	// Description is a human readable description of this rule.
 	// +kubebuilder:validation:MaxLength=500
@@ -97,48 +97,48 @@ type FirewallRuleParameters struct {
 	ZoneSelector *xpv1.Selector `json:"zoneSelector,omitempty"`
 }
 
-// FirewallRuleObservation are the observable fields of a FirewallRule.
-type FirewallRuleObservation struct{}
+// RuleObservation are the observable fields of a Rule.
+type RuleObservation struct{}
 
-// A FirewallRuleSpec defines the desired state of a FirewallRule.
-type FirewallRuleSpec struct {
+// A RuleSpec defines the desired state of a Rule.
+type RuleSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ForProvider       FirewallRuleParameters `json:"forProvider"`
+	ForProvider       RuleParameters `json:"forProvider"`
 }
 
-// A FirewallRuleStatus represents the observed state of a FirewallRule.
-type FirewallRuleStatus struct {
+// A RuleStatus represents the observed state of a Rule.
+type RuleStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
-	AtProvider          FirewallRuleObservation `json:"atProvider,omitempty"`
+	AtProvider          RuleObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// A FirewallRule is a set of common settings applied to one or more domains.
+// A Rule is a firewall filter applied in a particular order to a Zone.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
-type FirewallRule struct {
+type Rule struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FirewallRuleSpec   `json:"spec"`
-	Status FirewallRuleStatus `json:"status,omitempty"`
+	Spec   RuleSpec   `json:"spec"`
+	Status RuleStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// FirewallRuleList contains a list of FirewallRule
-type FirewallRuleList struct {
+// RuleList contains a list of Rule
+type RuleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []FirewallRule `json:"items"`
+	Items           []Rule `json:"items"`
 }
 
 // ResolveReferences of this DNS Record
-func (fr *FirewallRule) ResolveReferences(ctx context.Context, c client.Reader) error {
+func (fr *Rule) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, fr)
 
 	// Resolve spec.forProvider.zone
@@ -156,9 +156,11 @@ func (fr *FirewallRule) ResolveReferences(ctx context.Context, c client.Reader) 
 	fr.Spec.ForProvider.ZoneRef = rsp.ResolvedReference
 
 	// Resolve spec.forProvider.filter
-	// TODO: Make sure if this filter resolves, that the selected filter
-	// is on _the same zone_ as the zone selected above.
-	// Rules and Filters are both Namespaced to a Zone.
+	// NOTE(bagricola): It is _possible_ for poor implementation during usage
+	// of this resource to resolve a Filter that is not on the Zone we resolved
+	// above. We rely on the Cloudflare API returning an error here, in that it
+	// should reject our creation attempt if the Filter ID we pass is not
+	// valid on the Zone in question.
 	rsp, err = r.Resolve(ctx, reference.ResolutionRequest{
 		CurrentValue: reference.FromPtrValue(fr.Spec.ForProvider.Filter),
 		Reference:    fr.Spec.ForProvider.FilterRef,

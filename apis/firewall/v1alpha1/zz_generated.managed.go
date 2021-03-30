@@ -75,58 +75,58 @@ func (mg *Filter) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
-// GetCondition of this FirewallRule.
-func (mg *FirewallRule) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
+// GetCondition of this Rule.
+func (mg *Rule) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
 	return mg.Status.GetCondition(ct)
 }
 
-// GetDeletionPolicy of this FirewallRule.
-func (mg *FirewallRule) GetDeletionPolicy() xpv1.DeletionPolicy {
+// GetDeletionPolicy of this Rule.
+func (mg *Rule) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
-// GetProviderConfigReference of this FirewallRule.
-func (mg *FirewallRule) GetProviderConfigReference() *xpv1.Reference {
+// GetProviderConfigReference of this Rule.
+func (mg *Rule) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
 /*
-GetProviderReference of this FirewallRule.
+GetProviderReference of this Rule.
 Deprecated: Use GetProviderConfigReference.
 */
-func (mg *FirewallRule) GetProviderReference() *xpv1.Reference {
+func (mg *Rule) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
 }
 
-// GetWriteConnectionSecretToReference of this FirewallRule.
-func (mg *FirewallRule) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
+// GetWriteConnectionSecretToReference of this Rule.
+func (mg *Rule) GetWriteConnectionSecretToReference() *xpv1.SecretReference {
 	return mg.Spec.WriteConnectionSecretToReference
 }
 
-// SetConditions of this FirewallRule.
-func (mg *FirewallRule) SetConditions(c ...xpv1.Condition) {
+// SetConditions of this Rule.
+func (mg *Rule) SetConditions(c ...xpv1.Condition) {
 	mg.Status.SetConditions(c...)
 }
 
-// SetDeletionPolicy of this FirewallRule.
-func (mg *FirewallRule) SetDeletionPolicy(r xpv1.DeletionPolicy) {
+// SetDeletionPolicy of this Rule.
+func (mg *Rule) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
-// SetProviderConfigReference of this FirewallRule.
-func (mg *FirewallRule) SetProviderConfigReference(r *xpv1.Reference) {
+// SetProviderConfigReference of this Rule.
+func (mg *Rule) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
 /*
-SetProviderReference of this FirewallRule.
+SetProviderReference of this Rule.
 Deprecated: Use SetProviderConfigReference.
 */
-func (mg *FirewallRule) SetProviderReference(r *xpv1.Reference) {
+func (mg *Rule) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
 }
 
-// SetWriteConnectionSecretToReference of this FirewallRule.
-func (mg *FirewallRule) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
+// SetWriteConnectionSecretToReference of this Rule.
+func (mg *Rule) SetWriteConnectionSecretToReference(r *xpv1.SecretReference) {
 	mg.Spec.WriteConnectionSecretToReference = r
 }

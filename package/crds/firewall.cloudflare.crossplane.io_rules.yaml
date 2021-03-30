@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: firewallrules.firewall.cloudflare.crossplane.io
+  name: rules.firewall.cloudflare.crossplane.io
 spec:
   group: firewall.cloudflare.crossplane.io
   names:
@@ -12,10 +12,10 @@ spec:
     - crossplane
     - managed
     - cloudflare
-    kind: FirewallRule
-    listKind: FirewallRuleList
-    plural: firewallrules
-    singular: firewallrule
+    kind: Rule
+    listKind: RuleList
+    plural: rules
+    singular: rule
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -31,7 +31,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A FirewallRule is a set of common settings applied to one or more domains.
+        description: A Rule is a set of common settings applied to one or more domains.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -42,7 +42,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: A FirewallRuleSpec defines the desired state of a FirewallRule.
+            description: A RuleSpec defines the desired state of a Rule.
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
@@ -51,7 +51,7 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: FirewallRuleParameters are the configurable fields of a FirewallRule.
+                description: RuleParameters are the configurable fields of a Rule.
                 properties:
                   action:
                     description: Action is the action to apply to a matching request.
@@ -66,7 +66,7 @@ spec:
                   bypassProducts:
                     description: BypassProducts lists the products by identifier that should be bypassed when the bypass action is used.
                     items:
-                      description: FirewallRuleBypassProduct identifies a product that will be bypassed when the bypass action is used.
+                      description: RuleBypassProduct identifies a product that will be bypassed when the bypass action is used.
                       enum:
                       - zoneLockdown
                       - uaBlock
@@ -176,10 +176,10 @@ spec:
             - forProvider
             type: object
           status:
-            description: A FirewallRuleStatus represents the observed state of a FirewallRule.
+            description: A RuleStatus represents the observed state of a Rule.
             properties:
               atProvider:
-                description: FirewallRuleObservation are the observable fields of a FirewallRule.
+                description: RuleObservation are the observable fields of a Rule.
                 type: object
               conditions:
                 description: Conditions of the resource.

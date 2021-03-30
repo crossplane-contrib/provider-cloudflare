@@ -31,13 +31,13 @@ import (
 )
 
 const (
-	errUpdateFirewallRule = "error updating firewall rule"
+	errUpdateRule = "error updating firewall rule"
 )
 
 // Client is a Cloudflare API client that implements methods for working
 // with Firewall rules.
 type Client interface {
-	// Note there is no singular CreateFirewallRule in cloudflare-go
+	// Note there is no singular CreateRule in cloudflare-go
 	CreateFirewallRules(ctx context.Context, zoneID string, firewallRules []cloudflare.FirewallRule) ([]cloudflare.FirewallRule, error)
 	UpdateFirewallRule(ctx context.Context, zoneID string, firewallRule cloudflare.FirewallRule) (cloudflare.FirewallRule, error)
 	DeleteFirewallRule(ctx context.Context, zoneID, firewallRuleID string) error
@@ -55,20 +55,20 @@ func IsRuleNotFound(err error) bool {
 	return strings.Contains(err.Error(), "HTTP status 404")
 }
 
-// GenerateObservation creates an observation of a cloudflare FirewallRule
-func GenerateObservation(in cloudflare.FirewallRule) v1alpha1.FirewallRuleObservation {
-	return v1alpha1.FirewallRuleObservation{}
+// GenerateObservation creates an observation of a cloudflare Rule
+func GenerateObservation(in cloudflare.FirewallRule) v1alpha1.RuleObservation {
+	return v1alpha1.RuleObservation{}
 }
 
-func productsToBypassProducts(products []string) []v1alpha1.FirewallRuleBypassProduct {
-	bpp := make([]v1alpha1.FirewallRuleBypassProduct, len(products))
+func productsToBypassProducts(products []string) []v1alpha1.RuleBypassProduct {
+	bpp := make([]v1alpha1.RuleBypassProduct, len(products))
 	for i, v := range products {
-		bpp[i] = v1alpha1.FirewallRuleBypassProduct(v)
+		bpp[i] = v1alpha1.RuleBypassProduct(v)
 	}
 	return bpp
 }
 
-func bypassProductsToProducts(bypassProducts []v1alpha1.FirewallRuleBypassProduct) []string {
+func bypassProductsToProducts(bypassProducts []v1alpha1.RuleBypassProduct) []string {
 	p := make([]string, len(bypassProducts))
 	for i, v := range bypassProducts {
 		p[i] = string(v)
@@ -76,15 +76,15 @@ func bypassProductsToProducts(bypassProducts []v1alpha1.FirewallRuleBypassProduc
 	return p
 }
 
-// LateInitialize initializes FirewallRuleParameters based on the remote resource
-func LateInitialize(spec *v1alpha1.FirewallRuleParameters, r cloudflare.FirewallRule) bool {
+// LateInitialize initializes RuleParameters based on the remote resource
+func LateInitialize(spec *v1alpha1.RuleParameters, r cloudflare.FirewallRule) bool {
 
 	if spec == nil {
 		return false
 	}
 
 	li := false
-	if len(spec.BypassProducts) == 0 {
+	if len(spec.BypassProducts) == 0 && len(r.Products) > 0 {
 		spec.BypassProducts = productsToBypassProducts(r.Products)
 		li = true
 	}
@@ -106,7 +106,7 @@ func LateInitialize(spec *v1alpha1.FirewallRuleParameters, r cloudflare.Firewall
 
 // UpToDate checks if the remote resource is up to date with the
 // requested resource parameters.
-func UpToDate(spec *v1alpha1.FirewallRuleParameters, r cloudflare.FirewallRule) bool { //nolint:gocyclo
+func UpToDate(spec *v1alpha1.RuleParameters, r cloudflare.FirewallRule) bool { //nolint:gocyclo
 	// If we don't have a spec, we _must_ be up to date.
 	if spec == nil {
 		return true
@@ -152,8 +152,8 @@ func UpToDate(spec *v1alpha1.FirewallRuleParameters, r cloudflare.FirewallRule) 
 	return true
 }
 
-// CreateFirewallRule creates a new FirewallRule
-func CreateFirewallRule(ctx context.Context, client Client, spec *v1alpha1.FirewallRuleParameters) (*cloudflare.FirewallRule, error) {
+// CreateRule creates a new Rule
+func CreateRule(ctx context.Context, client Client, spec *v1alpha1.RuleParameters) (*cloudflare.FirewallRule, error) {
 	r := cloudflare.FirewallRule{
 		Action: spec.Action,
 		Filter: cloudflare.Filter{
@@ -188,12 +188,12 @@ func CreateFirewallRule(ctx context.Context, client Client, spec *v1alpha1.Firew
 	return &res[0], nil
 }
 
-// UpdateFirewallRule updates mutable values on a FirewallRule
-func UpdateFirewallRule(ctx context.Context, client Client, ruleID string, spec *v1alpha1.FirewallRuleParameters) error { //nolint:gocyclo
+// UpdateRule updates mutable values on a Rule
+func UpdateRule(ctx context.Context, client Client, ruleID string, spec *v1alpha1.RuleParameters) error { //nolint:gocyclo
 	// Get current firewall rule status
 	r, err := client.FirewallRule(ctx, *spec.Zone, ruleID)
 	if err != nil {
-		return errors.Wrap(err, errUpdateFirewallRule)
+		return errors.Wrap(err, errUpdateRule)
 	}
 
 	r.Action = spec.Action
