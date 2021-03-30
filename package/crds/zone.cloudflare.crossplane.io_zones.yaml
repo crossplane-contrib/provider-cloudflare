@@ -19,11 +19,14 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.bindingPhase
-      name: STATUS
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
       type: string
     - jsonPath: .status.atProvider.status
-      name: STATE
+      name: STATUS
       type: string
     - jsonPath: .status.atProvider.accountId
       name: ACCOUNT
@@ -82,19 +85,34 @@ spec:
                     properties:
                       advancedDdos:
                         description: AdvancedDDOS enables or disables Advanced DDoS mitigation
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       alwaysOnline:
                         description: AlwaysOnline enables or disables Always Online
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       alwaysUseHttps:
                         description: AlwaysUseHTTPS enables or disables Always use HTTPS
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       automaticHttpsRewrites:
                         description: AutomaticHTTPSRewrites enables or disables Automatic HTTPS Rewrites
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       brotli:
                         description: Brotli enables or disables Brotli
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       browserCacheTtl:
                         description: BrowserCacheTTL configures the browser cache ttl. 0 means respect existing headers
                         enum:
@@ -128,7 +146,10 @@ spec:
                         type: integer
                       browserCheck:
                         description: BrowserCheck enables or disables Browser check
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       cacheLevel:
                         description: CacheLevel configures the cache level
                         enum:
@@ -165,31 +186,55 @@ spec:
                         type: string
                       developmentMode:
                         description: DevelopmentMode enables or disables Development mode
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       edgeCacheTtl:
                         description: EdgeCacheTTL configures the edge cache ttl
                         type: integer
                       emailObfuscation:
                         description: EmailObfuscation enables or disables Email obfuscation
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       hotlinkProtection:
                         description: HotlinkProtection enables or disables Hotlink protection
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       http2:
                         description: HTTP2 enables or disables HTTP2
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       http3:
                         description: HTTP3 enables or disables HTTP3
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       ipGeolocation:
                         description: IPGeolocation enables or disables IP Geolocation
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       ipv6:
                         description: IPv6 enables or disables IPv6
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       logToCloudflare:
                         description: LogToCloudflare enables or disables Logging to cloudflare
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       maxUpload:
                         description: MaxUpload configures the maximum upload payload size
                         type: integer
@@ -203,19 +248,34 @@ spec:
                         type: string
                       mirage:
                         description: Mirage enables or disables Mirage
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       opportunisticEncryption:
                         description: OpportunisticEncryption enables or disables Opportunistic encryption
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       opportunisticOnion:
                         description: OpportunisticOnion enables or disables Opportunistic onion
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       orangeToOrange:
                         description: OrangeToOrange enables or disables Orange to orange
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       originErrorPagePassThru:
                         description: OriginErrorPagePassThru enables or disables Mirage
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       polish:
                         description: Polish configures the Polish setting
                         enum:
@@ -225,10 +285,16 @@ spec:
                         type: string
                       prefetchPreload:
                         description: PrefetchPreload enables or disables Prefetch preload
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       privacyPass:
                         description: PrivacyPass enables or disables Privacy pass
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       pseudoIpv4:
                         description: PseudoIPv4 configures the Pseudo IPv4 setting
                         enum:
@@ -238,10 +304,16 @@ spec:
                         type: string
                       responseBuffering:
                         description: ResponseBuffering enables or disables Response buffering
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       rocketLoader:
                         description: RocketLoader enables or disables Rocket loader
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       securityLevel:
                         description: SecurityLevel configures the Security level
                         enum:
@@ -254,10 +326,16 @@ spec:
                         type: string
                       serverSideExclude:
                         description: ServerSideExclude enables or disables Server side exclude
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       sortQueryStringForCache:
                         description: SortQueryStringForCache enables or disables Sort query string for cache
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       ssl:
                         description: SSL configures the SSL mode
                         enum:
@@ -276,25 +354,46 @@ spec:
                         type: string
                       tlsClientAuth:
                         description: TLSClientAuth enables or disables TLS client authentication
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       trueClientIPHeader:
                         description: TrueClientIPHeader enables or disables True client IP Header
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       visitorIP:
                         description: VisitorIP enables or disables Visitor IP
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       waf:
                         description: WAF enables or disables the Web application firewall
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       webP:
                         description: WebP enables or disables WebP
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       webSockets:
                         description: WebSockets enables or disables Web sockets
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                       zeroRtt:
                         description: ZeroRTT enables or disables Zero RTT
-                        type: boolean
+                        enum:
+                        - "off"
+                        - "on"
+                        type: string
                     type: object
                   type:
                     default: full

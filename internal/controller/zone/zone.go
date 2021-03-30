@@ -131,11 +131,8 @@ func (e *external) Observe(ctx context.Context,
 
 	z, err := e.client.ZoneDetails(ctx, zid)
 	if err != nil {
-		if zones.IsZoneNotFound(err) {
-			return managed.ExternalObservation{ResourceExists: false}, nil
-		}
-		return managed.ExternalObservation{ResourceExists: false},
-			errors.Wrap(err, errZoneLookup)
+		return managed.ExternalObservation{}, 
+			errors.Wrap(resource.Ignore(zones.IsZoneNotFound, err), errZoneLookup)
 	}
 
 	cr.Status.AtProvider = zones.GenerateObservation(z)

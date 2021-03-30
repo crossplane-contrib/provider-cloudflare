@@ -36,12 +36,6 @@ const (
 	errTrackPCUsage = "cannot track ProviderConfig usage"
 	errGetCreds     = "cannot get credentials"
 	errNoAuth       = "email or api key not provided"
-
-	// cfgBoolTrue represents a boolean true value in the Cloudflare API
-	cfsBoolTrue = "on"
-
-	// cfgBoolFalse represents a boolean false value in the Cloudflare API
-	cfsBoolFalse = "off"
 )
 
 // Config represents the API configuration required to create
@@ -105,25 +99,6 @@ func UseProviderSecret(ctx context.Context, data []byte) (*Config, error) {
 	return config, nil
 }
 
-// ToBoolean converts an interface from the Cloudflare API
-// into a bool pointer, if it contains a string with the
-// relevant boolean value.
-func ToBoolean(in interface{}) *bool {
-	if v, ok := in.(string); ok {
-		// Only match known true and false values.
-		// Returning nil for unknown values means
-		// the setting will be ignored.
-		if v == cfsBoolTrue {
-			o := true
-			return &o
-		}
-		if v == cfsBoolFalse {
-			o := false
-			return &o
-		}
-	}
-	return nil
-}
 
 // ToNumber converts an interface from the Cloudflare API
 // into an int pointer, if it contains an existing int or

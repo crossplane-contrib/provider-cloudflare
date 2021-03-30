@@ -8,6 +8,6 @@ spec:
     paused: true
     jumpStart: false
     settings:
-      developmentMode: true
+      developmentMode: "on"
   providerConfigRef:
     name: example
