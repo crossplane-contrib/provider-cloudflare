@@ -131,7 +131,7 @@ func (e *external) Observe(ctx context.Context,
 
 	z, err := e.client.ZoneDetails(ctx, zid)
 	if err != nil {
-		return managed.ExternalObservation{}, 
+		return managed.ExternalObservation{},
 			errors.Wrap(resource.Ignore(zones.IsZoneNotFound, err), errZoneLookup)
 	}
 

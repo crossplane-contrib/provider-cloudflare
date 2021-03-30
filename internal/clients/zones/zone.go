@@ -50,9 +50,6 @@ const (
 	// DO NOT CHANGE THIS
 	errZoneInvalidID = "Invalid zone identifier"
 
-	cfsBoolTrue  = "on"
-	cfsBoolFalse = "off"
-
 	cfsZeroRTT                 = "0rtt"
 	cfsAdvancedDDOS            = "advanced_ddos"
 	cfsAlwaysOnline            = "always_online"

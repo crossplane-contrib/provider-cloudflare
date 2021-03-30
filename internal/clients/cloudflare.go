@@ -99,7 +99,6 @@ func UseProviderSecret(ctx context.Context, data []byte) (*Config, error) {
 	return config, nil
 }
 
-
 // ToNumber converts an interface from the Cloudflare API
 // into an int pointer, if it contains an existing int or
 // float64 value.
