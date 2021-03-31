@@ -28,56 +28,56 @@ import (
 	"github.com/pkg/errors"
 )
 
-// DNSRecordParameters are the configurable fields of a DNS Record.
-type DNSRecordParameters struct {
-	// Type is the type of DNS record.
+// RecordParameters are the configurable fields of a DNS Record.
+type RecordParameters struct {
+	// Type is the type of DNS Record.
 	// +kubebuilder:validation:Enum=A;AAAA;CAA;CNAME;TXT;SRV;LOC;MX;NS;SPF;CERT;DNSKEY;DS;NAPTR;SMIMEA;SSHFP;TLSA;URI
 	// +kubebuilder:default=A
 	// +immutable
 	// +optional
 	Type *string `json:"type,omitempty"`
 
-	// Name of the DNS record.
+	// Name of the DNS Record.
 	// +kubebuilder:validation:MaxLength=255
 	Name string `json:"name"`
 
 	// Content of the DNS Record
 	Content string `json:"content"`
 
-	// TTL of the DNS record
+	// TTL of the DNS Record.
 	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=0
 	// +optional
 	TTL *int `json:"ttl,omitempty"`
 
-	// Proxied enables or disables proxying traffic via Cloudflare
+	// Proxied enables or disables proxying traffic via Cloudflare.
 	// +optional
 	Proxied *bool `json:"proxied,omitempty"`
 
-	// Priority of a record
+	// Priority of a record.
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=65535
 	// +optional
 	Priority *uint16 `json:"priority,omitempty"`
 
-	// ZoneID this DNS record is for.
+	// ZoneID this DNS Record is managed on.
 	// +immutable
 	// +optional
 	Zone *string `json:"zone,omitempty"`
 
-	// ZoneRef references the zone object this DNS Record is for.
+	// ZoneRef references the Zone object this DNS Record is managed on.
 	// +immutable
 	// +optional
 	ZoneRef *xpv1.Reference `json:"zoneRef,omitempty"`
 
-	// ZoneSelector selects the zone object this DNS Record is for.
+	// ZoneSelector selects the Zone object this DNS Record is managed on.
 	// +immutable
 	// +optional
 	ZoneSelector *xpv1.Selector `json:"zoneSelector,omitempty"`
 }
 
-// DNSRecordObservation are the observable fields of a DNSRecord.
-type DNSRecordObservation struct {
+// RecordObservation is the observable fields of a DNS Record.
+type RecordObservation struct {
 	Proxiable  bool         `json:"proxiable,omitempty"`
 	Zone       string       `json:"zone,omitempty"`
 	Locked     bool         `json:"locked,omitempty"`
@@ -85,46 +85,48 @@ type DNSRecordObservation struct {
 	ModifiedOn *metav1.Time `json:"modifiedOn,omitempty"`
 }
 
-// A DNSRecordSpec defines the desired state of a DNSRecord.
-type DNSRecordSpec struct {
+// A RecordSpec defines the desired state of a DNS Record.
+type RecordSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ForProvider       DNSRecordParameters `json:"forProvider"`
+	ForProvider       RecordParameters `json:"forProvider"`
 }
 
-// A DNSRecordStatus represents the observed state of a DNSRecord.
-type DNSRecordStatus struct {
+// A RecordStatus represents the observed state of a DNS Record.
+type RecordStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
-	AtProvider          DNSRecordObservation `json:"atProvider,omitempty"`
+	AtProvider          RecordObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// A DNSRecord is a set of DNS Records.
+// A Record represents a single DNS Record managed on a Zone.
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
-type DNSRecord struct {
+type Record struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DNSRecordSpec   `json:"spec"`
-	Status DNSRecordStatus `json:"status,omitempty"`
+	Spec   RecordSpec   `json:"spec"`
+	Status RecordStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// DNSRecordList contains a list of DNSRecord
-type DNSRecordList struct {
+// RecordList contains a list of DNS Record objects
+type RecordList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []DNSRecord `json:"items"`
+	Items           []Record `json:"items"`
 }
 
-// ResolveReferences of this DNS Record
-func (dr *DNSRecord) ResolveReferences(ctx context.Context, c client.Reader) error {
+// ResolveReferences resolves references to the Zone that this DNS Record
+// is managed on.
+func (dr *Record) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, dr)
 
 	// Resolve spec.forProvider.zone

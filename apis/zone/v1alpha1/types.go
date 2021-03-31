@@ -269,7 +269,7 @@ type ZoneParameters struct {
 	// when a new Zone is created.
 	// WARNING: JumpStart causes Cloudflare to automatically create
 	// DNS records without the involvement of Crossplane. This means
-	// you will have no DNSRecord instances representing records
+	// you will have no Record instances representing records
 	// created in this manner, and you will have to import them
 	// manually if you want to manage them with Crossplane.
 	// +kubebuilder:default=false
@@ -387,7 +387,7 @@ type ZoneStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.atProvider.status"
+// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
 // +kubebuilder:printcolumn:name="ACCOUNT",type="string",JSONPath=".status.atProvider.accountId"
 // +kubebuilder:printcolumn:name="PLAN",type="string",JSONPath=".status.atProvider.plan"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
@@ -402,7 +402,7 @@ type Zone struct {
 
 // +kubebuilder:object:root=true
 
-// ZoneList contains a list of Zone
+// ZoneList contains a list of Zone objects.
 type ZoneList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

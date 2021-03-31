@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	// Cloudflare returns this code when a record isnt found
+	// Cloudflare returns this code when a record isnt found.
 	errRecordNotFound = "81044"
 )
 
@@ -48,13 +48,12 @@ func NewClient(cfg clients.Config) Client {
 // IsRecordNotFound returns true if the passed error indicates
 // a Record was not found.
 func IsRecordNotFound(err error) bool {
-	errStr := err.Error()
-	return strings.Contains(errStr, errRecordNotFound)
+	return strings.Contains(err.Error(), errRecordNotFound)
 }
 
-// GenerateObservation creates an observation of a cloudflare Record
-func GenerateObservation(in cloudflare.DNSRecord) v1alpha1.DNSRecordObservation {
-	return v1alpha1.DNSRecordObservation{
+// GenerateObservation creates an observation of a cloudflare Record.
+func GenerateObservation(in cloudflare.DNSRecord) v1alpha1.RecordObservation {
+	return v1alpha1.RecordObservation{
 		Proxiable:  in.Proxiable,
 		Zone:       in.ZoneName,
 		Locked:     in.Locked,
@@ -63,8 +62,8 @@ func GenerateObservation(in cloudflare.DNSRecord) v1alpha1.DNSRecordObservation 
 	}
 }
 
-// LateInitialize initializes RecordParameters based on the remote resource
-func LateInitialize(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
+// LateInitialize initializes RecordParameters based on the remote resource.
+func LateInitialize(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) bool {
 	if spec == nil {
 		return false
 	}
@@ -83,13 +82,13 @@ func LateInitialize(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) 
 	return li
 }
 
-// UpToDate checks if the remote resource is up to date with the
+// UpToDate checks if the remote Record is up to date with the
 // requested resource parameters.
-func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool { //nolint:gocyclo
+func UpToDate(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) bool { //nolint:gocyclo
 	// NOTE(bagricola): The complexity here is simply repeated
 	// if statements checking for updated fields. You should think
 	// before adding further complexity to this method, but adding
-	// more field checks is not an issue.
+	// more field checks should not be an issue.
 	if spec == nil {
 		return true
 	}
@@ -127,8 +126,8 @@ func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
 	return true
 }
 
-// UpdateRecord updates mutable values on a Record
-func UpdateRecord(ctx context.Context, client Client, recordID string, spec *v1alpha1.DNSRecordParameters) error {
+// UpdateRecord updates mutable values on a DNS Record.
+func UpdateRecord(ctx context.Context, client Client, recordID string, spec *v1alpha1.RecordParameters) error {
 
 	rr := cloudflare.DNSRecord{
 		Type:     *spec.Type,

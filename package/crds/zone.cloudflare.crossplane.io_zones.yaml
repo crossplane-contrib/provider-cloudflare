@@ -67,7 +67,7 @@ spec:
                     type: string
                   jumpStart:
                     default: false
-                    description: 'JumpStart enables attempting to import existing DNS records when a new Zone is created. WARNING: JumpStart causes Cloudflare to automatically create DNS records without the involvement of Crossplane. This means you will have no DNSRecord instances representing records created in this manner, and you will have to import them manually if you want to manage them with Crossplane.'
+                    description: 'JumpStart enables attempting to import existing DNS records when a new Zone is created. WARNING: JumpStart causes Cloudflare to automatically create DNS records without the involvement of Crossplane. This means you will have no Record instances representing records created in this manner, and you will have to import them manually if you want to manage them with Crossplane.'
                     type: boolean
                   name:
                     description: Name is the name of the Zone, which should be a valid domain.

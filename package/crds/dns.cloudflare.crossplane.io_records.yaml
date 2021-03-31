@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: dnsrecords.dns.cloudflare.crossplane.io
+  name: records.dns.cloudflare.crossplane.io
 spec:
   group: dns.cloudflare.crossplane.io
   names:
@@ -12,15 +12,18 @@ spec:
     - crossplane
     - managed
     - cloudflare
-    kind: DNSRecord
-    listKind: DNSRecordList
-    plural: dnsrecords
-    singular: dnsrecord
+    kind: Record
+    listKind: RecordList
+    plural: records
+    singular: record
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.bindingPhase
-      name: STATUS
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
       type: string
     - jsonPath: .status.atProvider.status
       name: STATE
@@ -34,7 +37,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A DNSRecord is a set of DNS Records.
+        description: A Record represents a single DNS Record managed on a Zone.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -45,7 +48,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: A DNSRecordSpec defines the desired state of a DNSRecord.
+            description: A RecordSpec defines the desired state of a DNS Record.
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
@@ -54,31 +57,31 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: DNSRecordParameters are the configurable fields of a DNS Record.
+                description: RecordParameters are the configurable fields of a DNS Record.
                 properties:
                   content:
                     description: Content of the DNS Record
                     type: string
                   name:
-                    description: Name of the DNS record.
+                    description: Name of the DNS Record.
                     maxLength: 255
                     type: string
                   priority:
-                    description: Priority of a record
+                    description: Priority of a record.
                     maximum: 65535
                     minimum: 0
                     type: integer
                   proxied:
-                    description: Proxied enables or disables proxying traffic via Cloudflare
+                    description: Proxied enables or disables proxying traffic via Cloudflare.
                     type: boolean
                   ttl:
                     default: 1
-                    description: TTL of the DNS record
+                    description: TTL of the DNS Record.
                     minimum: 0
                     type: integer
                   type:
                     default: A
-                    description: Type is the type of DNS record.
+                    description: Type is the type of DNS Record.
                     enum:
                     - A
                     - AAAA
@@ -100,10 +103,10 @@ spec:
                     - URI
                     type: string
                   zone:
-                    description: ZoneID this DNS record is for.
+                    description: ZoneID this DNS Record is managed on.
                     type: string
                   zoneRef:
-                    description: ZoneRef references the zone object this DNS Record is for.
+                    description: ZoneRef references the Zone object this DNS Record is managed on.
                     properties:
                       name:
                         description: Name of the referenced object.
@@ -112,7 +115,7 @@ spec:
                     - name
                     type: object
                   zoneSelector:
-                    description: ZoneSelector selects the zone object this DNS Record is for.
+                    description: ZoneSelector selects the Zone object this DNS Record is managed on.
                     properties:
                       matchControllerRef:
                         description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
@@ -162,10 +165,10 @@ spec:
             - forProvider
             type: object
           status:
-            description: A DNSRecordStatus represents the observed state of a DNSRecord.
+            description: A RecordStatus represents the observed state of a DNS Record.
             properties:
               atProvider:
-                description: DNSRecordObservation are the observable fields of a DNSRecord.
+                description: RecordObservation is the observable fields of a DNS Record.
                 properties:
                   createdOn:
                     format: date-time
