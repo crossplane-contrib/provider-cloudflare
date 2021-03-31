@@ -122,9 +122,12 @@ func CreateFilter(ctx context.Context, client Client, spec *v1alpha1.FilterParam
 		return nil, err
 	}
 
-	if len(res) != 1 {
-		return nil, err
-	}
+	// The assumption here is that if no error was generated,
+	// Cloudflare created _at least one_ filter. If it didn't,
+	// then panicing here should be fine as we're in uncharted
+	// territory. We assume that the call to create one filter
+	// only creates one filter and if it doesn't (0 or more
+	// than 1) then it's Cloudflare's problem.
 	return &res[0], nil
 }
 

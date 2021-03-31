@@ -31,7 +31,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A Filter is a set of common settings applied to one or more domains.
+        description: A Filter is a matching expression that can be referenced by one or more firewall rules.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -128,7 +128,7 @@ spec:
             description: A FilterStatus represents the observed state of a Filter.
             properties:
               atProvider:
-                description: FilterObservation are the observable fields of a Filter.
+                description: FilterObservation is the observable fields of a Filter.
                 type: object
               conditions:
                 description: Conditions of the resource.

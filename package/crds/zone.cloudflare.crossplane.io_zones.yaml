@@ -26,7 +26,7 @@ spec:
       name: SYNCED
       type: string
     - jsonPath: .status.atProvider.status
-      name: STATUS
+      name: STATE
       type: string
     - jsonPath: .status.atProvider.accountId
       name: ACCOUNT

@@ -31,7 +31,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A Rule is a set of common settings applied to one or more domains.
+        description: A Rule applies a firewall filter in a particular order to a Zone.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -179,7 +179,7 @@ spec:
             description: A RuleStatus represents the observed state of a Rule.
             properties:
               atProvider:
-                description: RuleObservation are the observable fields of a Rule.
+                description: RuleObservation is the observable fields of a Rule.
                 type: object
               conditions:
                 description: Conditions of the resource.
