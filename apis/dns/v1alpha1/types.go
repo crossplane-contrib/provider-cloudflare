@@ -78,10 +78,27 @@ type RecordParameters struct {
 
 // RecordObservation is the observable fields of a DNS Record.
 type RecordObservation struct {
-	Proxiable  bool         `json:"proxiable,omitempty"`
-	Zone       string       `json:"zone,omitempty"`
-	Locked     bool         `json:"locked,omitempty"`
-	CreatedOn  *metav1.Time `json:"createdOn,omitempty"`
+	// Proxiable indicates whether this record _can be_ proxied
+	// via Cloudflare.
+	Proxiable bool `json:"proxiable,omitempty"`
+
+	// FQDN contains the full FQDN of the created record
+	// (Record Name + Zone).
+	FQDN string `json:"fqdn,omitempty"`
+
+	// Zone contains the name of the Zone this record
+	// is managed on.
+	Zone string `json:"zone,omitempty"`
+
+	// Locked indicates if this record is locked or not.
+	Locked bool `json:"locked,omitempty"`
+
+	// CreatedOn indicates when this record was created
+	// on Cloudflare.
+	CreatedOn *metav1.Time `json:"createdOn,omitempty"`
+
+	// ModifiedOn indicates when this record was modified
+	// on Cloudflare.
 	ModifiedOn *metav1.Time `json:"modifiedOn,omitempty"`
 }
 
@@ -103,8 +120,7 @@ type RecordStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
-// +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
+// +kubebuilder:printcolumn:name="FQDN",type="string",JSONPath=".status.atProvider.fqdn"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
 type Record struct {

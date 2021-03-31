@@ -55,6 +55,7 @@ func IsRecordNotFound(err error) bool {
 func GenerateObservation(in cloudflare.DNSRecord) v1alpha1.RecordObservation {
 	return v1alpha1.RecordObservation{
 		Proxiable:  in.Proxiable,
+		FQDN:       in.Name,
 		Zone:       in.ZoneName,
 		Locked:     in.Locked,
 		CreatedOn:  &metav1.Time{Time: in.CreatedOn},
@@ -69,12 +70,12 @@ func LateInitialize(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) boo
 	}
 
 	li := false
-	if spec.Proxied == nil {
+	if spec.Proxied == nil && o.Proxied != nil {
 		spec.Proxied = o.Proxied
 		li = true
 	}
 
-	if spec.Priority == nil {
+	if spec.Priority == nil && o.Priority != nil {
 		spec.Priority = o.Priority
 		li = true
 	}

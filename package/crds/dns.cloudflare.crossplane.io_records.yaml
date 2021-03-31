@@ -25,11 +25,8 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
-    - jsonPath: .status.atProvider.status
-      name: STATE
-      type: string
-    - jsonPath: .spec.classRef.name
-      name: CLASS
+    - jsonPath: .status.atProvider.fqdn
+      name: FQDN
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -171,16 +168,24 @@ spec:
                 description: RecordObservation is the observable fields of a DNS Record.
                 properties:
                   createdOn:
+                    description: CreatedOn indicates when this record was created on Cloudflare.
                     format: date-time
                     type: string
+                  fqdn:
+                    description: FQDN contains the full FQDN of the created record (Record Name + Zone).
+                    type: string
                   locked:
+                    description: Locked indicates if this record is locked or not.
                     type: boolean
                   modifiedOn:
+                    description: ModifiedOn indicates when this record was modified on Cloudflare.
                     format: date-time
                     type: string
                   proxiable:
+                    description: Proxiable indicates whether this record _can be_ proxied via Cloudflare.
                     type: boolean
                   zone:
+                    description: Zone contains the name of the Zone this record is managed on.
                     type: string
                 type: object
               conditions:
