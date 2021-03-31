@@ -51,6 +51,9 @@ const (
 	errFallbackOriginDeletion = "cannot delete record"
 	errFallbackOriginNoZone   = "cannot create fallback origin no zone found"
 
+	// String returned if the Fallback Origin is active
+	fallbackOriginStatusActive = "active"
+
 	maxConcurrency = 5
 )
 
@@ -69,7 +72,10 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 			kube:                  mgr.GetClient(),
 			newCloudflareClientFn: fallbackOrigins.NewClient}),
 		managed.WithLogger(l.WithValues("controller", name)),
-		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		// Do not initialize external-name field.
+		managed.WithInitializers(),
+	)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -128,6 +134,10 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	cr.Status.AtProvider = fallbackOrigins.GenerateObservation(fallbackorigin)
+
+	if cr.Status.AtProvider.Status == fallbackOriginStatusActive {
+		cr.Status.SetConditions(rtv1.Available())
+	}
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,

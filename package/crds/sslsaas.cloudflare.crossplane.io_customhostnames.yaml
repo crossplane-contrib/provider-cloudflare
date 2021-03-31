@@ -8,20 +8,27 @@ metadata:
 spec:
   group: sslsaas.cloudflare.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
     kind: CustomHostname
     listKind: CustomHostnameList
     plural: customhostnames
     singular: customhostname
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.bindingPhase
-      name: STATUS
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
       type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A CustomHostname is a custom hostnam required to use SSL for SaaS.
+        description: A CustomHostname is a custom hostname required to use SSL for SaaS.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -32,7 +39,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: A CustomHostnameSpec defines the desired state of a custom hostnam.
+            description: A CustomHostnameSpec defines the desired state of a custom hostname.
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
@@ -44,52 +51,80 @@ spec:
                 description: CustomHostnameParameters represents the settings of a CustomHostname
                 properties:
                   custom_origin_server:
-                    description: CustomOriginServer for a Custom Hostname
+                    description: CustomOriginServer for a Custom Hostname A valid hostname that’s been added to your DNS zone as an A, AAAA, or CNAME record.
                     type: string
                   hostname:
-                    description: Hostname for the custom hostnam.
+                    description: Hostname for the custom hostname.
+                    format: hostname
+                    maxLength: 255
                     type: string
                   ssl:
                     description: SSL Settings for a Custom Hostname
                     properties:
                       custom_certificate:
                         default: ""
+                        description: Custom Certificate used for this Custom Hostname If provided then Cloudflare will not attempt to generate an ACME certificate
                         type: string
                       custom_key:
                         default: ""
+                        description: Custom Certificate Key used for this Custom Hostname If provided then Cloudflare will not attempt to generate an ACME certificate
                         type: string
                       method:
                         default: http
+                        description: Domain control validation (DCV) method used for this custom hostname.
+                        enum:
+                        - http
+                        - txt
+                        - email
                         type: string
                       settings:
                         description: CustomHostnameSSLSettings represents the SSL settings for a custom hostname.
                         properties:
                           ciphers:
+                            description: An allowlist of ciphers for TLS termination. These ciphers must be in the BoringSSL format.
                             items:
                               type: string
                             type: array
                           http2:
                             default: "on"
+                            description: Whether or not HTTP2 is enabled for the Custom Hostname
+                            enum:
+                            - "on"
+                            - "off"
                             type: string
                           min_tls_version:
                             default: "1.2"
+                            description: The minimum TLS version supported for the Custom Hostname
+                            enum:
+                            - "1.0"
+                            - "1.1"
+                            - "1.2"
+                            - "1.3"
                             type: string
                           tls_1_3:
                             default: "on"
+                            description: Whether or not TLS 1.3 is enabled for the Custom Hostname
+                            enum:
+                            - "on"
+                            - "off"
                             type: string
                         type: object
                       type:
                         default: dv
+                        description: Level of validation to be used for this custom hostname. Domain validation (dv) must be used.
+                        enum:
+                        - dv
                         type: string
                       wildcard:
                         default: false
+                        description: Indicates whether the certificate for the custom hostname covers a wildcard.
                         type: boolean
                     type: object
                   zone:
                     description: ZoneID this custom hostname is for.
                     type: string
                   zoneRef:
-                    description: ZoneRef references the zone object this custom hostnam is for.
+                    description: ZoneRef references the zone object this custom hostname is for.
                     properties:
                       name:
                         description: Name of the referenced object.
@@ -98,7 +133,7 @@ spec:
                     - name
                     type: object
                   zoneSelector:
-                    description: ZoneSelector selects the zone object this custom hostnam is for.
+                    description: ZoneSelector selects the zone object this custom hostname is for.
                     properties:
                       matchControllerRef:
                         description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
@@ -145,10 +180,10 @@ spec:
             - forProvider
             type: object
           status:
-            description: A CustomHostnameStatus represents the observed state of a custom hostnam.
+            description: A CustomHostnameStatus represents the observed state of a custom hostname.
             properties:
               atProvider:
-                description: CustomHostnameObservation are the observable fields of a custom hostnam.
+                description: CustomHostnameObservation are the observable fields of a custom hostname.
                 properties:
                   ssl:
                     description: CustomHostnameSSLObserved represents the Observed SSL section in a given custom hostname.
@@ -173,6 +208,13 @@ spec:
                               type: string
                           type: object
                         type: array
+                    required:
+                    - certificate_authority
+                    - cname
+                    - cname_target
+                    - http_body
+                    - http_url
+                    - status
                     type: object
                   status:
                     description: CustomHostnameStatus is the enumeration of valid state values in the CustomHostnameSSL
@@ -181,6 +223,9 @@ spec:
                     items:
                       type: string
                     type: array
+                required:
+                - ssl
+                - status
                 type: object
               conditions:
                 description: Conditions of the resource.

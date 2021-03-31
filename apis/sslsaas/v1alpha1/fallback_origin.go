@@ -31,6 +31,8 @@ import (
 // FallbackOriginParameters represents the settings of a FallbackOrigin
 type FallbackOriginParameters struct {
 	// Origin for the Fallback Origin.
+	// +kubebuilder:validation:Format=hostname
+	// +kubebuilder:validation:MaxLength=255
 	Origin *string `json:"origin,omitempty"`
 
 	// ZoneID this Fallback Origin is for.
@@ -51,7 +53,10 @@ type FallbackOriginParameters struct {
 
 // FallbackOriginObservation are the observable fields of a Fallback Origin.
 type FallbackOriginObservation struct {
-	Status string   `json:"status,omitempty"`
+	// Status of the fallback origin and if its completed deployment
+	Status string `json:"status,omitempty"`
+
+	// Errors if there any of the fallback origin
 	Errors []string `json:"errors,omitempty"`
 }
 
@@ -71,7 +76,9 @@ type FallbackOriginStatus struct {
 
 // A FallbackOrigin is a fallback origin required to use SSL for SaaS.
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
+// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
 type FallbackOrigin struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

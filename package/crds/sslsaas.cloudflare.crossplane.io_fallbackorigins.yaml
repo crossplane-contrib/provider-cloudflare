@@ -8,15 +8,22 @@ metadata:
 spec:
   group: sslsaas.cloudflare.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - cloudflare
     kind: FallbackOrigin
     listKind: FallbackOriginList
     plural: fallbackorigins
     singular: fallbackorigin
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.bindingPhase
-      name: STATUS
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
       type: string
     name: v1alpha1
     schema:
@@ -45,6 +52,8 @@ spec:
                 properties:
                   origin:
                     description: Origin for the Fallback Origin.
+                    format: hostname
+                    maxLength: 255
                     type: string
                   zone:
                     description: ZoneID this Fallback Origin is for.
@@ -112,10 +121,12 @@ spec:
                 description: FallbackOriginObservation are the observable fields of a Fallback Origin.
                 properties:
                   errors:
+                    description: Errors if there any of the fallback origin
                     items:
                       type: string
                     type: array
                   status:
+                    description: Status of the fallback origin and if its completed deployment
                     type: string
                 type: object
               conditions:

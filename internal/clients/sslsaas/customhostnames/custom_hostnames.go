@@ -27,7 +27,7 @@ import (
 
 const (
 	// Cloudflare returns this code when a custom hostname isnt found
-	errCustomHostnameNotFound = "1551"
+	errCustomHostnameNotFound = "1436"
 )
 
 // Client is a Cloudflare API client that implements methods for working

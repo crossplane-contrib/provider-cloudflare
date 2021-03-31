@@ -37,15 +37,22 @@ type CustomHostnameSSLValidationErrors struct {
 // CustomHostnameSSLSettings represents the SSL settings for a custom hostname.
 type CustomHostnameSSLSettings struct {
 
+	// Whether or not HTTP2 is enabled for the Custom Hostname
+	// +kubebuilder:validation:Enum=on;off
 	// +kubebuilder:default="on"
 	HTTP2 *string `json:"http2,omitempty"`
 
+	// Whether or not TLS 1.3 is enabled for the Custom Hostname
+	// +kubebuilder:validation:Enum=on;off
 	// +kubebuilder:default="on"
 	TLS13 *string `json:"tls_1_3,omitempty"`
 
+	// The minimum TLS version supported for the Custom Hostname
+	// +kubebuilder:validation:Enum="1.0";"1.1";"1.2";"1.3"
 	// +kubebuilder:default="1.2"
 	MinTLSVersion *string `json:"min_tls_version,omitempty"`
 
+	// An allowlist of ciphers for TLS termination. These ciphers must be in the BoringSSL format.
 	Ciphers []string `json:"ciphers,omitempty"`
 
 	// Fields not supported in the go library yet
@@ -62,20 +69,29 @@ type CustomHostnameOwnershipVerification struct {
 // CustomHostnameSSL represents the SSL section in a given custom hostname.
 type CustomHostnameSSL struct {
 
+	// Domain control validation (DCV) method used for this custom hostname.
+	// +kubebuilder:validation:Enum=http;txt;email
 	// +kubebuilder:default="http"
 	Method *string `json:"method,omitempty"`
 
+	// Level of validation to be used for this custom hostname. Domain validation (dv) must be used.
+	// +kubebuilder:validation:Enum=dv
 	// +kubebuilder:default="dv"
 	Type *string `json:"type,omitempty"`
 
 	Settings CustomHostnameSSLSettings `json:"settings,omitempty"`
 
+	// Indicates whether the certificate for the custom hostname covers a wildcard.
 	// +kubebuilder:default=false
 	Wildcard *bool `json:"wildcard,omitempty"`
 
+	// Custom Certificate used for this Custom Hostname
+	// If provided then Cloudflare will not attempt to generate an ACME certificate
 	// +kubebuilder:default=""
 	CustomCertificate *string `json:"custom_certificate,omitempty"`
 
+	// Custom Certificate Key used for this Custom Hostname
+	// If provided then Cloudflare will not attempt to generate an ACME certificate
 	// +kubebuilder:default=""
 	CustomKey *string `json:"custom_key,omitempty"`
 
@@ -86,13 +102,13 @@ type CustomHostnameSSL struct {
 
 // CustomHostnameSSLObserved represents the Observed SSL section in a given custom hostname.
 type CustomHostnameSSLObserved struct {
-	Status               string                                         `json:"status,omitempty"`
-	HTTPUrl              string                                         `json:"http_url,omitempty"`
-	HTTPBody             string                                         `json:"http_body,omitempty"`
+	Status               string                                         `json:"status"`
+	HTTPUrl              string                                         `json:"http_url"`
+	HTTPBody             string                                         `json:"http_body"`
 	ValidationErrors     []cloudflare.CustomHostnameSSLValidationErrors `json:"validation_errors,omitempty"`
-	CertificateAuthority string                                         `json:"certificate_authority,omitempty"`
-	CnameName            string                                         `json:"cname,omitempty"`
-	CnameTarget          string                                         `json:"cname_target,omitempty"`
+	CertificateAuthority string                                         `json:"certificate_authority"`
+	CnameName            string                                         `json:"cname"`
+	CnameTarget          string                                         `json:"cname_target"`
 
 	// Following fields are in the API but not supported in go library yet
 	// TxtName          string                              `json:"txt_name,omitempty"`
@@ -109,7 +125,10 @@ type CustomHostnameSSLObserved struct {
 
 // CustomHostnameParameters represents the settings of a CustomHostname
 type CustomHostnameParameters struct {
-	// Hostname for the custom hostnam.
+
+	// Hostname for the custom hostname.
+	// +kubebuilder:validation:Format=hostname
+	// +kubebuilder:validation:MaxLength=255
 	// +immutable
 	Hostname *string `json:"hostname,omitempty"`
 
@@ -118,6 +137,7 @@ type CustomHostnameParameters struct {
 	SSL CustomHostnameSSL `json:"ssl,omitempty"`
 
 	// CustomOriginServer for a Custom Hostname
+	// A valid hostname that’s been added to your DNS zone as an A, AAAA, or CNAME record.
 	CustomOriginServer *string `json:"custom_origin_server,omitempty"`
 
 	// ZoneID this custom hostname is for.
@@ -125,31 +145,31 @@ type CustomHostnameParameters struct {
 	// +optional
 	Zone *string `json:"zone,omitempty"`
 
-	// ZoneRef references the zone object this custom hostnam is for.
+	// ZoneRef references the zone object this custom hostname is for.
 	// +immutable
 	// +optional
 	ZoneRef *xpv1.Reference `json:"zoneRef,omitempty"`
 
-	// ZoneSelector selects the zone object this custom hostnam is for.
+	// ZoneSelector selects the zone object this custom hostname is for.
 	// +immutable
 	// +optional
 	ZoneSelector *xpv1.Selector `json:"zoneSelector,omitempty"`
 }
 
-// CustomHostnameObservation are the observable fields of a custom hostnam.
+// CustomHostnameObservation are the observable fields of a custom hostname.
 type CustomHostnameObservation struct {
-	Status             cloudflare.CustomHostnameStatus `json:"status,omitempty"`
+	Status             cloudflare.CustomHostnameStatus `json:"status"`
 	VerificationErrors []string                        `json:"verification_errors,omitempty"`
-	SSL                CustomHostnameSSLObserved       `json:"ssl,omitempty"`
+	SSL                CustomHostnameSSLObserved       `json:"ssl"`
 }
 
-// A CustomHostnameSpec defines the desired state of a custom hostnam.
+// A CustomHostnameSpec defines the desired state of a custom hostname.
 type CustomHostnameSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	ForProvider       CustomHostnameParameters `json:"forProvider"`
 }
 
-// A CustomHostnameStatus represents the observed state of a custom hostnam.
+// A CustomHostnameStatus represents the observed state of a custom hostname.
 type CustomHostnameStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 	AtProvider          CustomHostnameObservation `json:"atProvider,omitempty"`
@@ -157,9 +177,11 @@ type CustomHostnameStatus struct {
 
 // +kubebuilder:object:root=true
 
-// A CustomHostname is a custom hostnam required to use SSL for SaaS.
+// A CustomHostname is a custom hostname required to use SSL for SaaS.
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
+// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
 type CustomHostname struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
