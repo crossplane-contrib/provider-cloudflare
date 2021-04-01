@@ -50,7 +50,7 @@ spec:
               forProvider:
                 description: CustomHostnameParameters represents the settings of a CustomHostname
                 properties:
-                  custom_origin_server:
+                  customOriginServer:
                     description: CustomOriginServer for a Custom Hostname A valid hostname that’s been added to your DNS zone as an A, AAAA, or CNAME record.
                     type: string
                   hostname:
@@ -61,11 +61,11 @@ spec:
                   ssl:
                     description: SSL Settings for a Custom Hostname
                     properties:
-                      custom_certificate:
+                      customCertificate:
                         default: ""
                         description: Custom Certificate used for this Custom Hostname If provided then Cloudflare will not attempt to generate an ACME certificate
                         type: string
-                      custom_key:
+                      customKey:
                         default: ""
                         description: Custom Certificate Key used for this Custom Hostname If provided then Cloudflare will not attempt to generate an ACME certificate
                         type: string
@@ -92,7 +92,7 @@ spec:
                             - "on"
                             - "off"
                             type: string
-                          min_tls_version:
+                          minTLSVersion:
                             default: "1.2"
                             description: The minimum TLS version supported for the Custom Hostname
                             enum:
@@ -101,7 +101,7 @@ spec:
                             - "1.2"
                             - "1.3"
                             type: string
-                          tls_1_3:
+                          tls13:
                             default: "on"
                             description: Whether or not TLS 1.3 is enabled for the Custom Hostname
                             enum:
@@ -188,19 +188,19 @@ spec:
                   ssl:
                     description: CustomHostnameSSLObserved represents the Observed SSL section in a given custom hostname.
                     properties:
-                      certificate_authority:
+                      certificateAuthority:
                         type: string
                       cname:
                         type: string
-                      cname_target:
+                      cnameTarget:
                         type: string
-                      http_body:
+                      httpBody:
                         type: string
-                      http_url:
+                      httpURL:
                         type: string
                       status:
                         type: string
-                      validation_errors:
+                      validationErrors:
                         items:
                           description: CustomHostnameSSLValidationErrors represents errors that occurred during SSL validation.
                           properties:
@@ -209,11 +209,11 @@ spec:
                           type: object
                         type: array
                     required:
-                    - certificate_authority
+                    - certificateAuthority
                     - cname
-                    - cname_target
-                    - http_body
-                    - http_url
+                    - cnameTarget
+                    - httpBody
+                    - httpURL
                     - status
                     type: object
                   status:

@@ -46,7 +46,6 @@ type FallbackOriginParameters struct {
 	ZoneRef *xpv1.Reference `json:"zoneRef,omitempty"`
 
 	// ZoneSelector selects the zone object this Fallback Origin is for.
-	// +immutable
 	// +optional
 	ZoneSelector *xpv1.Selector `json:"zoneSelector,omitempty"`
 }

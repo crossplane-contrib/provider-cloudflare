@@ -79,6 +79,7 @@ type CustomHostnameSSL struct {
 	// +kubebuilder:default="dv"
 	Type *string `json:"type,omitempty"`
 
+	// CustomHostnameSSLSettings represents the SSL settings for a custom hostname.
 	Settings CustomHostnameSSLSettings `json:"settings,omitempty"`
 
 	// Indicates whether the certificate for the custom hostname covers a wildcard.
@@ -151,7 +152,6 @@ type CustomHostnameParameters struct {
 	ZoneRef *xpv1.Reference `json:"zoneRef,omitempty"`
 
 	// ZoneSelector selects the zone object this custom hostname is for.
-	// +immutable
 	// +optional
 	ZoneSelector *xpv1.Selector `json:"zoneSelector,omitempty"`
 }
