@@ -29,7 +29,8 @@ import (
 )
 
 const (
-	errUpdateFilter = "error updating filter"
+	errUpdateFilter         = "error updating filter"
+	errCreateFilterBadCount = "create returned wrong number of filters"
 )
 
 // Client is a Cloudflare API client that implements methods for working
@@ -122,12 +123,21 @@ func CreateFilter(ctx context.Context, client Client, spec *v1alpha1.FilterParam
 		return nil, err
 	}
 
-	// The assumption here is that if no error was generated,
-	// Cloudflare created _at least one_ filter. If it didn't,
-	// then panicing here should be fine as we're in uncharted
-	// territory. We assume that the call to create one filter
-	// only creates one filter and if it doesn't (0 or more
-	// than 1) then it's Cloudflare's problem.
+	// If creation worked then we should have _one_ filter
+	// returned. We sanity check here for completeness
+	// but we should NEVER return this error as it
+	// indicates a problem in the Cloudflare API that
+	// was not properly captured by err above.
+
+	// NOTE: This WILL cause the creation to be seen as
+	// failed, even though the CreateFilters call may
+	// have created filters _on_ Cloudflare, so we rely
+	// on repeated calls to CreateFilters not creating
+	// duplicates for the same filter expressions (this
+	// is the current filter behaviour).
+	if len(res) != 1 {
+		return nil, errors.New(errCreateFilterBadCount)
+	}
 	return &res[0], nil
 }
 
