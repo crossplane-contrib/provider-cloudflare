@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package sslsaas contains group SSl for SaaS API versions
+// Package sslsaas contains group SSL for SaaS API versions
 package sslsaas

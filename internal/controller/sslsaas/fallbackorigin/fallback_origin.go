@@ -37,7 +37,7 @@ import (
 
 	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	fallbackOrigins "github.com/benagricola/provider-cloudflare/internal/clients/sslsaas/fallbackorigins"
+	fallbackorigins "github.com/benagricola/provider-cloudflare/internal/clients/sslsaas/fallbackorigins"
 )
 
 const (
@@ -70,7 +70,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		resource.ManagedKind(v1alpha1.FallbackOriginGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
 			kube:                  mgr.GetClient(),
-			newCloudflareClientFn: fallbackOrigins.NewClient}),
+			newCloudflareClientFn: fallbackorigins.NewClient}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		// Do not initialize external-name field.
@@ -88,7 +88,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 // is called.
 type connector struct {
 	kube                  client.Client
-	newCloudflareClientFn func(cfg clients.Config) fallbackOrigins.Client
+	newCloudflareClientFn func(cfg clients.Config) fallbackorigins.Client
 }
 
 // Connect produces a valid configuration for a Cloudflare API
@@ -111,7 +111,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 // An ExternalClient observes, then either creates, updates, or deletes an
 // external resource to ensure it reflects the managed resource's desired state.
 type external struct {
-	client fallbackOrigins.Client
+	client fallbackorigins.Client
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
@@ -127,13 +127,13 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	fallbackorigin, err := e.client.CustomHostnameFallbackOrigin(ctx, *cr.Spec.ForProvider.Zone)
 
 	if err != nil {
-		if fallbackOrigins.IsFallbackOriginNotFound(err) {
+		if fallbackorigins.IsFallbackOriginNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
 		}
 		return managed.ExternalObservation{}, errors.Wrap(err, errFallbackOriginLookup)
 	}
 
-	cr.Status.AtProvider = fallbackOrigins.GenerateObservation(fallbackorigin)
+	cr.Status.AtProvider = fallbackorigins.GenerateObservation(fallbackorigin)
 
 	if cr.Status.AtProvider.Status == fallbackOriginStatusActive {
 		cr.Status.SetConditions(rtv1.Available())
@@ -141,7 +141,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: fallbackOrigins.UpToDate(&cr.Spec.ForProvider, fallbackorigin),
+		ResourceUpToDate: fallbackorigins.UpToDate(&cr.Spec.ForProvider, fallbackorigin),
 	}, nil
 }
 
@@ -190,7 +190,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errFallbackOriginUpdate)
 	}
 
-	er := fallbackOrigins.UpdateFallbackOrigin(ctx, e.client, &cr.Spec.ForProvider)
+	er := fallbackorigins.UpdateFallbackOrigin(ctx, e.client, &cr.Spec.ForProvider)
 
 	return managed.ExternalUpdate{},
 		errors.Wrap(

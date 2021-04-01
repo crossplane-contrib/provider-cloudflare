@@ -45,12 +45,12 @@ type CustomHostnameSSLSettings struct {
 	// Whether or not TLS 1.3 is enabled for the Custom Hostname
 	// +kubebuilder:validation:Enum=on;off
 	// +kubebuilder:default="on"
-	TLS13 *string `json:"tls_1_3,omitempty"`
+	TLS13 *string `json:"tls13,omitempty"`
 
 	// The minimum TLS version supported for the Custom Hostname
 	// +kubebuilder:validation:Enum="1.0";"1.1";"1.2";"1.3"
 	// +kubebuilder:default="1.2"
-	MinTLSVersion *string `json:"min_tls_version,omitempty"`
+	MinTLSVersion *string `json:"minTLSVersion,omitempty"`
 
 	// An allowlist of ciphers for TLS termination. These ciphers must be in the BoringSSL format.
 	Ciphers []string `json:"ciphers,omitempty"`
@@ -88,12 +88,12 @@ type CustomHostnameSSL struct {
 	// Custom Certificate used for this Custom Hostname
 	// If provided then Cloudflare will not attempt to generate an ACME certificate
 	// +kubebuilder:default=""
-	CustomCertificate *string `json:"custom_certificate,omitempty"`
+	CustomCertificate *string `json:"customCertificate,omitempty"`
 
 	// Custom Certificate Key used for this Custom Hostname
 	// If provided then Cloudflare will not attempt to generate an ACME certificate
 	// +kubebuilder:default=""
-	CustomKey *string `json:"custom_key,omitempty"`
+	CustomKey *string `json:"customKey,omitempty"`
 
 	// Following fields are in the API but not supported in go library yet
 	// BundleMethod      *string                   `json:"bundle_method,omitempty"`
@@ -103,12 +103,12 @@ type CustomHostnameSSL struct {
 // CustomHostnameSSLObserved represents the Observed SSL section in a given custom hostname.
 type CustomHostnameSSLObserved struct {
 	Status               string                                         `json:"status"`
-	HTTPUrl              string                                         `json:"http_url"`
-	HTTPBody             string                                         `json:"http_body"`
-	ValidationErrors     []cloudflare.CustomHostnameSSLValidationErrors `json:"validation_errors,omitempty"`
-	CertificateAuthority string                                         `json:"certificate_authority"`
+	HTTPUrl              string                                         `json:"httpURL"`
+	HTTPBody             string                                         `json:"httpBody"`
+	ValidationErrors     []cloudflare.CustomHostnameSSLValidationErrors `json:"validationErrors,omitempty"`
+	CertificateAuthority string                                         `json:"certificateAuthority"`
 	CnameName            string                                         `json:"cname"`
-	CnameTarget          string                                         `json:"cname_target"`
+	CnameTarget          string                                         `json:"cnameTarget"`
 
 	// Following fields are in the API but not supported in go library yet
 	// TxtName          string                              `json:"txt_name,omitempty"`
@@ -138,7 +138,7 @@ type CustomHostnameParameters struct {
 
 	// CustomOriginServer for a Custom Hostname
 	// A valid hostname that’s been added to your DNS zone as an A, AAAA, or CNAME record.
-	CustomOriginServer *string `json:"custom_origin_server,omitempty"`
+	CustomOriginServer *string `json:"customOriginServer,omitempty"`
 
 	// ZoneID this custom hostname is for.
 	// +immutable
