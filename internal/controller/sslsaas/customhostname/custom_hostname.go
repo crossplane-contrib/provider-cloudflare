@@ -145,9 +145,14 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	// Mark as ready when the Hostname is ready
 	// Note that this does not mean that the SSL Certificate is ready
 	// That status is available here - cr.Status.AtProvider.SSL.Status
-	// We've made the decision to mark the resource as ready when Cloudflare marks it as ready here
-	// Because at this point traffic is able to hit the border at Cloudflare successfully
-	// (you would get an incorrect certificate however)
+
+	// We've made the decision to mark the resource as ready when
+	// Cloudflare can accept traffic for it on any port (in this case
+	// 80/http). 443/https traffic would receive a certificate error
+	// until cr.Status.AtProvider.SSL.Status returns ready as well.
+	// If this is necessary, both statuses can be checked by using a
+	// readinessCheck in a Composition.
+
 	if cr.Status.AtProvider.Status == customHostnameStatusActive {
 		cr.Status.SetConditions(rtv1.Available())
 	}

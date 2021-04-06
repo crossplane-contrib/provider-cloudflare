@@ -138,8 +138,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	return managed.ExternalObservation{
 		ResourceExists:          true,
-		ResourceUpToDate:        filter.UpToDate(&cr.Spec.ForProvider, f),
 		ResourceLateInitialized: filter.LateInitialize(&cr.Spec.ForProvider, f),
+		ResourceUpToDate:        filter.UpToDate(&cr.Spec.ForProvider, f),
 	}, nil
 }
 
