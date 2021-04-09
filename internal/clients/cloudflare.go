@@ -33,8 +33,8 @@ import (
 
 const (
 	errGetPC        = "cannot get ProviderConfig"
+	errPCRef        = "providerConfigRef not set"
 	errTrackPCUsage = "cannot track ProviderConfig usage"
-	errGetCreds     = "cannot get credentials"
 	errNoAuth       = "email or api key not provided"
 )
 
@@ -61,7 +61,7 @@ func GetConfig(ctx context.Context, c client.Client, mg resource.Managed) (*Conf
 	case mg.GetProviderConfigReference() != nil:
 		return UseProviderConfig(ctx, c, mg)
 	default:
-		return nil, errors.New("providerConfigRef is not given")
+		return nil, errors.New(errPCRef)
 	}
 
 }
@@ -81,7 +81,7 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 	cd := pc.Spec.Credentials
 	data, err := resource.CommonCredentialExtractor(ctx, cd.Source, c, cd.CommonCredentialSelectors)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+		return nil, errors.Wrap(err, errGetPC)
 	}
 	return UseProviderSecret(ctx, data)
 }
