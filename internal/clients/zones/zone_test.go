@@ -17,28 +17,33 @@ limitations under the License.
 package zones
 
 import (
+	"context"
 	"testing"
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/pkg/errors"
+
 	ptr "k8s.io/utils/pointer"
 
+	"github.com/crossplane/crossplane-runtime/pkg/test"
+
 	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	"github.com/benagricola/provider-cloudflare/internal/clients/zones/fake"
 )
 
 func TestLateInitialize(t *testing.T) {
 	type args struct {
-		zp *v1alpha1.ZoneParameters
-		z cloudflare.Zone
+		zp  *v1alpha1.ZoneParameters
+		z   cloudflare.Zone
 		czs ZoneSettingsMap
 		dzs ZoneSettingsMap
 	}
 
 	type want struct {
-		o   bool
-		zp  *v1alpha1.ZoneParameters
-		err error
+		o  bool
+		zp *v1alpha1.ZoneParameters
 	}
 
 	cases := map[string]struct {
@@ -48,7 +53,7 @@ func TestLateInitialize(t *testing.T) {
 	}{
 		"LateInitSpecNil": {
 			reason: "LateInit should return false when not passed a spec",
-			args: args{},
+			args:   args{},
 			want: want{
 				o: false,
 			},
@@ -58,7 +63,7 @@ func TestLateInitialize(t *testing.T) {
 			args: args{
 				zp: &v1alpha1.ZoneParameters{
 					Settings: v1alpha1.ZoneSettings{
-						ZeroRTT: ptr.StringPtr("yes"),
+						ZeroRTT:         ptr.StringPtr("yes"),
 						BrowserCacheTTL: ptr.Int64Ptr(900),
 					},
 				},
@@ -73,34 +78,34 @@ func TestLateInitialize(t *testing.T) {
 					},
 					// This field should not be late-inited, as the value
 					// is already set true in zp
-					Paused: false,
-					VanityNS: []string{"ns1.lele.com","ns2.woowoo.org"},
+					Paused:   false,
+					VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
 				},
 				// Current Settings should not be overwritten
 				czs: ZoneSettingsMap{
-					cfsZeroRTT: "yes",
+					cfsZeroRTT:         "yes",
 					cfsBrowserCacheTTL: 3600,
 				},
 				// Only AdvancedDDOS should be late-inited here
 				// as BrowserCacheTTL is already set
 				dzs: ZoneSettingsMap{
-					cfsAdvancedDDOS: "yes",
+					cfsAdvancedDDOS:    "yes",
 					cfsBrowserCacheTTL: 900,
 				},
 			},
 			want: want{
 				o: true,
 				zp: &v1alpha1.ZoneParameters{
-					Paused: ptr.BoolPtr(false),
-					AccountID: ptr.StringPtr("beef"),
-					PlanID: ptr.StringPtr("dead"),
-					VanityNameServers: []string{"ns1.lele.com","ns2.woowoo.org"},
+					Paused:            ptr.BoolPtr(false),
+					AccountID:         ptr.StringPtr("beef"),
+					PlanID:            ptr.StringPtr("dead"),
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
 					Settings: v1alpha1.ZoneSettings{
-						ZeroRTT: ptr.StringPtr("yes"),
-						AdvancedDDOS: ptr.StringPtr("yes"),
+						ZeroRTT:         ptr.StringPtr("yes"),
+						AdvancedDDOS:    ptr.StringPtr("yes"),
 						BrowserCacheTTL: ptr.Int64Ptr(900),
 					},
-				}, 
+				},
 			},
 		},
 	}
@@ -120,11 +125,11 @@ func TestLateInitialize(t *testing.T) {
 func TestUpToDate(t *testing.T) {
 	type args struct {
 		zp *v1alpha1.ZoneParameters
-		z cloudflare.Zone
+		z  cloudflare.Zone
 	}
 
 	type want struct {
-		o   bool
+		o bool
 	}
 
 	cases := map[string]struct {
@@ -134,7 +139,7 @@ func TestUpToDate(t *testing.T) {
 	}{
 		"UpToDateSpecNil": {
 			reason: "UpToDate should return true when not passed a spec",
-			args: args{},
+			args:   args{},
 			want: want{
 				o: true,
 			},
@@ -242,6 +247,105 @@ func TestUpToDate(t *testing.T) {
 			got := UpToDate(tc.args.zp, tc.args.z)
 			if diff := cmp.Diff(tc.want.o, got); diff != "" {
 				t.Errorf("\n%s\nUpToDate(...): -want, +got:\n%s\n", tc.reason, diff)
+			}
+		})
+	}
+}
+
+func TestUpdateZone(t *testing.T) {
+	errBoom := errors.New("boom")
+	type fields struct {
+		client Client
+	}
+
+	type args struct {
+		ctx context.Context
+		id  string
+		zp  v1alpha1.ZoneParameters
+	}
+
+	type want struct {
+		err error
+	}
+
+	cases := map[string]struct {
+		reason string
+		fields fields
+		args   args
+		want   want
+	}{
+		"UpdateZoneNotFound": {
+			reason: "UpdateZone should return errUpdateZone if the zone is not found",
+			fields: fields{
+				client: fake.MockClient{
+					// When the ZoneDetails method is called on this fake client,
+					// return an error that we can compare.
+					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
+						return cloudflare.Zone{}, errBoom
+					},
+				},
+			},
+			args: args{
+				id: "abcd",
+			},
+			want: want{
+				err: errors.Wrap(errBoom, errUpdateZone),
+			},
+		},
+		"UpdateZoneOptions": {
+			reason: "UpdateZone should return no error when updating zone options",
+			fields: fields{
+				client: fake.MockClient{
+					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
+						return cloudflare.Zone{
+							ID:       zoneID,
+							Name:     "testzone.com",
+							Paused:   true,
+							VanityNS: []string{"ns1.lele.com"},
+						}, nil
+					},
+					// When EditZone is called, check it receives the expected arguments.
+					// If it doesn't we return an error which will cause the test to fail.
+					MockEditZone: func(ctx context.Context, zoneID string, zoneOpts cloudflare.ZoneOptions) (cloudflare.Zone, error) {
+						var err error
+						if zoneID != "abcd" {
+							err = errors.New("zoneID value incorrect")
+						}
+						if *zoneOpts.Paused != false {
+							err = errors.New("zoneOpts.Paused value incorrect")
+						}
+
+						if !cmp.Equal(zoneOpts.VanityNS,
+							[]string{"ns1.lele.com", "ns2.woowoo.org"}) {
+							err = errors.New("zoneOpts.VanityNS does not match")
+						}
+						// Returned zone is discarded by UpdateZone
+						return cloudflare.Zone{}, err
+					},
+
+					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
+						return &cloudflare.ZoneSettingResponse{}, nil
+					},
+				},
+			},
+			args: args{
+				id: "abcd",
+				zp: v1alpha1.ZoneParameters{
+					Paused:            ptr.BoolPtr(false),
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
+				},
+			},
+			want: want{
+				err: nil,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := UpdateZone(tc.args.ctx, tc.fields.client, tc.args.id, tc.args.zp)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("\n%s\nUpdateZone(...): -want error, +got error:\n%s\n", tc.reason, diff)
 			}
 		})
 	}

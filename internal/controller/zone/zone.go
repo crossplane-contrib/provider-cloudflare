@@ -222,7 +222,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 			ctx,
 			e.client,
 			zid,
-			&cr.Spec.ForProvider,
+			cr.Spec.ForProvider,
 		),
 		errZoneUpdate)
 }

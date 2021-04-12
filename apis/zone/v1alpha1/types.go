@@ -53,7 +53,7 @@ type ZoneSettings struct {
 	// 0 means respect existing headers
 	// +kubebuilder:validation:Enum=0;30;60;300;1200;1800;3600;7200;10800;14400;18000;28800;43200;57600;72000;86400;172800;259200;345600;432000;691200;1382400;2073600;2678400;5356800;16070400;31536000
 	// +optional
-	BrowserCacheTTL *int64`json:"browserCacheTtl,omitempty"`
+	BrowserCacheTTL *int64 `json:"browserCacheTtl,omitempty"`
 
 	// BrowserCheck enables or disables Browser check
 	// +kubebuilder:validation:Enum=off;on
@@ -68,7 +68,7 @@ type ZoneSettings struct {
 	// ChallengeTTL configures the edge cache ttl
 	// +kubebuilder:validation:Enum=300;900;1800;2700;3600;7200;10800;14400;28800;57600;86400;604800;2592000;31536000
 	// +optional
-	ChallengeTTL *int64`json:"challengeTtl,omitempty"`
+	ChallengeTTL *int64 `json:"challengeTtl,omitempty"`
 
 	// CnameFlattening configures CNAME flattening
 	// +kubebuilder:validation:Enum=flatten_at_root;flatten_all;flatten_none
@@ -82,7 +82,7 @@ type ZoneSettings struct {
 
 	// EdgeCacheTTL configures the edge cache ttl
 	// +optional
-	EdgeCacheTTL *int64`json:"edgeCacheTtl,omitempty"`
+	EdgeCacheTTL *int64 `json:"edgeCacheTtl,omitempty"`
 
 	// EmailObfuscation enables or disables Email obfuscation
 	// +kubebuilder:validation:Enum=off;on
@@ -121,7 +121,7 @@ type ZoneSettings struct {
 
 	// MaxUpload configures the maximum upload payload size
 	// +optional
-	MaxUpload *int64`json:"maxUpload,omitempty"`
+	MaxUpload *int64 `json:"maxUpload,omitempty"`
 
 	// MinTLSVersion configures the minimum TLS version
 	// +kubebuilder:validation:Enum="1.0";"1.1";"1.2";"1.3"

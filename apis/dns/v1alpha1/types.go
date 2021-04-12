@@ -48,7 +48,7 @@ type RecordParameters struct {
 	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=0
 	// +optional
-	TTL *int64`json:"ttl,omitempty"`
+	TTL *int64 `json:"ttl,omitempty"`
 
 	// Proxied enables or disables proxying traffic via Cloudflare.
 	// +optional

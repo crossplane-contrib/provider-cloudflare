@@ -102,7 +102,7 @@ func UseProviderSecret(ctx context.Context, data []byte) (*Config, error) {
 // ToNumber converts an interface from the Cloudflare API
 // into an int64 pointer, if it contains an existing int,
 // int64 or float64 value.
-func ToNumber(in interface{}) *int64{
+func ToNumber(in interface{}) *int64 {
 	// I believe cloudflare-go just decodes values using encoding/json,
 	// which defaults to returning a float64 for numbers. We could probably
 	// just cast and check for a float64 and ignore the int, but we don't
@@ -113,8 +113,7 @@ func ToNumber(in interface{}) *int64{
 		o := int64(cv)
 		return &o
 	case int64:
-		o := int64(cv)
-		return &o
+		return &cv
 	case float64:
 		o := int64(cv)
 		return &o
