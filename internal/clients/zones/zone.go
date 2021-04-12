@@ -371,7 +371,7 @@ func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone) bool {
 	}
 
 	// Check if mutable fields are up to date with resource
-	if *spec.Paused != z.Paused {
+	if spec.Paused != nil && *spec.Paused != z.Paused {
 		return false
 	}
 
@@ -383,7 +383,8 @@ func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone) bool {
 		return false
 	}
 
-	if !cmp.Equal(spec.VanityNameServers, z.VanityNS) {
+	if (spec.VanityNameServers != nil && !cmp.Equal(spec.VanityNameServers, z.VanityNS)) ||
+		(spec.VanityNameServers == nil && len(z.VanityNS) > 0) {
 		return false
 	}
 
