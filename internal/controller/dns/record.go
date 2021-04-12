@@ -172,13 +172,15 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.SetConditions(rtv1.Creating())
 
+	ttl := int(*cr.Spec.ForProvider.TTL)
+
 	res, err := e.client.CreateDNSRecord(
 		ctx,
 		*cr.Spec.ForProvider.Zone,
 		cloudflare.DNSRecord{
 			Type:     *cr.Spec.ForProvider.Type,
 			Name:     cr.Spec.ForProvider.Name,
-			TTL:      *cr.Spec.ForProvider.TTL,
+			TTL:      ttl,
 			Content:  cr.Spec.ForProvider.Content,
 			Proxied:  cr.Spec.ForProvider.Proxied,
 			Priority: cr.Spec.ForProvider.Priority,

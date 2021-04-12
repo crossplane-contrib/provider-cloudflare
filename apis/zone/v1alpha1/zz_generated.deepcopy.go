@@ -189,7 +189,7 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.BrowserCacheTTL != nil {
 		in, out := &in.BrowserCacheTTL, &out.BrowserCacheTTL
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.BrowserCheck != nil {
@@ -204,7 +204,7 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.ChallengeTTL != nil {
 		in, out := &in.ChallengeTTL, &out.ChallengeTTL
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.CnameFlattening != nil {
@@ -219,7 +219,7 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.EdgeCacheTTL != nil {
 		in, out := &in.EdgeCacheTTL, &out.EdgeCacheTTL
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.EmailObfuscation != nil {
@@ -259,7 +259,7 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.MaxUpload != nil {
 		in, out := &in.MaxUpload, &out.MaxUpload
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.MinTLSVersion != nil {

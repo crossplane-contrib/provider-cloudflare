@@ -283,12 +283,12 @@ func mapSetString(sm ZoneSettingsMap, key string, value *string) {
 	sm[key] = *value
 }
 
-func mapSetNumber(sm ZoneSettingsMap, key string, value *int) {
+func mapSetNumber(sm ZoneSettingsMap, key string, value *int64) {
 	// Ignore nil pointers
 	if value == nil {
 		return
 	}
-	sm[key] = float64(*value)
+	sm[key] = *value
 }
 
 // ZoneToSettingsMap uses static definitions to map each setting

@@ -74,6 +74,7 @@ spec:
                   ttl:
                     default: 1
                     description: TTL of the DNS Record.
+                    format: int64
                     minimum: 0
                     type: integer
                   type:

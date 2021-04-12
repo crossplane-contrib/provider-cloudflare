@@ -143,6 +143,7 @@ spec:
                         - 5356800
                         - 16070400
                         - 31536000
+                        format: int64
                         type: integer
                       browserCheck:
                         description: BrowserCheck enables or disables Browser check
@@ -176,6 +177,7 @@ spec:
                         - 604800
                         - 2592000
                         - 31536000
+                        format: int64
                         type: integer
                       cnameFlattening:
                         description: CnameFlattening configures CNAME flattening
@@ -192,6 +194,7 @@ spec:
                         type: string
                       edgeCacheTtl:
                         description: EdgeCacheTTL configures the edge cache ttl
+                        format: int64
                         type: integer
                       emailObfuscation:
                         description: EmailObfuscation enables or disables Email obfuscation
@@ -237,6 +240,7 @@ spec:
                         type: string
                       maxUpload:
                         description: MaxUpload configures the maximum upload payload size
+                        format: int64
                         type: integer
                       minTLSVersion:
                         description: MinTLSVersion configures the minimum TLS version

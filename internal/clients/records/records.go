@@ -112,7 +112,7 @@ func UpToDate(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) bool { //
 		return false
 	}
 
-	if spec.TTL != nil && *spec.TTL != o.TTL {
+	if spec.TTL != nil && *spec.TTL != int64(o.TTL) {
 		return false
 	}
 
@@ -129,11 +129,12 @@ func UpToDate(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) bool { //
 
 // UpdateRecord updates mutable values on a DNS Record.
 func UpdateRecord(ctx context.Context, client Client, recordID string, spec *v1alpha1.RecordParameters) error {
-
+	// Cloudflare probably should not rely on the int type like this
+	ttl := int(*spec.TTL)
 	rr := cloudflare.DNSRecord{
 		Type:     *spec.Type,
 		Name:     spec.Name,
-		TTL:      *spec.TTL,
+		TTL:      ttl,
 		Content:  spec.Content,
 		Proxied:  spec.Proxied,
 		Priority: spec.Priority,

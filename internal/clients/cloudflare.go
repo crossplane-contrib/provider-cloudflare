@@ -40,7 +40,7 @@ const (
 
 // Config represents the API configuration required to create
 // a new client.
-// TODO: Lowercase the JSON keys
+// TODO: camelCase the JSON keys
 type Config struct {
 	APIKey string `json:"APIKey"`
 	Email  string `json:"Email"`
@@ -100,9 +100,9 @@ func UseProviderSecret(ctx context.Context, data []byte) (*Config, error) {
 }
 
 // ToNumber converts an interface from the Cloudflare API
-// into an int pointer, if it contains an existing int or
-// float64 value.
-func ToNumber(in interface{}) *int {
+// into an int64 pointer, if it contains an existing int,
+// int64 or float64 value.
+func ToNumber(in interface{}) *int64{
 	// I believe cloudflare-go just decodes values using encoding/json,
 	// which defaults to returning a float64 for numbers. We could probably
 	// just cast and check for a float64 and ignore the int, but we don't
@@ -110,9 +110,13 @@ func ToNumber(in interface{}) *int {
 	// storage type in kubernetes anyway.
 	switch cv := in.(type) {
 	case int:
-		return &cv
+		o := int64(cv)
+		return &o
+	case int64:
+		o := int64(cv)
+		return &o
 	case float64:
-		o := int(cv)
+		o := int64(cv)
 		return &o
 	default:
 	}

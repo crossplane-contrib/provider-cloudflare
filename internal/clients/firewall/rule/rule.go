@@ -92,6 +92,10 @@ func LateInitialize(spec *v1alpha1.RuleParameters, r cloudflare.FirewallRule) bo
 		spec.Paused = &r.Paused
 		li = true
 	}
+	// Note that the cloudflare field itself can be a float, but
+	// we represent it in the Kubernetes API as an int32. 
+	// We think this gives users adequate ability to control
+	// priority without resorting to decimals. 
 	if spec.Priority == nil {
 		// Priority should be a whole number
 		if p, ok := r.Priority.(float64); ok {
