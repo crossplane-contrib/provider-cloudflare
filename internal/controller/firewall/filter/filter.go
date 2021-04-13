@@ -18,6 +18,7 @@ package filter
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/workqueue"
@@ -68,6 +69,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 			newCloudflareClientFn: filter.NewClient}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		managed.WithPollInterval(5*time.Minute),
 		// Do not initialize external-name field.
 		managed.WithInitializers(),
 	)

@@ -18,6 +18,7 @@ package zone
 
 import (
 	"context"
+	"time"
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/google/go-cmp/cmp"
@@ -74,6 +75,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		managed.WithPollInterval(5*time.Minute),
 		// Do not initialize external-name field.
 		managed.WithInitializers(),
 	)
