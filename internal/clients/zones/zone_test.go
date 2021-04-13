@@ -58,7 +58,7 @@ func TestLateInitialize(t *testing.T) {
 				o: false,
 			},
 		},
-		"LateInit": {
+		"Success": {
 			reason: "LateInit should update fields and settings from a Zone and ZoneSettingsMap",
 			args: args{
 				zp: &v1alpha1.ZoneParameters{

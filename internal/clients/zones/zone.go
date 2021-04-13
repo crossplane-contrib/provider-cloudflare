@@ -121,7 +121,7 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with Zones.
-func NewClient(cfg clients.Config) Client {
+func NewClient(cfg clients.Config) (Client, error) {
 	return clients.NewClient(cfg)
 }
 
@@ -419,7 +419,7 @@ func UpdateZone(ctx context.Context, client Client, zoneID string, spec v1alpha1
 	if u {
 		_, err := client.EditZone(ctx, zoneID, zo)
 		if err != nil {
-			return errors.Wrap(err, errUpdateZone)
+			return err
 		}
 	}
 

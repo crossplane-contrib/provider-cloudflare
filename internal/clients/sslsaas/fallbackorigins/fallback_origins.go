@@ -39,7 +39,7 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with Fallback Origins.
-func NewClient(cfg clients.Config) Client {
+func NewClient(cfg clients.Config) (Client, error) {
 	return clients.NewClient(cfg)
 }
 

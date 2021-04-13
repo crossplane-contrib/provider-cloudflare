@@ -90,7 +90,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 // is called.
 type connector struct {
 	kube                  client.Client
-	newCloudflareClientFn func(cfg clients.Config) fallbackorigins.Client
+	newCloudflareClientFn func(cfg clients.Config) (fallbackorigins.Client, error)
 }
 
 // Connect produces a valid configuration for a Cloudflare API
@@ -107,7 +107,12 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errClientConfig)
 	}
 
-	return &external{client: c.newCloudflareClientFn(*config)}, nil
+	client, err := c.newCloudflareClientFn(*config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &external{client: client}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an

@@ -46,13 +46,10 @@ type Config struct {
 	Email  string `json:"Email"`
 }
 
-// NewClient creates new Cloudflare Client with provided Credentials.
-func NewClient(c Config) *cloudflare.API {
+// NewClient creates a new Cloudflare Client with provided Credentials.
+func NewClient(c Config) (*cloudflare.API, error) {
 	api, err := cloudflare.New(c.APIKey, c.Email)
-	if err != nil {
-		panic(err)
-	}
-	return api
+	return api, err
 }
 
 // GetConfig returns a valid Cloudflare API configuration
