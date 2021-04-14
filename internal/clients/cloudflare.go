@@ -35,21 +35,40 @@ const (
 	errGetPC        = "cannot get ProviderConfig"
 	errPCRef        = "providerConfigRef not set"
 	errTrackPCUsage = "cannot track ProviderConfig usage"
-	errNoAuth       = "email or api key not provided"
+	errNoAuth       = "auth details not valid"
 )
+
+// AuthByAPIKey represents the details required to authenticate
+// with the cloudflare API using a users' global API Key and
+// Email address.
+type AuthByAPIKey struct {
+	Key   *string `json:"apiKey,omitempty"`
+	Email *string `json:"email,omitempty"`
+}
+
+// AuthByAPIToken represents the details required to authenticate
+// with the cloudflare API using an API token.
+type AuthByAPIToken struct {
+	Token *string `json:"token,omitempty"`
+}
 
 // Config represents the API configuration required to create
 // a new client.
-// TODO: camelCase the JSON keys
 type Config struct {
-	APIKey string `json:"APIKey"`
-	Email  string `json:"Email"`
+	*AuthByAPIKey   `json:",inline"`
+	*AuthByAPIToken `json:",inline"`
 }
 
 // NewClient creates a new Cloudflare Client with provided Credentials.
 func NewClient(c Config) (*cloudflare.API, error) {
-	api, err := cloudflare.New(c.APIKey, c.Email)
-	return api, err
+	if c.AuthByAPIKey != nil && c.AuthByAPIKey.Key != nil &&
+		c.AuthByAPIKey.Email != nil {
+		return cloudflare.New(*c.AuthByAPIKey.Key, *c.AuthByAPIKey.Email)
+	}
+	if c.AuthByAPIToken != nil && c.AuthByAPIToken.Token != nil {
+		return cloudflare.NewWithAPIToken(*c.AuthByAPIToken.Token)
+	}
+	return nil, errors.New(errNoAuth)
 }
 
 // GetConfig returns a valid Cloudflare API configuration
@@ -89,9 +108,6 @@ func UseProviderSecret(ctx context.Context, data []byte) (*Config, error) {
 	config := &Config{}
 	if err := json.Unmarshal(data, config); err != nil {
 		return nil, err
-	}
-	if config.APIKey == "" || config.Email == "" {
-		return nil, errors.New(errNoAuth)
 	}
 	return config, nil
 }

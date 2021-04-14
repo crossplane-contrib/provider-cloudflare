@@ -21,10 +21,15 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/cloudflare/cloudflare-go"
+
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/pkg/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	ptr "k8s.io/utils/pointer"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -182,25 +187,10 @@ func TestUseProviderSecret(t *testing.T) {
 			},
 			args: args{
 				// Missing trailing } is invalid
-				// TODO: This test should FAIL if the json is valid...
 				data: []byte("{\"invalid\":\"foo\""),
 			},
 			want: want{
 				err: errJSON,
-			},
-		},
-		"ErrMissingSecretField": {
-			reason: "An error should be returned if the secret is missing one of the required fields",
-			fields: fields{
-				client: &test.MockClient{
-					MockGet: test.NewMockGetFn(nil),
-				},
-			},
-			args: args{
-				data: []byte("{\"APIKey\":\"foo\"}"),
-			},
-			want: want{
-				err: errors.New(errNoAuth),
 			},
 		},
 		"ValidSecret": {
@@ -211,12 +201,17 @@ func TestUseProviderSecret(t *testing.T) {
 				},
 			},
 			args: args{
-				data: []byte("{\"APIKey\":\"foo\",\"Email\":\"foo@bar.com\"}"),
+				data: []byte("{\"apiKey\":\"foo\",\"email\":\"foo@bar.com\",\"token\":\"A7E0BA00E5E44574BFEC828D3F895973\"}"),
 			},
 			want: want{
 				o: &Config{
-					APIKey: "foo",
-					Email:  "foo@bar.com",
+					AuthByAPIKey: &AuthByAPIKey{
+						Key:   ptr.StringPtr("foo"),
+						Email: ptr.StringPtr("foo@bar.com"),
+					},
+					AuthByAPIToken: &AuthByAPIToken{
+						Token: ptr.StringPtr("A7E0BA00E5E44574BFEC828D3F895973"),
+					},
 				},
 			},
 		},
@@ -231,6 +226,116 @@ func TestUseProviderSecret(t *testing.T) {
 
 			if diff := cmp.Diff(tc.want.o, got); diff != "" {
 				t.Errorf("\n%s\nGetConfig(...): -want, +got:\n%s\n", tc.reason, diff)
+			}
+
+		})
+	}
+}
+
+func TestNewClient(t *testing.T) {
+	type args struct {
+		config Config
+	}
+
+	type want struct {
+		o   *cloudflare.API
+		err error
+	}
+
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   want
+	}{
+		"ErrInvalidAuth": {
+			reason: "An error should be returned if the config does not contain any valid authentication details",
+			args: args{
+				config: Config{},
+			},
+			want: want{
+				err: errors.New(errNoAuth),
+			},
+		},
+		"ErrInvalidAPIKeyAuth": {
+			reason: "An error should be returned if the config does not contain required api key auth fields",
+			args: args{
+				config: Config{
+					AuthByAPIKey: &AuthByAPIKey{
+						Email: ptr.StringPtr("foo@bar.com"),
+					},
+				},
+			},
+			want: want{
+				err: errors.New(errNoAuth),
+			},
+		},
+		"ValidAPIKeyAuth": {
+			reason: "A cloudflare client should be returned when config contains valid API key details",
+			args: args{
+				config: Config{
+					AuthByAPIKey: &AuthByAPIKey{
+						Key:   ptr.StringPtr("abcd"),
+						Email: ptr.StringPtr("foo@bar.com"),
+					},
+				},
+			},
+			want: want{
+				err: nil,
+				o: func(key, email string) *cloudflare.API {
+					api, _ := cloudflare.New(key, email)
+					return api
+				}("abcd", "foo@bar.com"),
+			},
+		},
+		"ValidAPITokenAuth": {
+			reason: "A cloudflare client should be returned when config contains valid API token details",
+			args: args{
+				config: Config{
+					AuthByAPIToken: &AuthByAPIToken{
+						Token: ptr.StringPtr("beef"),
+					},
+				},
+			},
+			want: want{
+				err: nil,
+				o: func(token string) *cloudflare.API {
+					api, _ := cloudflare.NewWithAPIToken(token)
+					return api
+				}("beef"),
+			},
+		},
+		"ValidAPIBothAuth": {
+			reason: "A cloudflare client should be returned configured with API key details if both Auth types are provided",
+			args: args{
+				config: Config{
+					AuthByAPIKey: &AuthByAPIKey{
+						Key:   ptr.StringPtr("abcd"),
+						Email: ptr.StringPtr("foo@bar.com"),
+					},
+					AuthByAPIToken: &AuthByAPIToken{
+						Token: ptr.StringPtr("beef"),
+					},
+				},
+			},
+			want: want{
+				err: nil,
+				o: func(key, email string) *cloudflare.API {
+					api, _ := cloudflare.New(key, email)
+					return api
+				}("abcd", "foo@bar.com"),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, err := NewClient(tc.args.config)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("\n%s\nNewClient(...): -want error, +got error:\n%s\n", tc.reason, diff)
+			}
+
+			if diff := cmp.Diff(tc.want.o, got, cmpopts.IgnoreUnexported(cloudflare.API{})); diff != "" {
+				t.Errorf("\n%s\nNewClient(...): -want, +got:\n%s\n", tc.reason, diff)
 			}
 
 		})
