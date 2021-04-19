@@ -27,7 +27,7 @@ import (
 	ptr "k8s.io/utils/pointer"
 )
 
-func UInt16Ptr(v uint16) *uint16 {
+func uint16Ptr(v uint16) *uint16 {
 	return &v
 }
 
@@ -59,18 +59,18 @@ func TestLateInitialize(t *testing.T) {
 			args: args{
 				rp: &v1alpha1.RecordParameters{
 					Proxied:  ptr.BoolPtr(false),
-					Priority: UInt16Ptr(4),
+					Priority: uint16Ptr(4),
 				},
 				r: cloudflare.DNSRecord{
 					Proxied:  ptr.BoolPtr(true),
-					Priority: UInt16Ptr(1),
+					Priority: uint16Ptr(1),
 				},
 			},
 			want: want{
 				o: false,
 				rp: &v1alpha1.RecordParameters{
 					Proxied:  ptr.BoolPtr(false),
-					Priority: UInt16Ptr(4),
+					Priority: uint16Ptr(4),
 				},
 			},
 		},
@@ -80,14 +80,14 @@ func TestLateInitialize(t *testing.T) {
 				rp: &v1alpha1.RecordParameters{},
 				r: cloudflare.DNSRecord{
 					Proxied:  ptr.BoolPtr(true),
-					Priority: UInt16Ptr(1),
+					Priority: uint16Ptr(1),
 				},
 			},
 			want: want{
 				o: true,
 				rp: &v1alpha1.RecordParameters{
 					Proxied:  ptr.BoolPtr(true),
-					Priority: UInt16Ptr(1),
+					Priority: uint16Ptr(1),
 				},
 			},
 		},
