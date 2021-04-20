@@ -1,0 +1,18 @@
+apiVersion: spectrum.cloudflare.crossplane.io/v1alpha1
+kind: Application
+metadata:
+  name: example
+spec:
+  forProvider:
+    zone: 1234
+    protocol: tcp/80
+    ipFirewall: false
+    proxyProtocol: simple
+    originPort:
+      port: 80
+    dns:
+      type: ADDRESS
+      name: domain.in.zone
+
+  providerConfigRef:
+    name: example
