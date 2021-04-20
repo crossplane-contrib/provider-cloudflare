@@ -326,9 +326,7 @@ func TestCreate(t *testing.T) {
 				client: fake.MockClient{
 					MockCreateDNSRecord: func(ctx context.Context, zoneID string, rr cloudflare.DNSRecord) (*cloudflare.DNSRecordResponse, error) {
 						return &cloudflare.DNSRecordResponse{
-							Result: cloudflare.DNSRecord{
-								ZoneName: "foo.com",
-							},
+							Result: cloudflare.DNSRecord{},
 						}, errBoom
 					},
 				},
