@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// SpectrumApplicationDNS holds the external DNS configuration
+// for a Spectrum Application.
 type SpectrumApplicationDNS struct {
 	// Type is the type of edge IP configuration specified
 	// Only valid with CNAME DNS names
@@ -41,13 +43,21 @@ type SpectrumApplicationDNS struct {
 // SpectrumApplicationOriginDNS holds the origin DNS configuration for a Spectrum
 // Application.
 type SpectrumApplicationOriginDNS struct {
+	// Name is the name of the Origin DNS for the Spectrum Application
+	// +kubebuilder:validation:Format=hostname
 	Name *string `json:"name"`
 }
 
+// SpectrumApplicationOriginPort holds the origin ports for a Spectrum Application
 type SpectrumApplicationOriginPort struct {
-	Port  *uint16 `json:"port,omitempty"`
+	// Port is a singular port for a Spectrum Application
+	Port *uint16 `json:"port,omitempty"`
+
+	// Start is the start of a port range for a Spectrum Application
 	Start *uint16 `json:"start,omitempty"`
-	End   *uint16 `json:"end,omitempty"`
+
+	// End is the end of a port range for a Spectrum Application
+	End *uint16 `json:"end,omitempty"`
 }
 
 // SpectrumApplicationEdgeIPs holds the anycast edge IP configuration for the hostname of this application.

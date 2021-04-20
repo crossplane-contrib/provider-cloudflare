@@ -101,6 +101,8 @@ spec:
                     description: SpectrumApplicationOriginDNS holds the origin DNS configuration for a Spectrum Application.
                     properties:
                       name:
+                        description: Name is the name of the Origin DNS for the Spectrum Application
+                        format: hostname
                         type: string
                     required:
                     - name
@@ -111,12 +113,16 @@ spec:
                       type: string
                     type: array
                   originPort:
+                    description: SpectrumApplicationOriginPort holds the origin ports for a Spectrum Application
                     properties:
                       end:
+                        description: End is the end of a port range for a Spectrum Application
                         type: integer
                       port:
+                        description: Port is a singular port for a Spectrum Application
                         type: integer
                       start:
+                        description: Start is the start of a port range for a Spectrum Application
                         type: integer
                     type: object
                   protocol:
