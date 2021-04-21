@@ -104,10 +104,16 @@ func edgeIPsDontMatch(spec []string, o []net.IP) bool {
 
 // GenerateObservation creates an observation of a cloudflare Spectrum Application.
 func GenerateObservation(in cloudflare.SpectrumApplication) v1alpha1.ApplicationObservation {
-	return v1alpha1.ApplicationObservation{
-		CreatedOn:  &metav1.Time{Time: *in.CreatedOn},
-		ModifiedOn: &metav1.Time{Time: *in.ModifiedOn},
+	o := v1alpha1.ApplicationObservation{}
+	if in.CreatedOn != nil {
+		o.CreatedOn = &metav1.Time{Time: *in.CreatedOn}
 	}
+
+	if in.ModifiedOn != nil {
+		o.ModifiedOn = &metav1.Time{Time: *in.ModifiedOn}
+	}
+
+	return o
 }
 
 // UpToDate checks if the remote Application is up to date with the
@@ -129,31 +135,43 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return false
 	}
 
-	if spec.OriginPort.Port != nil && *spec.OriginPort.Port != o.OriginPort.Port {
+	if spec.OriginPort == nil && o.OriginPort != nil {
 		return false
 	}
 
-	if spec.OriginPort.Start != nil && *spec.OriginPort.Start != o.OriginPort.Start {
+	if spec.OriginPort != nil && spec.OriginPort.Port != nil && *spec.OriginPort.Port != o.OriginPort.Port {
 		return false
 	}
 
-	if spec.OriginPort.End != nil && *spec.OriginPort.End != o.OriginPort.End {
+	if spec.OriginPort != nil && spec.OriginPort.Start != nil && *spec.OriginPort.Start != o.OriginPort.Start {
 		return false
 	}
 
-	if spec.OriginDNS.Name != nil && *spec.OriginDNS.Name != o.OriginDNS.Name {
+	if spec.OriginPort != nil && spec.OriginPort.End != nil && *spec.OriginPort.End != o.OriginPort.End {
 		return false
 	}
 
-	if spec.EdgeIPs.Type != nil && o.EdgeIPs.Type != cloudflare.SpectrumApplicationEdgeType(*spec.EdgeIPs.Type) {
+	if spec.OriginDNS == nil && o.OriginDNS != nil {
 		return false
 	}
 
-	if spec.EdgeIPs.Connectivity != nil && o.EdgeIPs.Connectivity != (*cloudflare.SpectrumApplicationConnectivity)(spec.EdgeIPs.Connectivity) {
+	if spec.OriginDNS != nil && spec.OriginDNS.Name != nil && *spec.OriginDNS.Name != o.OriginDNS.Name {
 		return false
 	}
 
-	if spec.EdgeIPs.IPs != nil && edgeIPsDontMatch(spec.EdgeIPs.IPs, o.EdgeIPs.IPs) {
+	if spec.EdgeIPs == nil && o.EdgeIPs != nil {
+		return false
+	}
+
+	if spec.EdgeIPs != nil && spec.EdgeIPs.Type != nil && o.EdgeIPs.Type != cloudflare.SpectrumApplicationEdgeType(*spec.EdgeIPs.Type) {
+		return false
+	}
+
+	if spec.EdgeIPs != nil && spec.EdgeIPs.Connectivity != nil && o.EdgeIPs.Connectivity != (*cloudflare.SpectrumApplicationConnectivity)(spec.EdgeIPs.Connectivity) {
+		return false
+	}
+
+	if spec.EdgeIPs != nil && spec.EdgeIPs.IPs != nil && edgeIPsDontMatch(spec.EdgeIPs.IPs, o.EdgeIPs.IPs) {
 		return false
 	}
 
@@ -201,38 +219,42 @@ func UpdateSpectrumApplication(ctx context.Context, client Client, applicationID
 	}
 
 	oport := cloudflare.SpectrumApplicationOriginPort{}
-	if spec.OriginPort.Port != nil {
-		oport.Port = *spec.OriginPort.Port
-	}
+	if spec.OriginPort != nil {
+		if spec.OriginPort.Port != nil {
+			oport.Port = *spec.OriginPort.Port
+		}
 
-	if spec.OriginPort.Start != nil {
-		oport.Start = *spec.OriginPort.Start
-	}
+		if spec.OriginPort.Start != nil {
+			oport.Start = *spec.OriginPort.Start
+		}
 
-	if spec.OriginPort.End != nil {
-		oport.End = *spec.OriginPort.End
+		if spec.OriginPort.End != nil {
+			oport.End = *spec.OriginPort.End
+		}
 	}
 
 	odns := cloudflare.SpectrumApplicationOriginDNS{}
-	if spec.OriginDNS.Name != nil {
+	if spec.OriginDNS != nil && spec.OriginDNS.Name != nil {
 		odns.Name = *spec.OriginDNS.Name
 	}
 
 	eips := cloudflare.SpectrumApplicationEdgeIPs{}
-	if spec.EdgeIPs.Type != nil {
-		eips.Type = cloudflare.SpectrumApplicationEdgeType(*spec.EdgeIPs.Type)
-	}
-
-	if spec.EdgeIPs.Connectivity != nil {
-		eips.Connectivity = (*cloudflare.SpectrumApplicationConnectivity)(spec.EdgeIPs.Connectivity)
-	}
-
-	if spec.EdgeIPs.IPs != nil {
-		ips, iperr := ConvertIPs(spec.EdgeIPs.IPs)
-		if iperr != nil {
-			return iperr
+	if spec.EdgeIPs != nil {
+		if spec.EdgeIPs.Type != nil {
+			eips.Type = cloudflare.SpectrumApplicationEdgeType(*spec.EdgeIPs.Type)
 		}
-		eips.IPs = ips
+
+		if spec.EdgeIPs.Connectivity != nil {
+			eips.Connectivity = (*cloudflare.SpectrumApplicationConnectivity)(spec.EdgeIPs.Connectivity)
+		}
+
+		if spec.EdgeIPs.IPs != nil {
+			ips, iperr := ConvertIPs(spec.EdgeIPs.IPs)
+			if iperr != nil {
+				return iperr
+			}
+			eips.IPs = ips
+		}
 	}
 
 	ap := cloudflare.SpectrumApplication{

@@ -126,8 +126,16 @@ func (in *ApplicationParameters) DeepCopyInto(out *ApplicationParameters) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	in.OriginPort.DeepCopyInto(&out.OriginPort)
-	in.OriginDNS.DeepCopyInto(&out.OriginDNS)
+	if in.OriginPort != nil {
+		in, out := &in.OriginPort, &out.OriginPort
+		*out = new(SpectrumApplicationOriginPort)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.OriginDNS != nil {
+		in, out := &in.OriginDNS, &out.OriginDNS
+		*out = new(SpectrumApplicationOriginDNS)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.IPFirewall != nil {
 		in, out := &in.IPFirewall, &out.IPFirewall
 		*out = new(bool)

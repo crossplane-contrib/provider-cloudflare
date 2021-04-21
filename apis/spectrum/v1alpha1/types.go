@@ -88,9 +88,9 @@ type ApplicationParameters struct {
 	// OriginDirect is a list of destination addresses to the origin.
 	OriginDirect []string `json:"originDirect,omitempty"`
 
-	OriginPort SpectrumApplicationOriginPort `json:"originPort,omitempty"`
+	OriginPort *SpectrumApplicationOriginPort `json:"originPort,omitempty"`
 
-	OriginDNS SpectrumApplicationOriginDNS `json:"originDNS,omitempty"`
+	OriginDNS *SpectrumApplicationOriginDNS `json:"originDNS,omitempty"`
 
 	// IPFirewall enables IP Access Rules for this application.
 	IPFirewall *bool `json:"ipFirewall,omitempty"`

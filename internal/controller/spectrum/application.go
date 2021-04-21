@@ -176,38 +176,42 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	oport := cloudflare.SpectrumApplicationOriginPort{}
-	if cr.Spec.ForProvider.OriginPort.Port != nil {
-		oport.Port = *cr.Spec.ForProvider.OriginPort.Port
-	}
+	if cr.Spec.ForProvider.OriginPort != nil {
+		if cr.Spec.ForProvider.OriginPort.Port != nil {
+			oport.Port = *cr.Spec.ForProvider.OriginPort.Port
+		}
 
-	if cr.Spec.ForProvider.OriginPort.Start != nil {
-		oport.Start = *cr.Spec.ForProvider.OriginPort.Start
-	}
+		if cr.Spec.ForProvider.OriginPort.Start != nil {
+			oport.Start = *cr.Spec.ForProvider.OriginPort.Start
+		}
 
-	if cr.Spec.ForProvider.OriginPort.End != nil {
-		oport.End = *cr.Spec.ForProvider.OriginPort.End
+		if cr.Spec.ForProvider.OriginPort.End != nil {
+			oport.End = *cr.Spec.ForProvider.OriginPort.End
+		}
 	}
 
 	odns := cloudflare.SpectrumApplicationOriginDNS{}
-	if cr.Spec.ForProvider.OriginDNS.Name != nil {
+	if cr.Spec.ForProvider.OriginDNS != nil && cr.Spec.ForProvider.OriginDNS.Name != nil {
 		odns.Name = *cr.Spec.ForProvider.OriginDNS.Name
 	}
 
 	eips := cloudflare.SpectrumApplicationEdgeIPs{}
-	if cr.Spec.ForProvider.EdgeIPs.Type != nil {
-		eips.Type = cloudflare.SpectrumApplicationEdgeType(*cr.Spec.ForProvider.EdgeIPs.Type)
-	}
-
-	if cr.Spec.ForProvider.EdgeIPs.Connectivity != nil {
-		eips.Connectivity = (*cloudflare.SpectrumApplicationConnectivity)(cr.Spec.ForProvider.EdgeIPs.Connectivity)
-	}
-
-	if cr.Spec.ForProvider.EdgeIPs.IPs != nil {
-		ips, iperr := applications.ConvertIPs(cr.Spec.ForProvider.EdgeIPs.IPs)
-		if iperr != nil {
-			return managed.ExternalCreation{}, errors.Wrap(iperr, errApplicationCreation)
+	if cr.Spec.ForProvider.EdgeIPs != nil {
+		if cr.Spec.ForProvider.EdgeIPs.Type != nil {
+			eips.Type = cloudflare.SpectrumApplicationEdgeType(*cr.Spec.ForProvider.EdgeIPs.Type)
 		}
-		eips.IPs = ips
+
+		if cr.Spec.ForProvider.EdgeIPs.Connectivity != nil {
+			eips.Connectivity = (*cloudflare.SpectrumApplicationConnectivity)(cr.Spec.ForProvider.EdgeIPs.Connectivity)
+		}
+
+		if cr.Spec.ForProvider.EdgeIPs.IPs != nil {
+			ips, iperr := applications.ConvertIPs(cr.Spec.ForProvider.EdgeIPs.IPs)
+			if iperr != nil {
+				return managed.ExternalCreation{}, errors.Wrap(iperr, errApplicationCreation)
+			}
+			eips.IPs = ips
+		}
 	}
 
 	ap := cloudflare.SpectrumApplication{
@@ -274,6 +278,13 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.Wrap(errors.New(errApplicationNoZone), errApplicationUpdate)
 	}
 
+	aid := meta.GetExternalName(cr)
+
+	// Update should never be called on a nonexistent resource
+	if aid == "" {
+		return managed.ExternalUpdate{}, errors.New(errApplicationUpdate)
+	}
+
 	return managed.ExternalUpdate{},
 		errors.Wrap(
 			applications.UpdateSpectrumApplication(ctx, e.client, meta.GetExternalName(cr), &cr.Spec.ForProvider),
@@ -285,6 +296,13 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	cr, ok := mg.(*v1alpha1.Application)
 	if !ok {
 		return errors.New(errNotApplication)
+	}
+
+	aid := meta.GetExternalName(cr)
+
+	// Update should never be called on a nonexistent resource
+	if aid == "" {
+		return errors.New(errApplicationDeletion)
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
