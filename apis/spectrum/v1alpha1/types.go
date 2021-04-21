@@ -51,32 +51,44 @@ type SpectrumApplicationOriginDNS struct {
 // SpectrumApplicationOriginPort holds the origin ports for a Spectrum Application
 type SpectrumApplicationOriginPort struct {
 	// Port is a singular port for a Spectrum Application
-	Port *uint16 `json:"port,omitempty"`
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	// +optional
+	Port *uint32 `json:"port,omitempty"`
 
 	// Start is the start of a port range for a Spectrum Application
-	Start *uint16 `json:"start,omitempty"`
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	// +optional
+	Start *uint32 `json:"start,omitempty"`
 
 	// End is the end of a port range for a Spectrum Application
-	End *uint16 `json:"end,omitempty"`
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	// +optional
+	End *uint32 `json:"end,omitempty"`
 }
 
 // SpectrumApplicationEdgeIPs holds the anycast edge IP configuration for the hostname of this application.
 type SpectrumApplicationEdgeIPs struct {
 	// Type is the type of edge IP configuration specified.
 	// +kubebuilder:validation:Enum=dynamic;static
+	// +optional
 	Type *string `json:"type,omitempty"`
 
 	// Connectivity is IP versions supported for inbound connections on Spectrum anycast IPs.
 	// +kubebuilder:validation:Enum=all;ipv4;ipv6
+	// +optional
 	Connectivity *string `json:"connectivity,omitempty"`
 
 	// IPs is a slice of customer owned IPs we broadcast via anycast for this hostname and application.
+	// +optional
 	IPs []string `json:"ips,omitempty"`
 }
 
 // ApplicationParameters are the configurable fields of a Spectrum Application.
 type ApplicationParameters struct {
-	// Protocol [ort configuration at Cloudflare’s edge.
+	// Protocol port configuration at Cloudflare’s edge.
 	// +optional
 	Protocol *string `json:"protocol,omitempty"`
 
@@ -86,31 +98,39 @@ type ApplicationParameters struct {
 	DNS SpectrumApplicationDNS `json:"dns,omitempty"`
 
 	// OriginDirect is a list of destination addresses to the origin.
+	// +optional
 	OriginDirect []string `json:"originDirect,omitempty"`
 
+	// OriginPort is the port range when using Origin DNS
 	OriginPort *SpectrumApplicationOriginPort `json:"originPort,omitempty"`
 
+	// OriginDNS is the DNS entry when using DNS Origins
 	OriginDNS *SpectrumApplicationOriginDNS `json:"originDNS,omitempty"`
 
 	// IPFirewall enables IP Access Rules for this application.
+	// +optional
 	IPFirewall *bool `json:"ipFirewall,omitempty"`
 
 	// ProxyProtocol enables / sets the Proxy Protocol to the origin.
 	// +kubebuilder:validation:Enum=off;v1;v2;simple
+	// +optional
 	ProxyProtocol *string `json:"proxyProtocol,omitempty"`
 
 	// TLS is the type of TLS termination associated with the application.
 	// +kubebuilder:validation:Enum=off;flexible;full;strict
+	// +optional
 	TLS *string `json:"tls,omitempty"`
 
 	// TrafficType determines how data travels from the edge to the origin.
 	// +kubebuilder:validation:Enum=direct;http;https
+	// +optional
 	TrafficType *string `json:"trafficType,omitempty"`
 
 	// EdgeIPs is the anycast edge IP configuration for the hostname of this application.
 	EdgeIPs *SpectrumApplicationEdgeIPs `json:"edgeIPs,omitempty"`
 
 	// ArgoSmartRouting enables Argo Smart Routing for this application.
+	// +optional
 	ArgoSmartRouting *bool `json:"argoSmartRouting,omitempty"`
 
 	// ZoneID this Spectrum Application is managed on.

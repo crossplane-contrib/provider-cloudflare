@@ -98,7 +98,7 @@ spec:
                   ipv4:
                     type: boolean
                   originDNS:
-                    description: SpectrumApplicationOriginDNS holds the origin DNS configuration for a Spectrum Application.
+                    description: OriginDNS is the DNS entry when using DNS Origins
                     properties:
                       name:
                         description: Name is the name of the Origin DNS for the Spectrum Application
@@ -113,20 +113,29 @@ spec:
                       type: string
                     type: array
                   originPort:
-                    description: SpectrumApplicationOriginPort holds the origin ports for a Spectrum Application
+                    description: OriginPort is the port range when using Origin DNS
                     properties:
                       end:
                         description: End is the end of a port range for a Spectrum Application
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
                         type: integer
                       port:
                         description: Port is a singular port for a Spectrum Application
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
                         type: integer
                       start:
                         description: Start is the start of a port range for a Spectrum Application
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
                         type: integer
                     type: object
                   protocol:
-                    description: Protocol [ort configuration at Cloudflare’s edge.
+                    description: Protocol port configuration at Cloudflare’s edge.
                     type: string
                   proxyProtocol:
                     description: ProxyProtocol enables / sets the Proxy Protocol to the origin.

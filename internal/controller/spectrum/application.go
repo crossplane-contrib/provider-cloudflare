@@ -178,15 +178,15 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	oport := cloudflare.SpectrumApplicationOriginPort{}
 	if cr.Spec.ForProvider.OriginPort != nil {
 		if cr.Spec.ForProvider.OriginPort.Port != nil {
-			oport.Port = *cr.Spec.ForProvider.OriginPort.Port
+			oport.Port = uint16(*cr.Spec.ForProvider.OriginPort.Port)
 		}
 
 		if cr.Spec.ForProvider.OriginPort.Start != nil {
-			oport.Start = *cr.Spec.ForProvider.OriginPort.Start
+			oport.Start = uint16(*cr.Spec.ForProvider.OriginPort.Start)
 		}
 
 		if cr.Spec.ForProvider.OriginPort.End != nil {
-			oport.End = *cr.Spec.ForProvider.OriginPort.End
+			oport.End = uint16(*cr.Spec.ForProvider.OriginPort.End)
 		}
 	}
 

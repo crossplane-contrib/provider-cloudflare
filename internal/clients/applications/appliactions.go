@@ -139,15 +139,15 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return false
 	}
 
-	if spec.OriginPort != nil && spec.OriginPort.Port != nil && *spec.OriginPort.Port != o.OriginPort.Port {
+	if spec.OriginPort != nil && spec.OriginPort.Port != nil && uint16(*spec.OriginPort.Port) != o.OriginPort.Port {
 		return false
 	}
 
-	if spec.OriginPort != nil && spec.OriginPort.Start != nil && *spec.OriginPort.Start != o.OriginPort.Start {
+	if spec.OriginPort != nil && spec.OriginPort.Start != nil && uint16(*spec.OriginPort.Start) != o.OriginPort.Start {
 		return false
 	}
 
-	if spec.OriginPort != nil && spec.OriginPort.End != nil && *spec.OriginPort.End != o.OriginPort.End {
+	if spec.OriginPort != nil && spec.OriginPort.End != nil && uint16(*spec.OriginPort.End) != o.OriginPort.End {
 		return false
 	}
 
@@ -221,15 +221,15 @@ func UpdateSpectrumApplication(ctx context.Context, client Client, applicationID
 	oport := cloudflare.SpectrumApplicationOriginPort{}
 	if spec.OriginPort != nil {
 		if spec.OriginPort.Port != nil {
-			oport.Port = *spec.OriginPort.Port
+			oport.Port = uint16(*spec.OriginPort.Port)
 		}
 
 		if spec.OriginPort.Start != nil {
-			oport.Start = *spec.OriginPort.Start
+			oport.Start = uint16(*spec.OriginPort.Start)
 		}
 
 		if spec.OriginPort.End != nil {
-			oport.End = *spec.OriginPort.End
+			oport.End = uint16(*spec.OriginPort.End)
 		}
 	}
 

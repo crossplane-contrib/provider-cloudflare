@@ -307,17 +307,17 @@ func (in *SpectrumApplicationOriginPort) DeepCopyInto(out *SpectrumApplicationOr
 	*out = *in
 	if in.Port != nil {
 		in, out := &in.Port, &out.Port
-		*out = new(uint16)
+		*out = new(uint32)
 		**out = **in
 	}
 	if in.Start != nil {
 		in, out := &in.Start, &out.Start
-		*out = new(uint16)
+		*out = new(uint32)
 		**out = **in
 	}
 	if in.End != nil {
 		in, out := &in.End, &out.End
-		*out = new(uint16)
+		*out = new(uint32)
 		**out = **in
 	}
 }
