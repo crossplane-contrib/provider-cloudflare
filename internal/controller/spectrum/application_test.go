@@ -253,6 +253,26 @@ func TestObserve(t *testing.T) {
 				err: errors.New(errApplicationNoZone),
 			},
 		},
+		"ErrApplicationNotFound": {
+			reason: "We should return an error if the Application is not found (deleted on CF side)",
+			fields: fields{
+				client: fake.MockClient{
+					MockSpectrumApplication: func(ctx context.Context, zoneID string, ApplicationID string) (cloudflare.SpectrumApplication, error) {
+						return cloudflare.SpectrumApplication{}, errors.New("10006")
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withZone("foo.com"),
+				),
+			},
+			want: want{
+				o:   managed.ExternalObservation{ResourceExists: false},
+				err: nil,
+			},
+		},
 		"Success": {
 			reason: "We should return ResourceExists: true and no error when a Application is found",
 			fields: fields{
@@ -346,6 +366,30 @@ func TestCreate(t *testing.T) {
 			want: want{
 				o:   managed.ExternalCreation{},
 				err: errors.Wrap(errBoom, errApplicationCreation),
+			},
+		},
+		"ErrApplicationNoZone": {
+			reason: "We should return an error if the Application does not have a zone",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return cloudflare.SpectrumApplication{}, errBoom
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withTLS("full"),
+					withTrafficType("https"),
+					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
+						IPs: []string{"192.0.2.2", "2001:db8::1"},
+					}),
+				),
+			},
+			want: want{
+				o:   managed.ExternalCreation{},
+				err: errors.Wrap(errors.New(errApplicationNoZone), errApplicationCreation),
 			},
 		},
 		"Success": {

@@ -25,6 +25,7 @@ import (
 	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	"github.com/cloudflare/cloudflare-go"
+	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -71,35 +72,20 @@ func ConvertIPs(ips []string) ([]net.IP, error) {
 	return rips, nil
 }
 
-func ipInSlice(ip net.IP, slice []net.IP) bool {
-	for _, sip := range slice {
-		if sip.Equal(ip) {
-			return true
-		}
-	}
-	return false
-}
-
-// edgeIPsDontMatch returns true if the spec and observed IPs match
-// returns false if the spec IPs arrent valid IPs or if they arent part of the observe
+// edgeIPsDontMatch returns true if the spec and observed IPs do not match
+// returns false if the spec IPs do match
 func edgeIPsDontMatch(spec []string, o []net.IP) bool {
-	sips, err := ConvertIPs(spec)
-	if err != nil {
-		return true
+	a := make(map[string]struct{})
+	for _, ip := range spec {
+		a[ip] = struct{}{}
 	}
 
-	if len(sips) != len(o) {
-		return true
+	b := make(map[string]struct{})
+	for _, ip := range o {
+		b[ip.String()] = struct{}{}
 	}
 
-	for _, ip := range sips {
-		if !ipInSlice(ip, o) {
-			return true
-		}
-	}
-
-	// Everything matches
-	return false
+	return !cmp.Equal(a, b)
 }
 
 // GenerateObservation creates an observation of a cloudflare Spectrum Application.
@@ -139,16 +125,18 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return false
 	}
 
-	if spec.OriginPort != nil && spec.OriginPort.Port != nil && uint16(*spec.OriginPort.Port) != o.OriginPort.Port {
-		return false
-	}
+	if spec.OriginPort != nil {
+		if spec.OriginPort.Port != nil && uint16(*spec.OriginPort.Port) != o.OriginPort.Port {
+			return false
+		}
 
-	if spec.OriginPort != nil && spec.OriginPort.Start != nil && uint16(*spec.OriginPort.Start) != o.OriginPort.Start {
-		return false
-	}
+		if spec.OriginPort.Start != nil && uint16(*spec.OriginPort.Start) != o.OriginPort.Start {
+			return false
+		}
 
-	if spec.OriginPort != nil && spec.OriginPort.End != nil && uint16(*spec.OriginPort.End) != o.OriginPort.End {
-		return false
+		if spec.OriginPort.End != nil && uint16(*spec.OriginPort.End) != o.OriginPort.End {
+			return false
+		}
 	}
 
 	if spec.OriginDNS == nil && o.OriginDNS != nil {
@@ -163,16 +151,18 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return false
 	}
 
-	if spec.EdgeIPs != nil && spec.EdgeIPs.Type != nil && o.EdgeIPs.Type != cloudflare.SpectrumApplicationEdgeType(*spec.EdgeIPs.Type) {
-		return false
-	}
+	if spec.EdgeIPs != nil {
+		if spec.EdgeIPs.Type != nil && o.EdgeIPs.Type != cloudflare.SpectrumApplicationEdgeType(*spec.EdgeIPs.Type) {
+			return false
+		}
 
-	if spec.EdgeIPs != nil && spec.EdgeIPs.Connectivity != nil && o.EdgeIPs.Connectivity != (*cloudflare.SpectrumApplicationConnectivity)(spec.EdgeIPs.Connectivity) {
-		return false
-	}
+		if spec.EdgeIPs.Connectivity != nil && o.EdgeIPs.Connectivity != (*cloudflare.SpectrumApplicationConnectivity)(spec.EdgeIPs.Connectivity) {
+			return false
+		}
 
-	if spec.EdgeIPs != nil && spec.EdgeIPs.IPs != nil && edgeIPsDontMatch(spec.EdgeIPs.IPs, o.EdgeIPs.IPs) {
-		return false
+		if spec.EdgeIPs.IPs != nil && edgeIPsDontMatch(spec.EdgeIPs.IPs, o.EdgeIPs.IPs) {
+			return false
+		}
 	}
 
 	if spec.ProxyProtocol != nil && o.ProxyProtocol != cloudflare.ProxyProtocol(*spec.ProxyProtocol) {
