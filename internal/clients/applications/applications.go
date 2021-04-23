@@ -169,6 +169,10 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return false
 	}
 
+	if !cmp.Equal(spec.OriginDirect, o.OriginDirect) {
+		return false
+	}
+
 	if spec.Protocol != o.Protocol {
 		return false
 	}

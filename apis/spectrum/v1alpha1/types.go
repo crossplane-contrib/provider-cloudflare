@@ -97,7 +97,6 @@ type ApplicationParameters struct {
 	DNS SpectrumApplicationDNS `json:"dns,omitempty"`
 
 	// OriginDirect is a list of destination addresses to the origin.
-	// +optional
 	OriginDirect []string `json:"originDirect,omitempty"`
 
 	// OriginPort is the port range when using Origin DNS

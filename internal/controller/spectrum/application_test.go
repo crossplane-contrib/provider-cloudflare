@@ -31,6 +31,7 @@ import (
 	"github.com/benagricola/provider-cloudflare/internal/clients/applications/fake"
 
 	corev1 "k8s.io/api/core/v1"
+	ptr "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -55,6 +56,10 @@ func withEdgeIPs(edgeIPs v1alpha1.SpectrumApplicationEdgeIPs) ApplicationModifie
 	return func(r *v1alpha1.Application) { r.Spec.ForProvider.EdgeIPs = &edgeIPs }
 }
 
+func withOriginDirect(originDirect []string) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.OriginDirect = originDirect }
+}
+
 func withOriginDNS(originDNS v1alpha1.SpectrumApplicationOriginDNS) ApplicationModifier {
 	return func(r *v1alpha1.Application) { r.Spec.ForProvider.OriginDNS = &originDNS }
 }
@@ -69,6 +74,10 @@ func withTrafficType(trafficType string) ApplicationModifier {
 
 func withIPFirewall(ipf bool) ApplicationModifier {
 	return func(r *v1alpha1.Application) { r.Spec.ForProvider.IPFirewall = &ipf }
+}
+
+func withArgoSmartRouting(asr bool) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.ArgoSmartRouting = &asr }
 }
 
 func withProxyProtocol(proxy string) ApplicationModifier {
@@ -341,6 +350,9 @@ func TestObserve(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	errBoom := errors.New("boom")
+	port := uint32(2022)
+	start := uint32(2020)
+	end := uint32(2024)
 
 	type fields struct {
 		client applications.Client
@@ -420,6 +432,31 @@ func TestCreate(t *testing.T) {
 				err: errors.Wrap(errors.New(errApplicationNoZone), errApplicationCreation),
 			},
 		},
+		"ErrApplicationBadIPs": {
+			reason: "We should return an error if the Application provides bad IPs",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return cloudflare.SpectrumApplication{}, errBoom
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withZone("foo.com"),
+					withTLS("full"),
+					withTrafficType("https"),
+					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
+						IPs: []string{"ImNotAnIP", "2001:db8::1"},
+					}),
+				),
+			},
+			want: want{
+				o:   managed.ExternalCreation{},
+				err: errors.Wrap(errors.New("invalid IP within Edge IPs"), errApplicationCreation),
+			},
+		},
 		"SuccessSpectrumDNS": {
 			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum DNS is created",
 			fields: fields{
@@ -442,10 +479,124 @@ func TestCreate(t *testing.T) {
 					withOriginDNS(v1alpha1.SpectrumApplicationOriginDNS{
 						Name: "spectrum.origin.foo.com",
 					}),
+					withOriginPort(v1alpha1.SpectrumApplicationOriginPort{
+						Port: &port,
+					}),
 					withOriginPort(v1alpha1.SpectrumApplicationOriginPort{}),
 					withIPFirewall(true),
 					withProxyProtocol("off"),
 					withTLS("full"),
+				),
+			},
+			want: want{
+				o: managed.ExternalCreation{
+					ExternalNameAssigned: true,
+				},
+				err: nil,
+			},
+		},
+		"SuccessSpectrumDNSPortRange": {
+			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum DNS with port range is created",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return appDetails, nil
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withZone("foo.com"),
+					withProtocol("tcp/22"),
+					withIPv4(true),
+					withDNS(v1alpha1.SpectrumApplicationDNS{
+						Type: "CNAME",
+						Name: "spectrum.foo.com",
+					}),
+					withOriginDNS(v1alpha1.SpectrumApplicationOriginDNS{
+						Name: "spectrum.origin.foo.com",
+					}),
+					withOriginPort(v1alpha1.SpectrumApplicationOriginPort{
+						Start: &start,
+						End:   &end,
+					}),
+					withOriginPort(v1alpha1.SpectrumApplicationOriginPort{}),
+					withIPFirewall(true),
+					withProxyProtocol("off"),
+					withTLS("full"),
+				),
+			},
+			want: want{
+				o: managed.ExternalCreation{
+					ExternalNameAssigned: true,
+				},
+				err: nil,
+			},
+		},
+		"SuccessSpectrumEdgeIPsAnycast": {
+			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum Edge IPs Anycast is created",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return appDetails, nil
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withZone("foo.com"),
+					withProtocol("tcp/22"),
+					withIPv4(true),
+					withDNS(v1alpha1.SpectrumApplicationDNS{
+						Type: "CNAME",
+						Name: "spectrum.foo.com",
+					}),
+					withIPFirewall(true),
+					withProxyProtocol("off"),
+					withTLS("full"),
+					withOriginDirect([]string{"tcp://192.0.2.1:22"}),
+					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
+						Type: "static",
+						IPs:  []string{"192.0.2.2", "2001:db8::1"},
+					}),
+				),
+			},
+			want: want{
+				o: managed.ExternalCreation{
+					ExternalNameAssigned: true,
+				},
+				err: nil,
+			},
+		},
+		"SuccessSpectrumEdgeIPsDynamic": {
+			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum Edge IPs Dynamic is created",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return appDetails, nil
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withZone("foo.com"),
+					withProtocol("tcp/22"),
+					withIPv4(true),
+					withDNS(v1alpha1.SpectrumApplicationDNS{
+						Type: "CNAME",
+						Name: "spectrum.foo.com",
+					}),
+					withIPFirewall(true),
+					withProxyProtocol("off"),
+					withTLS("full"),
+					withOriginDirect([]string{"tcp://192.0.2.1:22"}),
+					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
+						Type:         "dynamic",
+						Connectivity: ptr.StringPtr("all"),
+					}),
 				),
 			},
 			want: want{
@@ -470,6 +621,7 @@ func TestCreate(t *testing.T) {
 					withZone("foo.com"),
 					withTLS("full"),
 					withTrafficType("https"),
+					withArgoSmartRouting(true),
 					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
 						Type: "static",
 						IPs:  []string{"192.0.2.2", "2001:db8::1"},
@@ -553,6 +705,55 @@ func TestUpdate(t *testing.T) {
 			want: want{
 				o:   managed.ExternalUpdate{},
 				err: errors.New(errApplicationUpdate),
+			},
+		},
+		"ErrApplicationNoZone": {
+			reason: "We should return an error if the Application does not have a zone",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return cloudflare.SpectrumApplication{}, errBoom
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withTLS("full"),
+					withTrafficType("https"),
+					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
+						IPs: []string{"192.0.2.2", "2001:db8::1"},
+					}),
+				),
+			},
+			want: want{
+				o:   managed.ExternalUpdate{},
+				err: errors.Wrap(errors.New(errApplicationNoZone), errApplicationUpdate),
+			},
+		},
+		"ErrApplicationBadIPs": {
+			reason: "We should return an error if the Application provides bad IPs",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return cloudflare.SpectrumApplication{}, errBoom
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withZone("foo.com"),
+					withTLS("full"),
+					withTrafficType("https"),
+					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
+						IPs: []string{"ImNotAnIP", "2001:db8::1"},
+					}),
+				),
+			},
+			want: want{
+				o:   managed.ExternalUpdate{},
+				err: errors.Wrap(errors.New("invalid IP within Edge IPs"), errApplicationUpdate),
 			},
 		},
 		"ErrApplicationUpdate": {
@@ -702,6 +903,29 @@ func TestDelete(t *testing.T) {
 			},
 			want: want{
 				err: errors.Wrap(errBoom, errApplicationDeletion),
+			},
+		},
+		"ErrApplicationNoZone": {
+			reason: "We should return an error if the Application does not have a zone",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return cloudflare.SpectrumApplication{}, errBoom
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withTLS("full"),
+					withTrafficType("https"),
+					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
+						IPs: []string{"192.0.2.2", "2001:db8::1"},
+					}),
+				),
+			},
+			want: want{
+				err: errors.Wrap(errors.New(errApplicationNoZone), errApplicationDeletion),
 			},
 		},
 		"Success": {
