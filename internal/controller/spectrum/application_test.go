@@ -55,8 +55,36 @@ func withEdgeIPs(edgeIPs v1alpha1.SpectrumApplicationEdgeIPs) ApplicationModifie
 	return func(r *v1alpha1.Application) { r.Spec.ForProvider.EdgeIPs = &edgeIPs }
 }
 
+func withOriginDNS(originDNS v1alpha1.SpectrumApplicationOriginDNS) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.OriginDNS = &originDNS }
+}
+
+func withOriginPort(originPort v1alpha1.SpectrumApplicationOriginPort) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.OriginPort = &originPort }
+}
+
 func withTrafficType(trafficType string) ApplicationModifier {
 	return func(r *v1alpha1.Application) { r.Spec.ForProvider.TrafficType = &trafficType }
+}
+
+func withIPFirewall(ipf bool) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.IPFirewall = &ipf }
+}
+
+func withProxyProtocol(proxy string) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.ProxyProtocol = &proxy }
+}
+
+func withProtocol(proto string) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.Protocol = proto }
+}
+
+func withIPv4(ip bool) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.IPv4 = &ip }
+}
+
+func withDNS(dns v1alpha1.SpectrumApplicationDNS) ApplicationModifier {
+	return func(r *v1alpha1.Application) { r.Spec.ForProvider.DNS = dns }
 }
 
 func withTLS(tls string) ApplicationModifier {
@@ -392,6 +420,41 @@ func TestCreate(t *testing.T) {
 				err: errors.Wrap(errors.New(errApplicationNoZone), errApplicationCreation),
 			},
 		},
+		"SuccessSpectrumDNS": {
+			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum DNS is created",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						return appDetails, nil
+					},
+				},
+			},
+			args: args{
+				mg: Application(
+					withExternalName("1234beef"),
+					withZone("foo.com"),
+					withProtocol("tcp/22"),
+					withIPv4(true),
+					withDNS(v1alpha1.SpectrumApplicationDNS{
+						Type: "CNAME",
+						Name: "spectrum.foo.com",
+					}),
+					withOriginDNS(v1alpha1.SpectrumApplicationOriginDNS{
+						Name: "spectrum.origin.foo.com",
+					}),
+					withOriginPort(v1alpha1.SpectrumApplicationOriginPort{}),
+					withIPFirewall(true),
+					withProxyProtocol("off"),
+					withTLS("full"),
+				),
+			},
+			want: want{
+				o: managed.ExternalCreation{
+					ExternalNameAssigned: true,
+				},
+				err: nil,
+			},
+		},
 		"Success": {
 			reason: "We should return ExternalNameAssigned: true and no error when a Application is created",
 			fields: fields{
@@ -408,7 +471,8 @@ func TestCreate(t *testing.T) {
 					withTLS("full"),
 					withTrafficType("https"),
 					withEdgeIPs(v1alpha1.SpectrumApplicationEdgeIPs{
-						IPs: []string{"192.0.2.2", "2001:db8::1"},
+						Type: "static",
+						IPs:  []string{"192.0.2.2", "2001:db8::1"},
 					}),
 				),
 			},

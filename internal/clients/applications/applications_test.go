@@ -131,7 +131,7 @@ func TestUpToDate(t *testing.T) {
 			reason: "UpToDate should return true if the spec matches the record",
 			args: args{
 				rp: &v1alpha1.ApplicationParameters{
-					Protocol:    ptr.StringPtr("tcp/80"),
+					Protocol:    "tcp/80",
 					TrafficType: ptr.StringPtr("http"),
 					IPFirewall:  ptr.BoolPtr(false),
 				},

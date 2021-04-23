@@ -113,11 +113,11 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return true
 	}
 
-	if spec.DNS.Type != nil && *spec.DNS.Type != o.DNS.Type {
+	if spec.DNS.Type != o.DNS.Type {
 		return false
 	}
 
-	if spec.DNS.Name != nil && *spec.DNS.Name != o.DNS.Name {
+	if spec.DNS.Name != o.DNS.Name {
 		return false
 	}
 
@@ -143,7 +143,7 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return false
 	}
 
-	if spec.OriginDNS != nil && spec.OriginDNS.Name != nil && *spec.OriginDNS.Name != o.OriginDNS.Name {
+	if spec.OriginDNS != nil && spec.OriginDNS.Name != o.OriginDNS.Name {
 		return false
 	}
 
@@ -152,7 +152,7 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 	}
 
 	if spec.EdgeIPs != nil {
-		if spec.EdgeIPs.Type != nil && o.EdgeIPs.Type != cloudflare.SpectrumApplicationEdgeType(*spec.EdgeIPs.Type) {
+		if o.EdgeIPs.Type != cloudflare.SpectrumApplicationEdgeType(spec.EdgeIPs.Type) {
 			return false
 		}
 
@@ -169,7 +169,7 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return false
 	}
 
-	if spec.Protocol != nil && *spec.Protocol != o.Protocol {
+	if spec.Protocol != o.Protocol {
 		return false
 	}
 
@@ -199,13 +199,9 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 // UpdateSpectrumApplication updates mutable values on a Spectrum Application.
 func UpdateSpectrumApplication(ctx context.Context, client Client, applicationID string, spec *v1alpha1.ApplicationParameters) error { //nolint:gocyclo
 
-	dns := cloudflare.SpectrumApplicationDNS{}
-	if spec.DNS.Type != nil {
-		dns.Type = *spec.DNS.Type
-	}
-
-	if spec.DNS.Name != nil {
-		dns.Name = *spec.DNS.Name
+	dns := cloudflare.SpectrumApplicationDNS{
+		Type: spec.DNS.Type,
+		Name: spec.DNS.Name,
 	}
 
 	oport := cloudflare.SpectrumApplicationOriginPort{}
@@ -224,15 +220,13 @@ func UpdateSpectrumApplication(ctx context.Context, client Client, applicationID
 	}
 
 	odns := cloudflare.SpectrumApplicationOriginDNS{}
-	if spec.OriginDNS != nil && spec.OriginDNS.Name != nil {
-		odns.Name = *spec.OriginDNS.Name
+	if spec.OriginDNS != nil {
+		odns.Name = spec.OriginDNS.Name
 	}
 
 	eips := cloudflare.SpectrumApplicationEdgeIPs{}
 	if spec.EdgeIPs != nil {
-		if spec.EdgeIPs.Type != nil {
-			eips.Type = cloudflare.SpectrumApplicationEdgeType(*spec.EdgeIPs.Type)
-		}
+		eips.Type = cloudflare.SpectrumApplicationEdgeType(spec.EdgeIPs.Type)
 
 		if spec.EdgeIPs.Connectivity != nil {
 			eips.Connectivity = (*cloudflare.SpectrumApplicationConnectivity)(spec.EdgeIPs.Connectivity)
@@ -248,6 +242,7 @@ func UpdateSpectrumApplication(ctx context.Context, client Client, applicationID
 	}
 
 	ap := cloudflare.SpectrumApplication{
+		Protocol:     spec.Protocol,
 		DNS:          dns,
 		OriginDirect: spec.OriginDirect,
 		OriginPort:   &oport,
@@ -257,10 +252,6 @@ func UpdateSpectrumApplication(ctx context.Context, client Client, applicationID
 
 	if spec.ProxyProtocol != nil {
 		ap.ProxyProtocol = cloudflare.ProxyProtocol(*spec.ProxyProtocol)
-	}
-
-	if spec.Protocol != nil {
-		ap.Protocol = *spec.Protocol
 	}
 
 	if spec.IPv4 != nil {

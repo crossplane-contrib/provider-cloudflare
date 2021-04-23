@@ -166,13 +166,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.SetConditions(rtv1.Creating())
 
-	dns := cloudflare.SpectrumApplicationDNS{}
-	if cr.Spec.ForProvider.DNS.Type != nil {
-		dns.Type = *cr.Spec.ForProvider.DNS.Type
-	}
-
-	if cr.Spec.ForProvider.DNS.Name != nil {
-		dns.Name = *cr.Spec.ForProvider.DNS.Name
+	dns := cloudflare.SpectrumApplicationDNS{
+		Type: cr.Spec.ForProvider.DNS.Type,
+		Name: cr.Spec.ForProvider.DNS.Name,
 	}
 
 	oport := cloudflare.SpectrumApplicationOriginPort{}
@@ -191,15 +187,13 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	odns := cloudflare.SpectrumApplicationOriginDNS{}
-	if cr.Spec.ForProvider.OriginDNS != nil && cr.Spec.ForProvider.OriginDNS.Name != nil {
-		odns.Name = *cr.Spec.ForProvider.OriginDNS.Name
+	if cr.Spec.ForProvider.OriginDNS != nil {
+		odns.Name = cr.Spec.ForProvider.OriginDNS.Name
 	}
 
 	eips := cloudflare.SpectrumApplicationEdgeIPs{}
 	if cr.Spec.ForProvider.EdgeIPs != nil {
-		if cr.Spec.ForProvider.EdgeIPs.Type != nil {
-			eips.Type = cloudflare.SpectrumApplicationEdgeType(*cr.Spec.ForProvider.EdgeIPs.Type)
-		}
+		eips.Type = cloudflare.SpectrumApplicationEdgeType(cr.Spec.ForProvider.EdgeIPs.Type)
 
 		if cr.Spec.ForProvider.EdgeIPs.Connectivity != nil {
 			eips.Connectivity = (*cloudflare.SpectrumApplicationConnectivity)(cr.Spec.ForProvider.EdgeIPs.Connectivity)
@@ -215,6 +209,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	ap := cloudflare.SpectrumApplication{
+		Protocol:     cr.Spec.ForProvider.Protocol,
 		DNS:          dns,
 		OriginDirect: cr.Spec.ForProvider.OriginDirect,
 		OriginPort:   &oport,
@@ -224,10 +219,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	if cr.Spec.ForProvider.ProxyProtocol != nil {
 		ap.ProxyProtocol = cloudflare.ProxyProtocol(*cr.Spec.ForProvider.ProxyProtocol)
-	}
-
-	if cr.Spec.ForProvider.Protocol != nil {
-		ap.Protocol = *cr.Spec.ForProvider.Protocol
 	}
 
 	if cr.Spec.ForProvider.IPv4 != nil {

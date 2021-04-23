@@ -91,6 +91,8 @@ spec:
                         - dynamic
                         - static
                         type: string
+                    required:
+                    - type
                     type: object
                   ipFirewall:
                     description: IPFirewall enables IP Access Rules for this application.
@@ -184,6 +186,8 @@ spec:
                         description: MatchLabels ensures an object with matching labels is selected.
                         type: object
                     type: object
+                required:
+                - protocol
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.

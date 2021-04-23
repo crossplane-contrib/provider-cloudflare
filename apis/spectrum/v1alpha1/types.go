@@ -33,11 +33,11 @@ type SpectrumApplicationDNS struct {
 	// Type is the type of edge IP configuration specified
 	// Only valid with CNAME DNS names
 	// +kubebuilder:validation:Enum=CNAME;ADDRESS
-	Type *string `json:"type"`
+	Type string `json:"type"`
 
 	// Name is the name of the DNS record associated with the application.
 	// +kubebuilder:validation:Format=hostname
-	Name *string `json:"name"`
+	Name string `json:"name"`
 }
 
 // SpectrumApplicationOriginDNS holds the origin DNS configuration for a Spectrum
@@ -45,7 +45,7 @@ type SpectrumApplicationDNS struct {
 type SpectrumApplicationOriginDNS struct {
 	// Name is the name of the Origin DNS for the Spectrum Application
 	// +kubebuilder:validation:Format=hostname
-	Name *string `json:"name"`
+	Name string `json:"name"`
 }
 
 // SpectrumApplicationOriginPort holds the origin ports for a Spectrum Application
@@ -73,8 +73,7 @@ type SpectrumApplicationOriginPort struct {
 type SpectrumApplicationEdgeIPs struct {
 	// Type is the type of edge IP configuration specified.
 	// +kubebuilder:validation:Enum=dynamic;static
-	// +optional
-	Type *string `json:"type,omitempty"`
+	Type string `json:"type"`
 
 	// Connectivity is IP versions supported for inbound connections on Spectrum anycast IPs.
 	// +kubebuilder:validation:Enum=all;ipv4;ipv6
@@ -89,9 +88,9 @@ type SpectrumApplicationEdgeIPs struct {
 // ApplicationParameters are the configurable fields of a Spectrum Application.
 type ApplicationParameters struct {
 	// Protocol port configuration at Cloudflare’s edge.
-	// +optional
-	Protocol *string `json:"protocol,omitempty"`
+	Protocol string `json:"protocol"`
 
+	// +optional
 	IPv4 *bool `json:"ipv4,omitempty"`
 
 	// The name and type of DNS record for the Spectrum application.
@@ -102,9 +101,11 @@ type ApplicationParameters struct {
 	OriginDirect []string `json:"originDirect,omitempty"`
 
 	// OriginPort is the port range when using Origin DNS
+	// +optional
 	OriginPort *SpectrumApplicationOriginPort `json:"originPort,omitempty"`
 
 	// OriginDNS is the DNS entry when using DNS Origins
+	// +optional
 	OriginDNS *SpectrumApplicationOriginDNS `json:"originDNS,omitempty"`
 
 	// IPFirewall enables IP Access Rules for this application.
@@ -127,6 +128,7 @@ type ApplicationParameters struct {
 	TrafficType *string `json:"trafficType,omitempty"`
 
 	// EdgeIPs is the anycast edge IP configuration for the hostname of this application.
+	// +optional
 	EdgeIPs *SpectrumApplicationEdgeIPs `json:"edgeIPs,omitempty"`
 
 	// ArgoSmartRouting enables Argo Smart Routing for this application.
