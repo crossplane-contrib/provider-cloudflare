@@ -156,7 +156,7 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 			return false
 		}
 
-		if spec.EdgeIPs.Connectivity != nil && o.EdgeIPs.Connectivity != (*cloudflare.SpectrumApplicationConnectivity)(spec.EdgeIPs.Connectivity) {
+		if spec.EdgeIPs.Connectivity != nil && o.EdgeIPs.Connectivity.String() != *spec.EdgeIPs.Connectivity {
 			return false
 		}
 

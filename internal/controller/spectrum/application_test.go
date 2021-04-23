@@ -482,7 +482,6 @@ func TestCreate(t *testing.T) {
 					withOriginPort(v1alpha1.SpectrumApplicationOriginPort{
 						Port: &port,
 					}),
-					withOriginPort(v1alpha1.SpectrumApplicationOriginPort{}),
 					withIPFirewall(true),
 					withProxyProtocol("off"),
 					withTLS("full"),
@@ -521,7 +520,6 @@ func TestCreate(t *testing.T) {
 						Start: &start,
 						End:   &end,
 					}),
-					withOriginPort(v1alpha1.SpectrumApplicationOriginPort{}),
 					withIPFirewall(true),
 					withProxyProtocol("off"),
 					withTLS("full"),
