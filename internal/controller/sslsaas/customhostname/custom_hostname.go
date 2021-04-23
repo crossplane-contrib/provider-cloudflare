@@ -231,7 +231,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		Type:              *cr.Spec.ForProvider.SSL.Type,
 		CustomCertificate: *cr.Spec.ForProvider.SSL.CustomCertificate,
 		CustomKey:         *cr.Spec.ForProvider.SSL.CustomKey,
-		Wildcard:          *cr.Spec.ForProvider.SSL.Wildcard,
+		Wildcard:          cr.Spec.ForProvider.SSL.Wildcard,
 		Settings:          sslSettings,
 	}
 

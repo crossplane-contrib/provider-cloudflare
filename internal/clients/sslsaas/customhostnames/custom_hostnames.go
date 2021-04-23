@@ -96,7 +96,7 @@ func UpToDate(spec *v1alpha1.CustomHostnameParameters, o cloudflare.CustomHostna
 		return false
 	}
 
-	if spec.SSL.Wildcard != nil && *spec.SSL.Type != o.SSL.Type {
+	if spec.SSL.Wildcard != nil && o.SSL.Wildcard != nil && spec.SSL.Wildcard != o.SSL.Wildcard {
 		return false
 	}
 
@@ -126,7 +126,7 @@ func UpdateCustomHostname(ctx context.Context, client Client, chID string, spec 
 		Type:              *spec.SSL.Type,
 		CustomCertificate: *spec.SSL.CustomCertificate,
 		CustomKey:         *spec.SSL.CustomKey,
-		Wildcard:          *spec.SSL.Wildcard,
+		Wildcard:          spec.SSL.Wildcard,
 		Settings:          sslSettings,
 	}
 
