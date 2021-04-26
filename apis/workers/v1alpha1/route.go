@@ -74,6 +74,8 @@ type RouteStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
+// +kubebuilder:printcolumn:name="PATTERN",type="string",JSONPath=".spec.forProvider.pattern"
+// +kubebuilder:printcolumn:name="SCRIPT",type="string",JSONPath=".spec.forProvider.script"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
 type Route struct {
 	metav1.TypeMeta   `json:",inline"`

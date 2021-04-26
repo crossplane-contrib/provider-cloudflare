@@ -25,6 +25,12 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
+    - jsonPath: .spec.forProvider.pattern
+      name: PATTERN
+      type: string
+    - jsonPath: .spec.forProvider.script
+      name: SCRIPT
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
