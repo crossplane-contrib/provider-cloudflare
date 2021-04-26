@@ -27,7 +27,7 @@ import (
 
 const (
 	// Cloudflare returns this code when a route isnt found.
-	errRecordNotFound = "10007"
+	errRouteNotFound = "10007"
 )
 
 // Client is a Cloudflare API client that implements methods for working
@@ -47,7 +47,7 @@ func NewClient(cfg clients.Config) (Client, error) {
 // IsRouteNotFound returns true if the passed error indicates
 // a Worker Route was not found.
 func IsRouteNotFound(err error) bool {
-	return strings.Contains(err.Error(), errRecordNotFound)
+	return strings.Contains(err.Error(), errRouteNotFound)
 }
 
 // UpToDate checks if the remote Route is up to date with the
@@ -78,7 +78,7 @@ func UpToDate(spec *v1alpha1.RouteParameters, o cloudflare.WorkerRoute) bool { /
 }
 
 // UpdateRoute updates mutable values on a Worker Route.
-func UpdateRoute(ctx context.Context, client Client, recordID string, spec *v1alpha1.RouteParameters) error {
+func UpdateRoute(ctx context.Context, client Client, routeID string, spec *v1alpha1.RouteParameters) error {
 	r := cloudflare.WorkerRoute{
 		Pattern: spec.Pattern,
 	}
@@ -87,7 +87,7 @@ func UpdateRoute(ctx context.Context, client Client, recordID string, spec *v1al
 		r.Script = *spec.Script
 	}
 
-	_, err := client.UpdateWorkerRoute(ctx, *spec.Zone, recordID, r)
+	_, err := client.UpdateWorkerRoute(ctx, *spec.Zone, routeID, r)
 
 	return err
 

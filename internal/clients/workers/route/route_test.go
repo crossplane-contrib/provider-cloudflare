@@ -107,8 +107,8 @@ func TestUpToDate(t *testing.T) {
 				o: false,
 			},
 		},
-		"UpToDatePattenDifferent": {
-			reason: "UpToDate should return false if the spec does not match the route patterns dont match",
+		"UpToDatePatternDifferent": {
+			reason: "UpToDate should return false if the spec pattern does not match the route pattern",
 			args: args{
 				rp: &v1alpha1.RouteParameters{
 					Script:  ptr.StringPtr("test-script"),
@@ -140,7 +140,7 @@ func TestUpToDate(t *testing.T) {
 			},
 		},
 		"UpToDateIdentical": {
-			reason: "UpToDate should return true if the spec matches the record",
+			reason: "UpToDate should return true if the spec matches the route",
 			args: args{
 				rp: &v1alpha1.RouteParameters{
 					Script:  ptr.StringPtr("test-worker"),
