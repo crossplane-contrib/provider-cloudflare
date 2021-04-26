@@ -29,6 +29,7 @@ import (
 	application "github.com/benagricola/provider-cloudflare/internal/controller/spectrum"
 	customhostname "github.com/benagricola/provider-cloudflare/internal/controller/sslsaas/customhostname"
 	fallbackorigin "github.com/benagricola/provider-cloudflare/internal/controller/sslsaas/fallbackorigin"
+	route "github.com/benagricola/provider-cloudflare/internal/controller/workers/route"
 	zone "github.com/benagricola/provider-cloudflare/internal/controller/zone"
 )
 
@@ -43,6 +44,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter) error {
 		customhostname.Setup,
 		zone.Setup,
 		record.Setup,
+		route.Setup,
 		fallbackorigin.Setup,
 	} {
 		if err := setup(mgr, l, wl); err != nil {

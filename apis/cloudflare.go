@@ -25,6 +25,7 @@ import (
 	spectrumv1alpha1 "github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
 	sslsaasv1alpha1 "github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
 	cloudflarev1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
+	workersv1alpha1 "github.com/benagricola/provider-cloudflare/apis/workers/v1alpha1"
 	zonev1alpha1 "github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 )
 
@@ -37,6 +38,7 @@ func init() {
 		spectrumv1alpha1.SchemeBuilder.AddToScheme,
 		zonev1alpha1.SchemeBuilder.AddToScheme,
 		firewallv1alpha1.SchemeBuilder.AddToScheme,
+		workersv1alpha1.SchemeBuilder.AddToScheme,
 	)
 }
 

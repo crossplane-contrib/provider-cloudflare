@@ -1,0 +1,12 @@
+apiVersion: workers.cloudflare.crossplane.io/v1alpha1
+kind: Route
+metadata:
+  name: example
+spec:
+  forProvider:
+    zone: 1234
+    pattern: example.com/*
+    script: worker-script
+
+  providerConfigRef:
+    name: example
