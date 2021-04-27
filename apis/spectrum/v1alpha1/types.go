@@ -90,9 +90,6 @@ type ApplicationParameters struct {
 	// Protocol port configuration at Cloudflare’s edge.
 	Protocol string `json:"protocol"`
 
-	// +optional
-	IPv4 *bool `json:"ipv4,omitempty"`
-
 	// The name and type of DNS record for the Spectrum application.
 	DNS SpectrumApplicationDNS `json:"dns,omitempty"`
 

@@ -22,11 +22,11 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
+	application "github.com/benagricola/provider-cloudflare/internal/controller/application"
 	"github.com/benagricola/provider-cloudflare/internal/controller/config"
 	record "github.com/benagricola/provider-cloudflare/internal/controller/dns"
 	filter "github.com/benagricola/provider-cloudflare/internal/controller/firewall/filter"
 	rule "github.com/benagricola/provider-cloudflare/internal/controller/firewall/rule"
-	application "github.com/benagricola/provider-cloudflare/internal/controller/spectrum"
 	customhostname "github.com/benagricola/provider-cloudflare/internal/controller/sslsaas/customhostname"
 	fallbackorigin "github.com/benagricola/provider-cloudflare/internal/controller/sslsaas/fallbackorigin"
 	route "github.com/benagricola/provider-cloudflare/internal/controller/workers/route"

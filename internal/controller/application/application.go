@@ -221,10 +221,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		ap.ProxyProtocol = cloudflare.ProxyProtocol(*cr.Spec.ForProvider.ProxyProtocol)
 	}
 
-	if cr.Spec.ForProvider.IPv4 != nil {
-		ap.IPv4 = *cr.Spec.ForProvider.IPv4
-	}
-
 	if cr.Spec.ForProvider.IPFirewall != nil {
 		ap.IPFirewall = *cr.Spec.ForProvider.IPFirewall
 	}

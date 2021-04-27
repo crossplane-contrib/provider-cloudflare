@@ -137,7 +137,6 @@ func TestUpToDate(t *testing.T) {
 			reason: "UpToDate should return true and not panic with a Application with Spectrum DNS",
 			args: args{
 				rp: &v1alpha1.ApplicationParameters{
-					IPv4: ptr.BoolPtr(true),
 					DNS: v1alpha1.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -153,7 +152,6 @@ func TestUpToDate(t *testing.T) {
 					TLS:           ptr.StringPtr("full"),
 				},
 				r: cloudflare.SpectrumApplication{
-					IPv4: true,
 					DNS: cloudflare.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -177,7 +175,6 @@ func TestUpToDate(t *testing.T) {
 			reason: "UpToDate should return true and not panic with a Application with Spectrum DNS with port range",
 			args: args{
 				rp: &v1alpha1.ApplicationParameters{
-					IPv4: ptr.BoolPtr(true),
 					DNS: v1alpha1.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -194,7 +191,6 @@ func TestUpToDate(t *testing.T) {
 					TLS:           ptr.StringPtr("full"),
 				},
 				r: cloudflare.SpectrumApplication{
-					IPv4: true,
 					DNS: cloudflare.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -219,7 +215,6 @@ func TestUpToDate(t *testing.T) {
 			reason: "UpToDate should return true and not panic with a Application with Spectrum Edge IPs Anycast",
 			args: args{
 				rp: &v1alpha1.ApplicationParameters{
-					IPv4: ptr.BoolPtr(true),
 					DNS: v1alpha1.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -234,7 +229,6 @@ func TestUpToDate(t *testing.T) {
 					OriginDirect:  []string{"tcp://192.0.2.1:22"},
 				},
 				r: cloudflare.SpectrumApplication{
-					IPv4: true,
 					DNS: cloudflare.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -257,7 +251,6 @@ func TestUpToDate(t *testing.T) {
 			reason: "UpToDate should return true and not panic with a Application with Spectrum Edge IPs Dynamic",
 			args: args{
 				rp: &v1alpha1.ApplicationParameters{
-					IPv4: ptr.BoolPtr(true),
 					DNS: v1alpha1.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -272,7 +265,6 @@ func TestUpToDate(t *testing.T) {
 					OriginDirect:  []string{"tcp://192.0.2.1:22"},
 				},
 				r: cloudflare.SpectrumApplication{
-					IPv4: true,
 					DNS: cloudflare.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",

@@ -97,8 +97,6 @@ spec:
                   ipFirewall:
                     description: IPFirewall enables IP Access Rules for this application.
                     type: boolean
-                  ipv4:
-                    type: boolean
                   originDNS:
                     description: OriginDNS is the DNS entry when using DNS Origins
                     properties:

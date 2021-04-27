@@ -88,10 +88,6 @@ func withProtocol(proto string) ApplicationModifier {
 	return func(r *v1alpha1.Application) { r.Spec.ForProvider.Protocol = proto }
 }
 
-func withIPv4(ip bool) ApplicationModifier {
-	return func(r *v1alpha1.Application) { r.Spec.ForProvider.IPv4 = &ip }
-}
-
 func withDNS(dns v1alpha1.SpectrumApplicationDNS) ApplicationModifier {
 	return func(r *v1alpha1.Application) { r.Spec.ForProvider.DNS = dns }
 }
@@ -471,7 +467,6 @@ func TestCreate(t *testing.T) {
 					withExternalName("1234beef"),
 					withZone("foo.com"),
 					withProtocol("tcp/22"),
-					withIPv4(true),
 					withDNS(v1alpha1.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -508,7 +503,6 @@ func TestCreate(t *testing.T) {
 					withExternalName("1234beef"),
 					withZone("foo.com"),
 					withProtocol("tcp/22"),
-					withIPv4(true),
 					withDNS(v1alpha1.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -546,7 +540,6 @@ func TestCreate(t *testing.T) {
 					withExternalName("1234beef"),
 					withZone("foo.com"),
 					withProtocol("tcp/22"),
-					withIPv4(true),
 					withDNS(v1alpha1.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",
@@ -582,7 +575,6 @@ func TestCreate(t *testing.T) {
 					withExternalName("1234beef"),
 					withZone("foo.com"),
 					withProtocol("tcp/22"),
-					withIPv4(true),
 					withDNS(v1alpha1.SpectrumApplicationDNS{
 						Type: "CNAME",
 						Name: "spectrum.foo.com",

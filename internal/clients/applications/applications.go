@@ -177,10 +177,6 @@ func UpToDate(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplica
 		return false
 	}
 
-	if spec.IPv4 != nil && *spec.IPv4 != o.IPv4 {
-		return false
-	}
-
 	if spec.IPFirewall != nil && *spec.IPFirewall != o.IPFirewall {
 		return false
 	}
@@ -256,10 +252,6 @@ func UpdateSpectrumApplication(ctx context.Context, client Client, applicationID
 
 	if spec.ProxyProtocol != nil {
 		ap.ProxyProtocol = cloudflare.ProxyProtocol(*spec.ProxyProtocol)
-	}
-
-	if spec.IPv4 != nil {
-		ap.IPv4 = *spec.IPv4
 	}
 
 	if spec.IPFirewall != nil {
