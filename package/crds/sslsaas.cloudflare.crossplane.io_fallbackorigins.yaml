@@ -55,6 +55,27 @@ spec:
                     format: hostname
                     maxLength: 255
                     type: string
+                  originRef:
+                    description: OriginRef references the Record object this Fallback Origin should point to.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  originSelector:
+                    description: OriginSelector selects the Record object this Fallback Origin should point to.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels is selected.
+                        type: object
+                    type: object
                   zone:
                     description: ZoneID this Fallback Origin is for.
                     type: string

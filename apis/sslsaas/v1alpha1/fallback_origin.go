@@ -22,7 +22,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	dns "github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
+	zone "github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/pkg/errors"
@@ -33,7 +35,17 @@ type FallbackOriginParameters struct {
 	// Origin for the Fallback Origin.
 	// +kubebuilder:validation:Format=hostname
 	// +kubebuilder:validation:MaxLength=255
+	// +optional
 	Origin *string `json:"origin,omitempty"`
+
+	// OriginRef references the Record object this Fallback Origin should point to.
+	// +immutable
+	// +optional
+	OriginRef *xpv1.Reference `json:"originRef,omitempty"`
+
+	// OriginSelector selects the Record object this Fallback Origin should point to.
+	// +optional
+	OriginSelector *xpv1.Selector `json:"originSelector,omitempty"`
 
 	// ZoneID this Fallback Origin is for.
 	// +immutable
@@ -99,12 +111,26 @@ type FallbackOriginList struct {
 func (dr *FallbackOrigin) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, dr)
 
-	// Resolve spec.forProvider.zone
+	// Resolve spec.forProvider.origin to FQDN from DNS Record
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(dr.Spec.ForProvider.Origin),
+		Reference:    dr.Spec.ForProvider.OriginRef,
+		Selector:     dr.Spec.ForProvider.OriginSelector,
+		To:           reference.To{Managed: &dns.Record{}, List: &dns.RecordList{}},
+		Extract:      dns.RecordFQDN(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "spec.forProvider.origin")
+	}
+	dr.Spec.ForProvider.Origin = reference.ToPtrValue(rsp.ResolvedValue)
+	dr.Spec.ForProvider.OriginRef = rsp.ResolvedReference
+
+	// Resolve spec.forProvider.zone
+	rsp, err = r.Resolve(ctx, reference.ResolutionRequest{
 		CurrentValue: reference.FromPtrValue(dr.Spec.ForProvider.Zone),
 		Reference:    dr.Spec.ForProvider.ZoneRef,
 		Selector:     dr.Spec.ForProvider.ZoneSelector,
-		To:           reference.To{Managed: &v1alpha1.Zone{}, List: &v1alpha1.ZoneList{}},
+		To:           reference.To{Managed: &zone.Zone{}, List: &zone.ZoneList{}},
 		Extract:      reference.ExternalName(),
 	})
 	if err != nil {

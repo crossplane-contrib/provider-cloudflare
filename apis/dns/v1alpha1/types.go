@@ -25,6 +25,7 @@ import (
 	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 )
 
@@ -138,6 +139,19 @@ type RecordList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Record `json:"items"`
+}
+
+// RecordFQDN resolves the FQDN field out of a DNS Record's
+// status. This may be used by other resources to
+// avoid calculating the FQDN of a record.
+func RecordFQDN() reference.ExtractValueFn {
+	return func(mg resource.Managed) string {
+		r, ok := mg.(*Record)
+		if !ok {
+			return ""
+		}
+		return r.Status.AtProvider.FQDN
+	}
 }
 
 // ResolveReferences resolves references to the Zone that this DNS Record

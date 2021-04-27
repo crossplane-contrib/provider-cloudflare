@@ -409,6 +409,16 @@ func (in *FallbackOriginParameters) DeepCopyInto(out *FallbackOriginParameters) 
 		*out = new(string)
 		**out = **in
 	}
+	if in.OriginRef != nil {
+		in, out := &in.OriginRef, &out.OriginRef
+		*out = new(v1.Reference)
+		**out = **in
+	}
+	if in.OriginSelector != nil {
+		in, out := &in.OriginSelector, &out.OriginSelector
+		*out = new(v1.Selector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Zone != nil {
 		in, out := &in.Zone, &out.Zone
 		*out = new(string)
