@@ -48,8 +48,8 @@ const (
 
 	errFallbackOriginLookup   = "cannot lookup fallback origin"
 	errFallbackOriginCreation = "cannot create fallback origin"
-	errFallbackOriginUpdate   = "cannot update record"
-	errFallbackOriginDeletion = "cannot delete record"
+	errFallbackOriginUpdate   = "cannot update fallback origin"
+	errFallbackOriginDeletion = "cannot delete fallback origin"
 	errFallbackOriginNoZone   = "cannot create fallback origin no zone found"
 
 	// String returned if the Fallback Origin is active
