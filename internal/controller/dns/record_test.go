@@ -344,6 +344,75 @@ func TestCreate(t *testing.T) {
 				err: errors.Wrap(errBoom, errRecordCreation),
 			},
 		},
+		"ErrRecordCreatePriorityMX": {
+			reason: "We should return an error if 'Priority' is unset for MX records",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateDNSRecord: func(ctx context.Context, zoneID string, rr cloudflare.DNSRecord) (*cloudflare.DNSRecordResponse, error) {
+						return &cloudflare.DNSRecordResponse{
+							Result: rr,
+						}, nil
+					},
+				},
+			},
+			args: args{
+				mg: record(
+					withType("MX"),
+					withTTL(600),
+					withZone("foo.com"),
+				),
+			},
+			want: want{
+				o:   managed.ExternalCreation{},
+				err: errors.New(errRecordCreation),
+			},
+		},
+		"ErrRecordCreatePrioritySRV": {
+			reason: "We should return an error if 'Priority' is unset for SRV records",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateDNSRecord: func(ctx context.Context, zoneID string, rr cloudflare.DNSRecord) (*cloudflare.DNSRecordResponse, error) {
+						return &cloudflare.DNSRecordResponse{
+							Result: rr,
+						}, nil
+					},
+				},
+			},
+			args: args{
+				mg: record(
+					withType("SRV"),
+					withTTL(600),
+					withZone("foo.com"),
+				),
+			},
+			want: want{
+				o:   managed.ExternalCreation{},
+				err: errors.New(errRecordCreation),
+			},
+		},
+		"ErrRecordCreatePriorityURI": {
+			reason: "We should return an error if 'Priority' is unset for URI records",
+			fields: fields{
+				client: fake.MockClient{
+					MockCreateDNSRecord: func(ctx context.Context, zoneID string, rr cloudflare.DNSRecord) (*cloudflare.DNSRecordResponse, error) {
+						return &cloudflare.DNSRecordResponse{
+							Result: rr,
+						}, nil
+					},
+				},
+			},
+			args: args{
+				mg: record(
+					withType("URI"),
+					withTTL(600),
+					withZone("foo.com"),
+				),
+			},
+			want: want{
+				o:   managed.ExternalCreation{},
+				err: errors.New(errRecordCreation),
+			},
+		},
 		"Success": {
 			reason: "We should return ExternalNameAssigned: true and no error when a record is created",
 			fields: fields{

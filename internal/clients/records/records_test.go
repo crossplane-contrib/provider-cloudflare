@@ -59,7 +59,7 @@ func TestLateInitialize(t *testing.T) {
 			args: args{
 				rp: &v1alpha1.RecordParameters{
 					Proxied:  ptr.BoolPtr(false),
-					Priority: uint16Ptr(4),
+					Priority: ptr.Int32Ptr(4),
 				},
 				r: cloudflare.DNSRecord{
 					Proxied:  ptr.BoolPtr(true),
@@ -70,7 +70,7 @@ func TestLateInitialize(t *testing.T) {
 				o: false,
 				rp: &v1alpha1.RecordParameters{
 					Proxied:  ptr.BoolPtr(false),
-					Priority: uint16Ptr(4),
+					Priority: ptr.Int32Ptr(4),
 				},
 			},
 		},
@@ -87,7 +87,7 @@ func TestLateInitialize(t *testing.T) {
 				o: true,
 				rp: &v1alpha1.RecordParameters{
 					Proxied:  ptr.BoolPtr(true),
-					Priority: uint16Ptr(1),
+					Priority: ptr.Int32Ptr(1),
 				},
 			},
 		},

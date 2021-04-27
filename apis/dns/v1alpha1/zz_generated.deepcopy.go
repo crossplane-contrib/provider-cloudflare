@@ -127,7 +127,7 @@ func (in *RecordParameters) DeepCopyInto(out *RecordParameters) {
 	}
 	if in.Priority != nil {
 		in, out := &in.Priority, &out.Priority
-		*out = new(uint16)
+		*out = new(int32)
 		**out = **in
 	}
 	if in.Zone != nil {

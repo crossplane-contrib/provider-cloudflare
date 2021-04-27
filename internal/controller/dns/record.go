@@ -173,11 +173,22 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errRecordCreation)
 	}
 
-	// TODO: Add validation here for priority (only required for specific record types)
+	// Required for MX, SRV and URI records; unused by other record types.
+	if cr.Spec.ForProvider.Priority == nil {
+		switch *cr.Spec.ForProvider.Type {
+		case "MX", "SRV", "URI":
+			return managed.ExternalCreation{}, errors.New(errRecordCreation)
+		}
+	}
 
 	cr.SetConditions(rtv1.Creating())
 
 	ttl := int(*cr.Spec.ForProvider.TTL)
+	var pri *uint16
+	if cr.Spec.ForProvider.Priority != nil {
+		val := uint16(*cr.Spec.ForProvider.Priority)
+		pri = &val
+	}
 
 	res, err := e.client.CreateDNSRecord(
 		ctx,
@@ -188,7 +199,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 			TTL:      ttl,
 			Content:  cr.Spec.ForProvider.Content,
 			Proxied:  cr.Spec.ForProvider.Proxied,
-			Priority: cr.Spec.ForProvider.Priority,
+			Priority: pri,
 		},
 	)
 

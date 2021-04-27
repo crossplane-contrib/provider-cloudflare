@@ -58,7 +58,7 @@ type RecordParameters struct {
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=65535
 	// +optional
-	Priority *uint16 `json:"priority,omitempty"`
+	Priority *int32 `json:"priority,omitempty"`
 
 	// ZoneID this DNS Record is managed on.
 	// +immutable

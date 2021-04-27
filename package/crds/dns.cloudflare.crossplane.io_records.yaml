@@ -65,6 +65,7 @@ spec:
                     type: string
                   priority:
                     description: Priority of a record.
+                    format: int32
                     maximum: 65535
                     minimum: 0
                     type: integer

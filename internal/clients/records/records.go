@@ -76,7 +76,8 @@ func LateInitialize(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) boo
 	}
 
 	if spec.Priority == nil && o.Priority != nil {
-		spec.Priority = o.Priority
+		pri := int32(*o.Priority)
+		spec.Priority = &pri
 		li = true
 	}
 
@@ -120,7 +121,7 @@ func UpToDate(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) bool { //
 		return false
 	}
 
-	if spec.Priority != nil && o.Priority != nil && *spec.Priority != *o.Priority {
+	if spec.Priority != nil && o.Priority != nil && *spec.Priority != int32(*o.Priority) {
 		return false
 	}
 
@@ -131,13 +132,17 @@ func UpToDate(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) bool { //
 func UpdateRecord(ctx context.Context, client Client, recordID string, spec *v1alpha1.RecordParameters) error {
 	// Cloudflare probably should not rely on the int type like this
 	ttl := int(*spec.TTL)
+
 	rr := cloudflare.DNSRecord{
-		Type:     *spec.Type,
-		Name:     spec.Name,
-		TTL:      ttl,
-		Content:  spec.Content,
-		Proxied:  spec.Proxied,
-		Priority: spec.Priority,
+		Type:    *spec.Type,
+		Name:    spec.Name,
+		TTL:     ttl,
+		Content: spec.Content,
+		Proxied: spec.Proxied,
+	}
+
+	if spec.Priority != nil {
+		*rr.Priority = uint16(*spec.Priority)
 	}
 
 	return client.UpdateDNSRecord(ctx, *spec.Zone, recordID, rr)
