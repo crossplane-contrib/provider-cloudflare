@@ -17,15 +17,21 @@ limitations under the License.
 package applications
 
 import (
+	"context"
 	"net"
 	"testing"
 
 	"github.com/cloudflare/cloudflare-go"
 
-	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/pkg/errors"
+
+	"k8s.io/utils/pointer"
 	ptr "k8s.io/utils/pointer"
+
+	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
+	"github.com/benagricola/provider-cloudflare/internal/clients/applications/fake"
 )
 
 func TestUpToDate(t *testing.T) {
@@ -308,6 +314,96 @@ func TestUpToDate(t *testing.T) {
 			got := UpToDate(tc.args.rp, tc.args.r)
 			if diff := cmp.Diff(tc.want.o, got); diff != "" {
 				t.Errorf("\n%s\nUpToDate(...): -want, +got:\n%s\n", tc.reason, diff)
+			}
+		})
+	}
+}
+
+func TestUpdateSpectrumApplication(t *testing.T) {
+	errBoom := errors.New("boom")
+
+	type fields struct {
+		client Client
+	}
+
+	type args struct {
+		ctx context.Context
+		id  string
+		ap  *v1alpha1.ApplicationParameters
+	}
+
+	type want struct {
+		o error
+	}
+
+	cases := map[string]struct {
+		reason string
+		fields fields
+		args   args
+		want   want
+	}{
+		"UpdateEmptyParams": {
+			reason: "Update should return an updated spectrum application when not provided optional fields",
+			fields: fields{
+				client: fake.MockClient{
+					// Confirm that Update method sent without optional struct pointers
+					MockUpdateSpectrumApplication: func(ctx context.Context, zoneID, appID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						if appDetails.EdgeIPs != nil || appDetails.OriginDNS != nil ||
+							appDetails.OriginPort != nil {
+							return cloudflare.SpectrumApplication{}, errBoom
+						}
+						return cloudflare.SpectrumApplication{}, nil
+					},
+				},
+			},
+			args: args{
+				id: "1234",
+				ap: &v1alpha1.ApplicationParameters{
+					Zone: pointer.StringPtr("test"),
+				},
+			},
+			want: want{
+				o: nil,
+			},
+		},
+		"UpdateOptionalParams": {
+			reason: "Update should return an updated spectrum application when provided optional fields",
+			fields: fields{
+				client: fake.MockClient{
+					// Confirm that Update method sent without optional struct pointers
+					MockUpdateSpectrumApplication: func(ctx context.Context, zoneID, appID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
+						if appDetails.EdgeIPs == nil || appDetails.OriginDNS == nil ||
+							appDetails.OriginPort == nil {
+							return cloudflare.SpectrumApplication{}, errBoom
+						}
+						return cloudflare.SpectrumApplication{}, nil
+					},
+				},
+			},
+			args: args{
+				id: "1234",
+				ap: &v1alpha1.ApplicationParameters{
+					Zone: pointer.StringPtr("test"),
+					OriginPort: &v1alpha1.SpectrumApplicationOriginPort{},
+					OriginDNS: &v1alpha1.SpectrumApplicationOriginDNS{
+						Name: "test.com",
+					},
+					EdgeIPs: &v1alpha1.SpectrumApplicationEdgeIPs{
+						Type: "dynamic",
+					},
+				},
+			},
+			want: want{
+				o: nil,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := UpdateSpectrumApplication(tc.args.ctx, tc.fields.client, tc.args.id, tc.args.ap)
+			if diff := cmp.Diff(tc.want.o, got); diff != "" {
+				t.Errorf("\n%s\nUpdateSpectrumApplication(...): -want, +got:\n%s\n", tc.reason, diff)
 			}
 		})
 	}

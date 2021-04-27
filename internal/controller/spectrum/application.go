@@ -171,8 +171,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		Name: cr.Spec.ForProvider.DNS.Name,
 	}
 
-	oport := cloudflare.SpectrumApplicationOriginPort{}
+	var oport *cloudflare.SpectrumApplicationOriginPort
 	if cr.Spec.ForProvider.OriginPort != nil {
+		oport = &cloudflare.SpectrumApplicationOriginPort{}
 		if cr.Spec.ForProvider.OriginPort.Port != nil {
 			oport.Port = uint16(*cr.Spec.ForProvider.OriginPort.Port)
 		}
@@ -186,14 +187,19 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		}
 	}
 
-	odns := cloudflare.SpectrumApplicationOriginDNS{}
+	var odns *cloudflare.SpectrumApplicationOriginDNS
 	if cr.Spec.ForProvider.OriginDNS != nil {
-		odns.Name = cr.Spec.ForProvider.OriginDNS.Name
+		odns = &cloudflare.SpectrumApplicationOriginDNS{
+			Name: cr.Spec.ForProvider.OriginDNS.Name,
+		}
 	}
 
-	eips := cloudflare.SpectrumApplicationEdgeIPs{}
+	var eips *cloudflare.SpectrumApplicationEdgeIPs
+
 	if cr.Spec.ForProvider.EdgeIPs != nil {
-		eips.Type = cloudflare.SpectrumApplicationEdgeType(cr.Spec.ForProvider.EdgeIPs.Type)
+		eips = &cloudflare.SpectrumApplicationEdgeIPs{
+			Type: cloudflare.SpectrumApplicationEdgeType(cr.Spec.ForProvider.EdgeIPs.Type),
+		}
 
 		if cr.Spec.ForProvider.EdgeIPs.Connectivity != nil {
 			eips.Connectivity = (*cloudflare.SpectrumApplicationConnectivity)(cr.Spec.ForProvider.EdgeIPs.Connectivity)
@@ -212,9 +218,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		Protocol:     cr.Spec.ForProvider.Protocol,
 		DNS:          dns,
 		OriginDirect: cr.Spec.ForProvider.OriginDirect,
-		OriginPort:   &oport,
-		OriginDNS:    &odns,
-		EdgeIPs:      &eips,
+		OriginPort:   oport,
+		OriginDNS:    odns,
+		EdgeIPs:      eips,
 	}
 
 	if cr.Spec.ForProvider.ProxyProtocol != nil {
