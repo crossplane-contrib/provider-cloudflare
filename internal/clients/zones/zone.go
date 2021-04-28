@@ -96,6 +96,15 @@ const (
 	cfsWebSockets              = "websockets"
 )
 
+var ignoreSettings = map[string]struct{}{
+	"0rtt":            {},
+	"ciphers":         {},
+	"tls_1_2_only":    {},
+	"minify":          {},
+	"mobile_redirect": {},
+	"security_header": {},
+}
+
 // ZoneSettingsMap contains pairs of keys and values
 // that represent settings on a Zone.
 type ZoneSettingsMap map[string]interface{}
@@ -168,7 +177,7 @@ func LateInitialize(spec *v1alpha1.ZoneParameters, z cloudflare.Zone,
 		spec.PlanID = &z.Plan.ID
 		li = true
 	}
-	if spec.VanityNameServers == nil {
+	if len(spec.VanityNameServers) == 0 && len(z.VanityNS) > 0 {
 		spec.VanityNameServers = z.VanityNS
 		li = true
 	}
@@ -186,6 +195,13 @@ func LateInitializeSettings(current, desired ZoneSettingsMap, initOn *v1alpha1.Z
 
 	// For each retrieved setting
 	for k, v := range current {
+		// If field name is in ignored list, continue.
+		// TODO: Remove ignore list, we should support all available
+		// Cloudflare Zone settings.
+		if _, ok := ignoreSettings[k]; ok {
+			continue
+		}
+
 		// Check to see if setting is already desired
 		if _, ok := desired[k]; !ok {
 			// If not, late-init it
@@ -386,6 +402,7 @@ func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone) bool { //nolint:
 		return false
 	}
 
+	// TODO: Does this handle nameservers in the wrong order?
 	if (spec.VanityNameServers != nil && !cmp.Equal(spec.VanityNameServers, z.VanityNS)) ||
 		(spec.VanityNameServers == nil && len(z.VanityNS) > 0) {
 		return false

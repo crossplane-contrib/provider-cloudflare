@@ -62,8 +62,11 @@ func TestLateInitialize(t *testing.T) {
 			reason: "LateInit should update fields and settings from a Zone and ZoneSettingsMap",
 			args: args{
 				zp: &v1alpha1.ZoneParameters{
+					AccountID:         ptr.StringPtr("beef"),
+					Paused:            ptr.BoolPtr(false),
+					PlanID:            ptr.StringPtr("dead"),
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
 					Settings: v1alpha1.ZoneSettings{
-						ZeroRTT:         ptr.StringPtr("yes"),
 						BrowserCacheTTL: ptr.Int64Ptr(900),
 					},
 				},
@@ -81,15 +84,16 @@ func TestLateInitialize(t *testing.T) {
 					Paused:   false,
 					VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
 				},
-				// Current Settings should not be overwritten
+				// 'Current' Settings are those settings that were observed
+				// from the API.
+				// Only AdvancedDDOS should be late-inited here.
 				czs: ZoneSettingsMap{
-					cfsZeroRTT:         "yes",
+					cfsAdvancedDDOS:    "yes",
 					cfsBrowserCacheTTL: 3600,
 				},
-				// Only AdvancedDDOS should be late-inited here
-				// as BrowserCacheTTL is already set
+				// 'Desired' settings are our locally desired settings and
+				// should not be overwritten by API settings.
 				dzs: ZoneSettingsMap{
-					cfsAdvancedDDOS:    "yes",
 					cfsBrowserCacheTTL: 900,
 				},
 			},
@@ -101,10 +105,52 @@ func TestLateInitialize(t *testing.T) {
 					PlanID:            ptr.StringPtr("dead"),
 					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
 					Settings: v1alpha1.ZoneSettings{
-						ZeroRTT:         ptr.StringPtr("yes"),
 						AdvancedDDOS:    ptr.StringPtr("yes"),
 						BrowserCacheTTL: ptr.Int64Ptr(900),
 					},
+				},
+			},
+		},
+		"SuccessIgnored": {
+			reason: "LateInit should ignore fields in an ignorelist",
+			args: args{
+				zp: &v1alpha1.ZoneParameters{
+					AccountID:         ptr.StringPtr("beef"),
+					Paused:            ptr.BoolPtr(false),
+					PlanID:            ptr.StringPtr("dead"),
+					Settings:          v1alpha1.ZoneSettings{},
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
+				},
+				z: cloudflare.Zone{
+					Account: cloudflare.Account{
+						ID: "beef",
+					},
+					Plan: cloudflare.ZonePlan{
+						ZonePlanCommon: cloudflare.ZonePlanCommon{
+							ID: "dead",
+						},
+					},
+					// This field should not be late-inited, as the value
+					// is already set true in zp
+					Paused:   false,
+					VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
+				},
+				// 'Current' Settings are those settings that were observed
+				// from the API.
+				// Ciphers should be ignored here as it is in the ignore list.
+				czs: ZoneSettingsMap{
+					"ciphers": "blah",
+				},
+				dzs: ZoneSettingsMap{},
+			},
+			want: want{
+				o: false,
+				zp: &v1alpha1.ZoneParameters{
+					Paused:            ptr.BoolPtr(false),
+					AccountID:         ptr.StringPtr("beef"),
+					PlanID:            ptr.StringPtr("dead"),
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
+					Settings:          v1alpha1.ZoneSettings{},
 				},
 			},
 		},
