@@ -27,7 +27,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"k8s.io/utils/pointer"
 	ptr "k8s.io/utils/pointer"
 
 	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
@@ -359,7 +358,7 @@ func TestUpdateSpectrumApplication(t *testing.T) {
 			args: args{
 				id: "1234",
 				ap: &v1alpha1.ApplicationParameters{
-					Zone: pointer.StringPtr("test"),
+					Zone: ptr.StringPtr("test"),
 				},
 			},
 			want: want{
@@ -383,7 +382,7 @@ func TestUpdateSpectrumApplication(t *testing.T) {
 			args: args{
 				id: "1234",
 				ap: &v1alpha1.ApplicationParameters{
-					Zone:       pointer.StringPtr("test"),
+					Zone:       ptr.StringPtr("test"),
 					OriginPort: &v1alpha1.SpectrumApplicationOriginPort{},
 					OriginDNS: &v1alpha1.SpectrumApplicationOriginDNS{
 						Name: "test.com",
