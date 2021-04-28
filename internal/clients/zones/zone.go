@@ -96,6 +96,13 @@ const (
 	cfsWebSockets              = "websockets"
 )
 
+// ignoreSettings is a temporary list of settings we should
+// ignore to avoid continual late-initialisation of settings
+// we don't yet support.
+// TODO: We should automatically ignore any settings that
+// we do not support, otherwise we will continually late-init
+// fields that have been added in the Cloudflare API but not
+// in this resource.
 var ignoreSettings = map[string]struct{}{
 	"0rtt":            {},
 	"ciphers":         {},
