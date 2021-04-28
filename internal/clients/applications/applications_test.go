@@ -383,7 +383,7 @@ func TestUpdateSpectrumApplication(t *testing.T) {
 			args: args{
 				id: "1234",
 				ap: &v1alpha1.ApplicationParameters{
-					Zone: pointer.StringPtr("test"),
+					Zone:       pointer.StringPtr("test"),
 					OriginPort: &v1alpha1.SpectrumApplicationOriginPort{},
 					OriginDNS: &v1alpha1.SpectrumApplicationOriginDNS{
 						Name: "test.com",
