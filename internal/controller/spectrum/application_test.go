@@ -18,6 +18,7 @@ package spectrum
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	"github.com/cloudflare/cloudflare-go"
@@ -205,6 +206,7 @@ func TestConnect(t *testing.T) {
 
 func TestObserve(t *testing.T) {
 	errBoom := errors.New("boom")
+	netIP := net.ParseIP("1.2.3.4")
 
 	type fields struct {
 		client applications.Client
@@ -324,6 +326,35 @@ func TestObserve(t *testing.T) {
 				o: managed.ExternalObservation{
 					ResourceExists:   true,
 					ResourceUpToDate: true,
+				},
+				err: nil,
+			},
+		},
+		"LateInitEdgeIPs": {
+			reason: "We should return ResourceLateInitialized: true and no error when the EdgeIPs field is LateInitialised",
+			fields: fields{
+				client: fake.MockClient{
+					MockSpectrumApplication: func(ctx context.Context, zoneID, ApplicationID string) (cloudflare.SpectrumApplication, error) {
+						return cloudflare.SpectrumApplication{
+							ID: ApplicationID,
+							EdgeIPs: &cloudflare.SpectrumApplicationEdgeIPs{
+								Type: cloudflare.SpectrumEdgeTypeDynamic,
+								IPs: []net.IP{
+									netIP,
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			args: args{
+				mg: Application(withExternalName("1234beef"), withZone("foo.com")),
+			},
+			want: want{
+				o: managed.ExternalObservation{
+					ResourceExists:          true,
+					ResourceLateInitialized: true,
+					ResourceUpToDate:        true,
 				},
 				err: nil,
 			},

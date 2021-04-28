@@ -88,6 +88,15 @@ func edgeIPsDontMatch(spec []string, o []net.IP) bool {
 	return !cmp.Equal(a, b)
 }
 
+// edgeIPsToStrings returns a string array of inputted net.IPs
+func edgeIPsToStrings(i []net.IP) []string {
+	o := make([]string, len(i))
+	for ci, ip := range i {
+		o[ci] = ip.String()
+	}
+	return o
+}
+
 // GenerateObservation creates an observation of a cloudflare Spectrum Application.
 func GenerateObservation(in cloudflare.SpectrumApplication) v1alpha1.ApplicationObservation {
 	o := v1alpha1.ApplicationObservation{}
@@ -100,6 +109,31 @@ func GenerateObservation(in cloudflare.SpectrumApplication) v1alpha1.Application
 	}
 
 	return o
+}
+
+// LateInitialize initializes ApplicationParameters based on the remote resource
+func LateInitialize(spec *v1alpha1.ApplicationParameters, o cloudflare.SpectrumApplication) bool {
+
+	if spec == nil {
+		return false
+	}
+
+	li := false
+
+	// The Assumption here is that we will only lateInit the EdgeIPs
+	// field if the user did not specify the entire field. We will
+	// not lateInit fields inside EdgeIPs if they are set later.
+	if spec.EdgeIPs == nil && o.EdgeIPs != nil {
+		spec.EdgeIPs = &v1alpha1.SpectrumApplicationEdgeIPs{
+			Type: o.EdgeIPs.Type.String(),
+			IPs:  edgeIPsToStrings(o.EdgeIPs.IPs),
+		}
+		if o.EdgeIPs.Connectivity != nil {
+			spec.EdgeIPs.Connectivity = (*string)(o.EdgeIPs.Connectivity)
+		}
+		li = true
+	}
+	return li
 }
 
 // UpToDate checks if the remote Application is up to date with the
