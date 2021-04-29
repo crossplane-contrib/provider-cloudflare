@@ -96,7 +96,7 @@ func UpToDate(spec *v1alpha1.CustomHostnameParameters, o cloudflare.CustomHostna
 		return false
 	}
 
-	if spec.SSL.Wildcard != nil && o.SSL.Wildcard != nil && spec.SSL.Wildcard != o.SSL.Wildcard {
+	if spec.SSL.Wildcard != nil && o.SSL.Wildcard != nil && *spec.SSL.Wildcard != *o.SSL.Wildcard {
 		return false
 	}
 
