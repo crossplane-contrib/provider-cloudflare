@@ -131,6 +131,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errFallbackOriginNoZone)
 	}
 
+	// FallbackOrigin does not exist if we dont have an ID stored in external-name
+	foid := meta.GetExternalName(cr)
+	if foid == "" {
+		return managed.ExternalObservation{ResourceExists: false}, nil
+	}
+
 	fallbackorigin, err := e.client.CustomHostnameFallbackOrigin(ctx, *cr.Spec.ForProvider.Zone)
 
 	if err != nil {
@@ -197,6 +203,13 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errFallbackOriginUpdate)
 	}
 
+	foid := meta.GetExternalName(cr)
+
+	// Update should never be called on a nonexistent resource
+	if foid == "" {
+		return managed.ExternalUpdate{}, errors.New(errFallbackOriginUpdate)
+	}
+
 	er := fallbackorigins.UpdateFallbackOrigin(ctx, e.client, &cr.Spec.ForProvider)
 
 	return managed.ExternalUpdate{},
@@ -213,6 +226,13 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
+		return errors.New(errFallbackOriginDeletion)
+	}
+
+	foid := meta.GetExternalName(cr)
+
+	// Delete should never be called on a nonexistent resource
+	if foid == "" {
 		return errors.New(errFallbackOriginDeletion)
 	}
 

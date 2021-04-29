@@ -265,7 +265,14 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errCustomHostnameUpdate)
 	}
 
-	er := customhostnames.UpdateCustomHostname(ctx, e.client, meta.GetExternalName(cr), &cr.Spec.ForProvider)
+	chid := meta.GetExternalName(cr)
+
+	// Update should never be called on a nonexistent resource
+	if chid == "" {
+		return managed.ExternalUpdate{}, errors.New(errCustomHostnameUpdate)
+	}
+
+	er := customhostnames.UpdateCustomHostname(ctx, e.client, chid, &cr.Spec.ForProvider)
 
 	return managed.ExternalUpdate{},
 		errors.Wrap(
@@ -284,7 +291,14 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errCustomHostnameDeletion)
 	}
 
+	chid := meta.GetExternalName(cr)
+
+	// Delete should never be called on a nonexistent resource
+	if chid == "" {
+		return errors.New(errCustomHostnameDeletion)
+	}
+
 	return errors.Wrap(
-		e.client.DeleteCustomHostname(ctx, *cr.Spec.ForProvider.Zone, meta.GetExternalName(cr)),
+		e.client.DeleteCustomHostname(ctx, *cr.Spec.ForProvider.Zone, chid),
 		errCustomHostnameDeletion)
 }
