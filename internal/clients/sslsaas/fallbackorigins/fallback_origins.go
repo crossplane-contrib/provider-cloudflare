@@ -18,6 +18,7 @@ package fallbackorigins
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
@@ -30,7 +31,7 @@ const (
 	errFallbackOriginNotFound = "1551"
 )
 
-// Export an error type so that this can be checked for in the controller tests
+// ErrNotFound is an error type so that we can check for it in the controller tests
 type ErrNotFound struct{}
 
 func (e *ErrNotFound) Error() string { return "Fallback origin not found" }
@@ -53,8 +54,8 @@ func NewClient(cfg clients.Config) (Client, error) {
 func IsFallbackOriginNotFound(err error) bool {
 	// We check for a custom error type here because we need to be able
 	// to export something which can be used in the Mock for the controller tests.
-	err, ok := err.(*ErrNotFound)
-	if ok {
+	var notFoundError *ErrNotFound
+	if errors.As(err, &notFoundError) {
 		return true
 	}
 
