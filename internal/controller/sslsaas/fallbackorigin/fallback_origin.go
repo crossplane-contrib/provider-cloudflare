@@ -29,7 +29,6 @@ import (
 	rtv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -131,12 +130,6 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errFallbackOriginNoZone)
 	}
 
-	// FallbackOrigin does not exist if we dont have an ID stored in external-name
-	foid := meta.GetExternalName(cr)
-	if foid == "" {
-		return managed.ExternalObservation{ResourceExists: false}, nil
-	}
-
 	fallbackorigin, err := e.client.CustomHostnameFallbackOrigin(ctx, *cr.Spec.ForProvider.Zone)
 
 	if err != nil {
@@ -187,9 +180,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.Wrap(err, errFallbackOriginCreation)
 	}
 
-	meta.SetExternalName(cr, *cr.Spec.ForProvider.Origin)
-
-	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
+	return managed.ExternalCreation{}, nil
 
 }
 
@@ -200,13 +191,6 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
-		return managed.ExternalUpdate{}, errors.New(errFallbackOriginUpdate)
-	}
-
-	foid := meta.GetExternalName(cr)
-
-	// Update should never be called on a nonexistent resource
-	if foid == "" {
 		return managed.ExternalUpdate{}, errors.New(errFallbackOriginUpdate)
 	}
 
@@ -226,13 +210,6 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 
 	if cr.Spec.ForProvider.Zone == nil {
-		return errors.New(errFallbackOriginDeletion)
-	}
-
-	foid := meta.GetExternalName(cr)
-
-	// Delete should never be called on a nonexistent resource
-	if foid == "" {
 		return errors.New(errFallbackOriginDeletion)
 	}
 

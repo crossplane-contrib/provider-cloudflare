@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	rtfake "github.com/crossplane/crossplane-runtime/pkg/resource/fake"
@@ -51,10 +50,6 @@ import (
 
 type fallbackOriginModifier func(*v1alpha1.FallbackOrigin)
 
-func withExternalName(fallbackOriginModifier string) fallbackOriginModifier {
-	return func(r *v1alpha1.FallbackOrigin) { meta.SetExternalName(r, fallbackOriginModifier) }
-}
-
 func withZone(zoneID string) fallbackOriginModifier {
 	return func(r *v1alpha1.FallbackOrigin) { r.Spec.ForProvider.Zone = &zoneID }
 }
@@ -72,9 +67,8 @@ func fallbackOrigin(m ...fallbackOriginModifier) *v1alpha1.FallbackOrigin {
 }
 
 const (
-	externalName = "external-name"
-	zone         = "zone.com"
-	origin       = "fallback.zone.com"
+	zone   = "zone.com"
+	origin = "fallback.zone.com"
 )
 
 func TestConnect(t *testing.T) {
@@ -191,7 +185,7 @@ func TestObserve(t *testing.T) {
 		args   args
 		want   want
 	}{
-		"errNotFallbackOrigin": {
+		"ErrNotFallbackOrigin": {
 			reason: "An error should be returned if the managed resource is not a *FallbackOrigin",
 			args: args{
 				mg: nil,
@@ -201,9 +195,13 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"ErrNoFallbackOrigin": {
-			reason: "We should return ResourceExists: false when no external name is set",
+			reason: "We should return ResourceExists: false when the resource does not exist",
 			fields: fields{
-				client: fake.MockClient{},
+				client: fake.MockClient{
+					MockCustomHostnameFallbackOrigin: func(ctx context.Context, zoneID string) (cloudflare.CustomHostnameFallbackOrigin, error) {
+						return cloudflare.CustomHostnameFallbackOrigin{}, &fallbackorigins.ErrNotFound{}
+					},
+				},
 			},
 			args: args{
 				mg: fallbackOrigin(
@@ -226,7 +224,6 @@ func TestObserve(t *testing.T) {
 			},
 			args: args{
 				mg: fallbackOrigin(
-					withExternalName(externalName),
 					withZone(zone),
 					withOrigin(origin),
 				),
@@ -264,7 +261,6 @@ func TestObserve(t *testing.T) {
 			},
 			args: args{
 				mg: fallbackOrigin(
-					withExternalName(externalName),
 					withZone(zone),
 					withOrigin(origin),
 				),
@@ -336,7 +332,6 @@ func TestCreate(t *testing.T) {
 			},
 			args: args{
 				mg: fallbackOrigin(
-					withExternalName(externalName),
 					withZone(zone),
 					withOrigin(origin),
 				),
@@ -347,7 +342,7 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"Success": {
-			reason: "We should return ExternalNameAssigned: true and no error when a FallbackOrigin is created",
+			reason: "We should return no error when a FallbackOrigin is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockUpdateCustomHostnameFallbackOrigin: func(ctx context.Context, zoneID string, chfo cloudflare.CustomHostnameFallbackOrigin) (*cloudflare.CustomHostnameFallbackOriginResponse, error) {
@@ -364,9 +359,7 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o:   managed.ExternalCreation{},
 				err: nil,
 			},
 		},
@@ -417,25 +410,6 @@ func TestUpdate(t *testing.T) {
 			want: want{
 				err: errors.New(errNotFallbackOrigin),
 			},
-		}, "ErrNoFallbackOrigin": {
-			reason: "We should return an error when no external name is set",
-			fields: fields{
-				client: fake.MockClient{
-					MockUpdateCustomHostnameFallbackOrigin: func(ctx context.Context, zoneID string, chfo cloudflare.CustomHostnameFallbackOrigin) (*cloudflare.CustomHostnameFallbackOriginResponse, error) {
-						return &cloudflare.CustomHostnameFallbackOriginResponse{}, nil
-					},
-				},
-			},
-			args: args{
-				mg: fallbackOrigin(
-					withZone(zone),
-					withOrigin(origin),
-				),
-			},
-			want: want{
-				o:   managed.ExternalUpdate{},
-				err: errors.New(errFallbackOriginUpdate),
-			},
 		},
 		"ErrFallbackOriginUpdate": {
 			reason: "We should return any errors during the update process",
@@ -448,7 +422,6 @@ func TestUpdate(t *testing.T) {
 			},
 			args: args{
 				mg: fallbackOrigin(
-					withExternalName(externalName),
 					withZone(zone),
 					withOrigin(origin),
 				),
@@ -474,7 +447,6 @@ func TestUpdate(t *testing.T) {
 			},
 			args: args{
 				mg: fallbackOrigin(
-					withExternalName(externalName),
 					withZone(zone),
 					withOrigin(origin),
 				),
@@ -561,7 +533,6 @@ func TestDelete(t *testing.T) {
 			},
 			args: args{
 				mg: fallbackOrigin(
-					withExternalName(externalName),
 					withZone(zone),
 					withOrigin(origin),
 				),
@@ -581,7 +552,6 @@ func TestDelete(t *testing.T) {
 			},
 			args: args{
 				mg: fallbackOrigin(
-					withExternalName(externalName),
 					withZone(zone),
 					withOrigin(origin),
 				),

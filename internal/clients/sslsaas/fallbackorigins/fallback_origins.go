@@ -30,6 +30,11 @@ const (
 	errFallbackOriginNotFound = "1551"
 )
 
+// Export an error type so that this can be checked for in the controller tests
+type ErrNotFound struct{}
+
+func (e *ErrNotFound) Error() string { return "Fallback origin not found" }
+
 // Client is a Cloudflare API client that implements methods for working
 // with Fallback Origins.
 type Client interface {
@@ -46,6 +51,14 @@ func NewClient(cfg clients.Config) (Client, error) {
 // IsFallbackOriginNotFound returns true if the passed error indicates
 // that the FallbackOrigin is not found (been deleted or not set at all).
 func IsFallbackOriginNotFound(err error) bool {
+	// We check for a custom error type here because we need to be able
+	// to export something which can be used in the Mock for the controller tests.
+	err, ok := err.(*ErrNotFound)
+	if ok {
+		return true
+	}
+
+	// The actual Cloudflare API indicates a "not found" with this error code.
 	errStr := err.Error()
 	return strings.Contains(errStr, errFallbackOriginNotFound)
 }
