@@ -503,25 +503,6 @@ func TestDelete(t *testing.T) {
 				err: errors.New(errNotFallbackOrigin),
 			},
 		},
-		"ErrNoFallbackOrigin": {
-			reason: "We should return an error when no external name is set",
-			fields: fields{
-				client: fake.MockClient{
-					MockDeleteCustomHostnameFallbackOrigin: func(ctx context.Context, zoneID string) error {
-						return nil
-					},
-				},
-			},
-			args: args{
-				mg: fallbackOrigin(
-					withZone(zone),
-					withOrigin(origin),
-				),
-			},
-			want: want{
-				err: errors.New(errFallbackOriginDeletion),
-			},
-		},
 		"ErrFallbackOriginDelete": {
 			reason: "We should return any errors during the delete process",
 			fields: fields{
