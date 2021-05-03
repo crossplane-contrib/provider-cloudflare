@@ -31,7 +31,7 @@ const (
 	errFallbackOriginNotFound = "1551"
 )
 
-// ErrNotFound is an error type so that we can check for it in the controller tests
+// ErrNotFound is an error type so that we can return it in the controller test mocks
 type ErrNotFound struct{}
 
 func (e *ErrNotFound) Error() string { return "Fallback origin not found" }
