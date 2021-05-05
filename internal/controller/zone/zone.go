@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
 	"k8s.io/client-go/util/workqueue"
@@ -150,20 +149,16 @@ func (e *external) Observe(ctx context.Context,
 		cr.Status.SetConditions(rtv1.Unavailable())
 	}
 
-	observedSettings, err := zones.LoadSettingsForZone(ctx, e.client, z.ID)
-	if err != nil {
+	observedSettings := &v1alpha1.ZoneSettings{}
+	if err := zones.LoadSettingsForZone(ctx, e.client, z.ID, observedSettings); err != nil {
 		return managed.ExternalObservation{ResourceExists: true},
 			errors.Wrap(err, errZoneObservation)
 	}
 
-	desiredSettings := zones.ZoneToSettingsMap(&cr.Spec.ForProvider.Settings)
-
 	return managed.ExternalObservation{
-		ResourceExists: true,
-		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, z,
-			observedSettings, desiredSettings),
-		ResourceUpToDate: zones.UpToDate(&cr.Spec.ForProvider, z) &&
-			cmp.Equal(observedSettings, desiredSettings),
+		ResourceExists:          true,
+		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, z, observedSettings),
+		ResourceUpToDate:        zones.UpToDate(&cr.Spec.ForProvider, z, observedSettings),
 	}, nil
 }
 

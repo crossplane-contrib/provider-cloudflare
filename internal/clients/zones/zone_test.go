@@ -37,8 +37,7 @@ func TestLateInitialize(t *testing.T) {
 	type args struct {
 		zp  *v1alpha1.ZoneParameters
 		z   cloudflare.Zone
-		czs ZoneSettingsMap
-		dzs ZoneSettingsMap
+		czs *v1alpha1.ZoneSettings
 	}
 
 	type want struct {
@@ -59,7 +58,41 @@ func TestLateInitialize(t *testing.T) {
 			},
 		},
 		"Success": {
-			reason: "LateInit should update fields and settings from a Zone and ZoneSettingsMap",
+			reason: "LateInit should update fields from a Zone",
+			args: args{
+				zp: &v1alpha1.ZoneParameters{
+					AccountID:         ptr.StringPtr("beef"),
+					PlanID:            ptr.StringPtr("dead"),
+					VanityNameServers: []string{},
+					Settings:          v1alpha1.ZoneSettings{},
+				},
+				z: cloudflare.Zone{
+					Account: cloudflare.Account{
+						ID: "beef",
+					},
+					Plan: cloudflare.ZonePlan{
+						ZonePlanCommon: cloudflare.ZonePlanCommon{
+							ID: "dead",
+						},
+					},
+					Paused:   false,
+					VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
+				},
+				czs: &v1alpha1.ZoneSettings{},
+			},
+			want: want{
+				o: true,
+				zp: &v1alpha1.ZoneParameters{
+					Paused:            ptr.BoolPtr(false),
+					AccountID:         ptr.StringPtr("beef"),
+					PlanID:            ptr.StringPtr("dead"),
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
+					Settings:          v1alpha1.ZoneSettings{},
+				},
+			},
+		},
+		"SuccessSettings": {
+			reason: "LateInit should update settings from a Zone",
 			args: args{
 				zp: &v1alpha1.ZoneParameters{
 					AccountID:         ptr.StringPtr("beef"),
@@ -67,6 +100,9 @@ func TestLateInitialize(t *testing.T) {
 					PlanID:            ptr.StringPtr("dead"),
 					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
 					Settings: v1alpha1.ZoneSettings{
+						// This setting will be lateInited
+						AdvancedDDOS: nil,
+						// This setting will not be overwritten
 						BrowserCacheTTL: ptr.Int64Ptr(900),
 					},
 				},
@@ -80,21 +116,16 @@ func TestLateInitialize(t *testing.T) {
 						},
 					},
 					// This field should not be late-inited, as the value
-					// is already set true in zp
+					// is already set false in zp
 					Paused:   false,
 					VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
 				},
 				// 'Current' Settings are those settings that were observed
 				// from the API.
 				// Only AdvancedDDOS should be late-inited here.
-				czs: ZoneSettingsMap{
-					cfsAdvancedDDOS:    "yes",
-					cfsBrowserCacheTTL: 3600,
-				},
-				// 'Desired' settings are our locally desired settings and
-				// should not be overwritten by API settings.
-				dzs: ZoneSettingsMap{
-					cfsBrowserCacheTTL: 900,
+				czs: &v1alpha1.ZoneSettings{
+					AdvancedDDOS:    ptr.StringPtr("yes"),
+					BrowserCacheTTL: ptr.Int64Ptr(3600),
 				},
 			},
 			want: want{
@@ -111,54 +142,11 @@ func TestLateInitialize(t *testing.T) {
 				},
 			},
 		},
-		"SuccessIgnored": {
-			reason: "LateInit should ignore fields in an ignorelist",
-			args: args{
-				zp: &v1alpha1.ZoneParameters{
-					AccountID:         ptr.StringPtr("beef"),
-					Paused:            ptr.BoolPtr(false),
-					PlanID:            ptr.StringPtr("dead"),
-					Settings:          v1alpha1.ZoneSettings{},
-					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
-				},
-				z: cloudflare.Zone{
-					Account: cloudflare.Account{
-						ID: "beef",
-					},
-					Plan: cloudflare.ZonePlan{
-						ZonePlanCommon: cloudflare.ZonePlanCommon{
-							ID: "dead",
-						},
-					},
-					// This field should not be late-inited, as the value
-					// is already set true in zp
-					Paused:   false,
-					VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
-				},
-				// 'Current' Settings are those settings that were observed
-				// from the API.
-				// Ciphers should be ignored here as it is in the ignore list.
-				czs: ZoneSettingsMap{
-					"ciphers": "blah",
-				},
-				dzs: ZoneSettingsMap{},
-			},
-			want: want{
-				o: false,
-				zp: &v1alpha1.ZoneParameters{
-					Paused:            ptr.BoolPtr(false),
-					AccountID:         ptr.StringPtr("beef"),
-					PlanID:            ptr.StringPtr("dead"),
-					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
-					Settings:          v1alpha1.ZoneSettings{},
-				},
-			},
-		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := LateInitialize(tc.args.zp, tc.args.z, tc.args.czs, tc.args.dzs)
+			got := LateInitialize(tc.args.zp, tc.args.z, tc.args.czs)
 			if diff := cmp.Diff(tc.want.o, got); diff != "" {
 				t.Errorf("\n%s\nLateInit(...): -want, +got:\n%s\n", tc.reason, diff)
 			}
@@ -170,8 +158,9 @@ func TestLateInitialize(t *testing.T) {
 }
 func TestUpToDate(t *testing.T) {
 	type args struct {
-		zp *v1alpha1.ZoneParameters
-		z  cloudflare.Zone
+		zp  *v1alpha1.ZoneParameters
+		z   cloudflare.Zone
+		ozs *v1alpha1.ZoneSettings
 	}
 
 	type want struct {
@@ -183,14 +172,14 @@ func TestUpToDate(t *testing.T) {
 		args   args
 		want   want
 	}{
-		"UpToDateSpecNil": {
+		"SpecNil": {
 			reason: "UpToDate should return true when not passed a spec",
 			args:   args{},
 			want: want{
 				o: true,
 			},
 		},
-		"UpToDateEmptyParams": {
+		"EmptyParams": {
 			reason: "UpToDate should return true and not panic with nil values",
 			args: args{
 				zp: &v1alpha1.ZoneParameters{},
@@ -208,12 +197,13 @@ func TestUpToDate(t *testing.T) {
 					},
 					VanityNS: []string{},
 				},
+				ozs: &v1alpha1.ZoneSettings{},
 			},
 			want: want{
 				o: true,
 			},
 		},
-		"UpToDatePaused": {
+		"Paused": {
 			reason: "UpToDate should return false if Paused is not up to date",
 			args: args{
 				zp: &v1alpha1.ZoneParameters{
@@ -222,12 +212,13 @@ func TestUpToDate(t *testing.T) {
 				z: cloudflare.Zone{
 					Paused: true,
 				},
+				ozs: &v1alpha1.ZoneSettings{},
 			},
 			want: want{
 				o: false,
 			},
 		},
-		"UpToDatePlanFalse": {
+		"PlanFalse": {
 			reason: "UpToDate should return false if PlanID is not one of Plan or PlanPending IDs",
 			args: args{
 				zp: &v1alpha1.ZoneParameters{
@@ -245,12 +236,13 @@ func TestUpToDate(t *testing.T) {
 						},
 					},
 				},
+				ozs: &v1alpha1.ZoneSettings{},
 			},
 			want: want{
 				o: false,
 			},
 		},
-		"UpToDatePlanTrue": {
+		"PlanTrue": {
 			reason: "UpToDate should return true if PlanID is current Plan ID",
 			args: args{
 				zp: &v1alpha1.ZoneParameters{
@@ -263,16 +255,18 @@ func TestUpToDate(t *testing.T) {
 						},
 					},
 				},
+				ozs: &v1alpha1.ZoneSettings{},
 			},
 			want: want{
 				o: true,
 			},
 		},
-		"UpToDatePlanPendingTrue": {
+		"PlanPendingTrue": {
 			reason: "UpToDate should return true if PlanID is pending Plan ID",
 			args: args{
 				zp: &v1alpha1.ZoneParameters{
-					PlanID: ptr.StringPtr("cake"),
+					PlanID:   ptr.StringPtr("cake"),
+					Settings: v1alpha1.ZoneSettings{},
 				},
 				z: cloudflare.Zone{
 					PlanPending: cloudflare.ZonePlan{
@@ -281,16 +275,41 @@ func TestUpToDate(t *testing.T) {
 						},
 					},
 				},
+				ozs: &v1alpha1.ZoneSettings{},
 			},
 			want: want{
 				o: true,
+			},
+		},
+		"SettingsFalse": {
+			reason: "UpToDate should return false if settings are different",
+			args: args{
+				zp: &v1alpha1.ZoneParameters{
+					PlanID: ptr.StringPtr("cake"),
+					Settings: v1alpha1.ZoneSettings{
+						ZeroRTT: ptr.StringPtr("no"),
+					},
+				},
+				z: cloudflare.Zone{
+					PlanPending: cloudflare.ZonePlan{
+						ZonePlanCommon: cloudflare.ZonePlanCommon{
+							ID: "cake",
+						},
+					},
+				},
+				ozs: &v1alpha1.ZoneSettings{
+					ZeroRTT: ptr.StringPtr("yes"),
+				},
+			},
+			want: want{
+				o: false,
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := UpToDate(tc.args.zp, tc.args.z)
+			got := UpToDate(tc.args.zp, tc.args.z, tc.args.ozs)
 			if diff := cmp.Diff(tc.want.o, got); diff != "" {
 				t.Errorf("\n%s\nUpToDate(...): -want, +got:\n%s\n", tc.reason, diff)
 			}
@@ -392,6 +411,80 @@ func TestUpdateZone(t *testing.T) {
 			err := UpdateZone(tc.args.ctx, tc.fields.client, tc.args.id, tc.args.zp)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\n%s\nUpdateZone(...): -want error, +got error:\n%s\n", tc.reason, diff)
+			}
+		})
+	}
+}
+
+func TestLoadSettingsForZone(t *testing.T) {
+	type fields struct {
+		client Client
+	}
+
+	type args struct {
+		ctx context.Context
+		id  string
+		zs  v1alpha1.ZoneSettings
+	}
+
+	type want struct {
+		err error
+		o   v1alpha1.ZoneSettings
+	}
+
+	cases := map[string]struct {
+		reason string
+		fields fields
+		args   args
+		want   want
+	}{
+		"LoadUnknownSetting": {
+			// Note: This is an academic test - all of the keys we use are static strings
+			// So we _cannot_ load a setting into a struct without knowing about it.
+			// We add this test to avoid regressions if the method used to load settings
+			// is changed, as it has caused problems in the past.
+			reason: "LoadSettingsForZone should not error when reading unknown settings",
+			fields: fields{
+				client: fake.MockClient{
+					// When the ZoneDetails method is called on this fake client,
+					// return an error that we can compare.
+					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
+						return cloudflare.Zone{}, nil
+					},
+					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
+						return &cloudflare.ZoneSettingResponse{
+							Result: []cloudflare.ZoneSetting{
+								{ID: "unknownKey", Value: "foo"},
+							},
+						}, nil
+					},
+				},
+			},
+			args: args{
+				id: "abcd",
+				zs: v1alpha1.ZoneSettings{
+					AdvancedDDOS: ptr.StringPtr("yes"),
+				},
+			},
+			want: want{
+				err: nil,
+				o: v1alpha1.ZoneSettings{
+					AdvancedDDOS: ptr.StringPtr("yes"),
+				},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := tc.args.zs.DeepCopy()
+
+			err := LoadSettingsForZone(tc.args.ctx, tc.fields.client, tc.args.id, &tc.args.zs)
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("\n%s\nLoadSettingsForZone(...): -want error, +got error:\n%s\n", tc.reason, diff)
+			}
+			if diff := cmp.Diff(tc.want.o, *got); diff != "" {
+				t.Errorf("\n%s\nLoadSettingsForZone(...): -want, +got:\n%s\n", tc.reason, diff)
 			}
 		})
 	}

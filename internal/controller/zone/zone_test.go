@@ -26,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	ptr "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -44,17 +45,29 @@ import (
 
 type zoneModifier func(*v1alpha1.Zone)
 
+func withAccount(sValue *string) zoneModifier {
+	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.AccountID = sValue }
+}
+func withEdgeCacheTTL(sValue *int64) zoneModifier {
+	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.Settings.EdgeCacheTTL = sValue }
+}
 func withExternalName(zoneID string) zoneModifier {
 	return func(r *v1alpha1.Zone) { meta.SetExternalName(r, zoneID) }
 }
-func withSetting(sValue int64) zoneModifier {
-	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.Settings.EdgeCacheTTL = &sValue }
+func withNS(sValue []string) zoneModifier {
+	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.VanityNameServers = sValue }
 }
-func withPaused(paused bool) zoneModifier {
-	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.Paused = &paused }
+func withPaused(paused *bool) zoneModifier {
+	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.Paused = paused }
 }
-func withType(typ string) zoneModifier {
-	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.Type = &typ }
+func withPlan(sValue *string) zoneModifier {
+	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.PlanID = sValue }
+}
+func withType(typ *string) zoneModifier {
+	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.Type = typ }
+}
+func withZeroRTT(sValue *string) zoneModifier {
+	return func(r *v1alpha1.Zone) { r.Spec.ForProvider.Settings.ZeroRTT = sValue }
 }
 
 func zone(m ...zoneModifier) *v1alpha1.Zone {
@@ -158,6 +171,20 @@ func TestConnect(t *testing.T) {
 
 func TestObserve(t *testing.T) {
 	errBoom := errors.New("boom")
+	testZone := cloudflare.Zone{
+		Account: cloudflare.Account{
+			ID:   "a1234",
+			Name: "blah",
+		},
+		Plan: cloudflare.ZonePlan{
+			ZonePlanCommon: cloudflare.ZonePlanCommon{
+				ID:   "a1235",
+				Name: "blah1",
+			},
+		},
+		Paused:   true,
+		VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
+	}
 
 	type fields struct {
 		client zones.Client
@@ -219,35 +246,110 @@ func TestObserve(t *testing.T) {
 				err: errors.Wrap(errBoom, errZoneLookup),
 			},
 		},
-		"Success": {
+		"SuccessNeedsUpdate": {
 			reason: "We should return ResourceExists: true and no error when a zone is found",
 			fields: fields{
 				client: fake.MockClient{
 					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
-						return cloudflare.Zone{
-							ID:       zoneID,
-							Paused:   true,
-							VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
-						}, nil
+						return testZone, nil
 					},
 					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
 						return &cloudflare.ZoneSettingResponse{
 							Result: []cloudflare.ZoneSetting{
-								{ID: "test1", Value: "foo"},
-								{ID: "test2", Value: "bar"},
+								{ID: "edge_cache_ttl", Value: "7200", Editable: true},
 							},
 						}, nil
 					},
 				},
 			},
 			args: args{
-				mg: zone(withExternalName("1234beef"), withPaused(false)),
+				mg: zone(
+					withExternalName("1234beef"),
+					// Paused is different than input params, this will trigger
+					// ResourceUpToDate: false
+					withPaused(ptr.BoolPtr(false)),
+					withEdgeCacheTTL(ptr.Int64(7200)),
+					withAccount(ptr.StringPtr("a1234")),
+					withPlan(ptr.StringPtr("a1235")),
+					withNS([]string{"ns1.lele.com", "ns2.woowoo.org"}),
+				),
+			},
+			want: want{
+				o: managed.ExternalObservation{
+					ResourceExists:          true,
+					ResourceUpToDate:        false,
+					ResourceLateInitialized: false,
+				},
+				err: nil,
+			},
+		},
+		"SuccessLateInit": {
+			reason: "We should return ResourceLateInitialized: true and ResourceUpToDate: false when updates are required",
+			fields: fields{
+				client: fake.MockClient{
+					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
+						return testZone, nil
+					},
+					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
+						return &cloudflare.ZoneSettingResponse{
+							Result: []cloudflare.ZoneSetting{
+								{ID: "edge_cache_ttl", Value: "7200", Editable: true},
+								{ID: "0rtt", Value: "off", Editable: true},
+							},
+						}, nil
+					},
+				},
+			},
+			args: args{
+				mg: zone(
+					withExternalName("1234beef"),
+					withPaused(ptr.BoolPtr(false)),
+					withAccount(ptr.StringPtr("a1234")),
+					withPlan(ptr.StringPtr("a1235")),
+					withNS([]string{"ns1.lele.com", "ns2.woowoo.org"}),
+				),
 			},
 			want: want{
 				o: managed.ExternalObservation{
 					ResourceExists:          true,
 					ResourceUpToDate:        false,
 					ResourceLateInitialized: true,
+				},
+				err: nil,
+			},
+		},
+		"Success": {
+			reason: "We should return ResourceLateInitialized: false and ResourceUpToDate: false when resource exactly matches remote",
+			fields: fields{
+				client: fake.MockClient{
+					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
+						return testZone, nil
+					},
+					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
+						return &cloudflare.ZoneSettingResponse{
+							Result: []cloudflare.ZoneSetting{
+								{ID: "edge_cache_ttl", Value: "7200", Editable: true},
+								{ID: "0rtt", Value: "off", Editable: true},
+							},
+						}, nil
+					},
+				},
+			},
+			args: args{
+				mg: zone(
+					withExternalName("1234beef"),
+					withPaused(ptr.BoolPtr(false)),
+					withZeroRTT(ptr.StringPtr("off")),
+					withAccount(ptr.StringPtr("a1234")),
+					withPlan(ptr.StringPtr("a1235")),
+					withNS([]string{"ns1.lele.com", "ns2.woowoo.org"}),
+				),
+			},
+			want: want{
+				o: managed.ExternalObservation{
+					ResourceExists:          true,
+					ResourceUpToDate:        false,
+					ResourceLateInitialized: false,
 				},
 				err: nil,
 			},
@@ -310,7 +412,7 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: zone(withExternalName("1234beef"), withType("full")),
+				mg: zone(withExternalName("1234beef"), withType(ptr.StringPtr("full"))),
 			},
 			want: want{
 				o:   managed.ExternalCreation{},
@@ -333,7 +435,7 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: zone(withPaused(false), withType("full")),
+				mg: zone(withPaused(ptr.BoolPtr(false)), withType(ptr.StringPtr("full"))),
 			},
 			want: want{
 				o: managed.ExternalCreation{
@@ -429,8 +531,8 @@ func TestUpdate(t *testing.T) {
 			args: args{
 				mg: zone(
 					withExternalName("1234beef"),
-					withType("full"),
-					withPaused(true),
+					withType(ptr.StringPtr("full")),
+					withPaused(ptr.BoolPtr(true)),
 				),
 			},
 			want: want{
@@ -470,9 +572,9 @@ func TestUpdate(t *testing.T) {
 			args: args{
 				mg: zone(
 					withExternalName("1234beef"),
-					withPaused(true),
-					withType("full"),
-					withSetting(900),
+					withPaused(ptr.BoolPtr(true)),
+					withType(ptr.StringPtr("full")),
+					withEdgeCacheTTL(ptr.Int64Ptr(900)),
 				),
 			},
 			want: want{
@@ -569,9 +671,9 @@ func TestDelete(t *testing.T) {
 			args: args{
 				mg: zone(
 					withExternalName("1234beef"),
-					withPaused(true),
-					withType("full"),
-					withSetting(900),
+					withPaused(ptr.BoolPtr(true)),
+					withType(ptr.StringPtr("full")),
+					withEdgeCacheTTL(ptr.Int64Ptr(900)),
 				),
 			},
 			want: want{

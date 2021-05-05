@@ -96,22 +96,6 @@ const (
 	cfsWebSockets              = "websockets"
 )
 
-// ignoreSettings is a temporary list of settings we should
-// ignore to avoid continual late-initialisation of settings
-// we don't yet support.
-// TODO: We should automatically ignore any settings that
-// we do not support, otherwise we will continually late-init
-// fields that have been added in the Cloudflare API but not
-// in this resource.
-var ignoreSettings = map[string]struct{}{
-	"0rtt":            {},
-	"ciphers":         {},
-	"tls_1_2_only":    {},
-	"minify":          {},
-	"mobile_redirect": {},
-	"security_header": {},
-}
-
 // ZoneSettingsMap contains pairs of keys and values
 // that represent settings on a Zone.
 type ZoneSettingsMap map[string]interface{}
@@ -165,7 +149,7 @@ func GenerateObservation(in cloudflare.Zone) v1alpha1.ZoneObservation {
 
 // LateInitialize initializes ZoneParameters based on the remote resource
 func LateInitialize(spec *v1alpha1.ZoneParameters, z cloudflare.Zone,
-	current, desired ZoneSettingsMap) bool {
+	ozs *v1alpha1.ZoneSettings) bool {
 
 	if spec == nil {
 		return false
@@ -189,7 +173,12 @@ func LateInitialize(spec *v1alpha1.ZoneParameters, z cloudflare.Zone,
 		li = true
 	}
 
-	if LateInitializeSettings(current, desired, &spec.Settings) {
+	// Create a settings map from our Desired and Observed
+	// Settings, so we can work out which fields need initialising.
+	desired := zoneToSettingsMap(&spec.Settings)
+	observed := zoneToSettingsMap(ozs)
+
+	if LateInitializeSettings(observed, desired, &spec.Settings) {
 		li = true
 	}
 
@@ -197,21 +186,18 @@ func LateInitialize(spec *v1alpha1.ZoneParameters, z cloudflare.Zone,
 }
 
 // LateInitializeSettings initializes Settings based on the remote resource
-func LateInitializeSettings(current, desired ZoneSettingsMap, initOn *v1alpha1.ZoneSettings) bool {
+func LateInitializeSettings(observed, desired ZoneSettingsMap, initOn *v1alpha1.ZoneSettings) bool {
 	li := false
 
-	// For each retrieved setting
-	for k, v := range current {
-		// If field name is in ignored list, continue.
-		// TODO: Remove ignore list, we should support all available
-		// Cloudflare Zone settings.
-		if _, ok := ignoreSettings[k]; ok {
+	// For each setting we retrieved from the API
+	for k, v := range observed {
+		// If the remote value is nil, skip
+		if v == nil {
 			continue
 		}
-
-		// Check to see if setting is already desired
+		// If our local value is nil (i.e. unset), then init it
+		// and set our late init state to true.
 		if _, ok := desired[k]; !ok {
-			// If not, late-init it
 			desired[k] = v
 			li = true
 		}
@@ -219,7 +205,7 @@ func LateInitializeSettings(current, desired ZoneSettingsMap, initOn *v1alpha1.Z
 	// If we lateInited any fields, update them on the
 	// Zone settings.
 	if li {
-		SettingsMapToZone(desired, initOn)
+		settingsMapToZone(desired, initOn)
 	}
 	return li
 }
@@ -227,12 +213,12 @@ func LateInitializeSettings(current, desired ZoneSettingsMap, initOn *v1alpha1.Z
 // LoadSettingsForZone loads Zone settings from the cloudflare API
 // and returns a ZoneSettingsMap.
 func LoadSettingsForZone(ctx context.Context,
-	client Client, zoneID string) (ZoneSettingsMap, error) {
+	client Client, zoneID string, zs *v1alpha1.ZoneSettings) error {
 
 	// Get settings
 	sr, err := client.ZoneSettings(ctx, zoneID)
 	if err != nil {
-		return nil, errors.Wrap(err, errLoadSettings)
+		return errors.Wrap(err, errLoadSettings)
 	}
 
 	// Parse the result into a map based on key
@@ -245,13 +231,13 @@ func LoadSettingsForZone(ctx context.Context,
 		}
 		sbk[setting.ID] = setting.Value
 	}
-
-	return sbk, nil
+	settingsMapToZone(sbk, zs)
+	return nil
 }
 
-// SettingsMapToZone uses static definitions to map each setting
+// settingsMapToZone uses static definitions to map each setting
 // to its' value on a ZoneSettings instance.
-func SettingsMapToZone(sm ZoneSettingsMap, zs *v1alpha1.ZoneSettings) {
+func settingsMapToZone(sm ZoneSettingsMap, zs *v1alpha1.ZoneSettings) {
 	zs.ZeroRTT = clients.ToString(sm[cfsZeroRTT])
 	zs.AdvancedDDOS = clients.ToString(sm[cfsAdvancedDDOS])
 	zs.AlwaysOnline = clients.ToString(sm[cfsAlwaysOnline])
@@ -298,77 +284,84 @@ func SettingsMapToZone(sm ZoneSettingsMap, zs *v1alpha1.ZoneSettings) {
 	zs.WebSockets = clients.ToString(sm[cfsWebSockets])
 }
 
-func mapSetString(sm ZoneSettingsMap, key string, value *string) {
-	// Ignore nil pointers
-	if value == nil {
+func mapSet(sm ZoneSettingsMap, key string, value interface{}) {
+	// Note for clarity: These case statements _cannot_ be combined
+	// as they are extracting the individual value type pointers
+	// from the interface that is passed in.
+	switch vt := (value).(type) {
+	case *string:
+		if vt != nil {
+			sm[key] = *vt
+		}
+	case *int64:
+		if vt != nil {
+			sm[key] = *vt
+		}
+	// Empty pointer values are ignored
+	default:
 		return
 	}
-	sm[key] = *value
-}
-
-func mapSetNumber(sm ZoneSettingsMap, key string, value *int64) {
-	// Ignore nil pointers
-	if value == nil {
-		return
-	}
-	sm[key] = *value
 }
 
 // ZoneToSettingsMap uses static definitions to map each setting
 // from its' value on a ZoneSettings instance.
-func ZoneToSettingsMap(zs *v1alpha1.ZoneSettings) ZoneSettingsMap {
+func zoneToSettingsMap(zs *v1alpha1.ZoneSettings) ZoneSettingsMap {
 	sm := ZoneSettingsMap{}
-	mapSetString(sm, cfsZeroRTT, zs.ZeroRTT)
-	mapSetString(sm, cfsAdvancedDDOS, zs.AdvancedDDOS)
-	mapSetString(sm, cfsAlwaysOnline, zs.AlwaysOnline)
-	mapSetString(sm, cfsAlwaysUseHTTPS, zs.AlwaysUseHTTPS)
-	mapSetString(sm, cfsAutomaticHTTPSRewrites, zs.AutomaticHTTPSRewrites)
-	mapSetString(sm, cfsBrotli, zs.Brotli)
-	mapSetNumber(sm, cfsBrowserCacheTTL, zs.BrowserCacheTTL)
-	mapSetString(sm, cfsBrowserCheck, zs.BrowserCheck)
-	mapSetString(sm, cfsCacheLevel, zs.CacheLevel)
-	mapSetNumber(sm, cfsChallengeTTL, zs.ChallengeTTL)
-	mapSetString(sm, cfsCnameFlattening, zs.CnameFlattening)
-	mapSetString(sm, cfsDevelopmentMode, zs.DevelopmentMode)
-	mapSetNumber(sm, cfsEdgeCacheTTL, zs.EdgeCacheTTL)
-	mapSetString(sm, cfsEmailObfuscation, zs.EmailObfuscation)
-	mapSetString(sm, cfsHotlinkProtection, zs.HotlinkProtection)
-	mapSetString(sm, cfsHTTP2, zs.HTTP2)
-	mapSetString(sm, cfsHTTP3, zs.HTTP3)
-	mapSetString(sm, cfsIPGeolocation, zs.IPGeolocation)
-	mapSetString(sm, cfsIPv6, zs.IPv6)
-	mapSetString(sm, cfsLogToCloudflare, zs.LogToCloudflare)
-	mapSetNumber(sm, cfsMaxUpload, zs.MaxUpload)
-	mapSetString(sm, cfsMinTLSVersion, zs.MinTLSVersion)
-	mapSetString(sm, cfsMirage, zs.Mirage)
-	mapSetString(sm, cfsOpportunisticEncryption, zs.OpportunisticEncryption)
-	mapSetString(sm, cfsOpportunisticOnion, zs.OpportunisticOnion)
-	mapSetString(sm, cfsOrangeToOrange, zs.OrangeToOrange)
-	mapSetString(sm, cfsOriginErrorPagePassThru, zs.OriginErrorPagePassThru)
-	mapSetString(sm, cfsPolish, zs.Polish)
-	mapSetString(sm, cfsPrefetchPreload, zs.PrefetchPreload)
-	mapSetString(sm, cfsPrivacyPass, zs.PrivacyPass)
-	mapSetString(sm, cfsPseudoIPv4, zs.PseudoIPv4)
-	mapSetString(sm, cfsResponseBuffering, zs.ResponseBuffering)
-	mapSetString(sm, cfsRocketLoader, zs.RocketLoader)
-	mapSetString(sm, cfsSecurityLevel, zs.SecurityLevel)
-	mapSetString(sm, cfsServerSideExclude, zs.ServerSideExclude)
-	mapSetString(sm, cfsSortQueryStringForCache, zs.SortQueryStringForCache)
-	mapSetString(sm, cfsSSL, zs.SSL)
-	mapSetString(sm, cfsTLS13, zs.TLS13)
-	mapSetString(sm, cfsTLSClientAuth, zs.TLSClientAuth)
-	mapSetString(sm, cfsTrueClientIPHeader, zs.TrueClientIPHeader)
-	mapSetString(sm, cfsVisitorIP, zs.VisitorIP)
-	mapSetString(sm, cfsWAF, zs.WAF)
-	mapSetString(sm, cfsWebP, zs.WebP)
-	mapSetString(sm, cfsWebSockets, zs.WebSockets)
+	mapSet(sm, cfsZeroRTT, zs.ZeroRTT)
+	mapSet(sm, cfsAdvancedDDOS, zs.AdvancedDDOS)
+	mapSet(sm, cfsAlwaysOnline, zs.AlwaysOnline)
+	mapSet(sm, cfsAlwaysUseHTTPS, zs.AlwaysUseHTTPS)
+	mapSet(sm, cfsAutomaticHTTPSRewrites, zs.AutomaticHTTPSRewrites)
+	mapSet(sm, cfsBrotli, zs.Brotli)
+	mapSet(sm, cfsBrowserCacheTTL, zs.BrowserCacheTTL)
+	mapSet(sm, cfsBrowserCheck, zs.BrowserCheck)
+	mapSet(sm, cfsCacheLevel, zs.CacheLevel)
+	mapSet(sm, cfsChallengeTTL, zs.ChallengeTTL)
+	mapSet(sm, cfsCnameFlattening, zs.CnameFlattening)
+	mapSet(sm, cfsDevelopmentMode, zs.DevelopmentMode)
+	mapSet(sm, cfsEdgeCacheTTL, zs.EdgeCacheTTL)
+	mapSet(sm, cfsEmailObfuscation, zs.EmailObfuscation)
+	mapSet(sm, cfsHotlinkProtection, zs.HotlinkProtection)
+	mapSet(sm, cfsHTTP2, zs.HTTP2)
+	mapSet(sm, cfsHTTP3, zs.HTTP3)
+	mapSet(sm, cfsIPGeolocation, zs.IPGeolocation)
+	mapSet(sm, cfsIPv6, zs.IPv6)
+	mapSet(sm, cfsLogToCloudflare, zs.LogToCloudflare)
+	mapSet(sm, cfsMaxUpload, zs.MaxUpload)
+	mapSet(sm, cfsMinTLSVersion, zs.MinTLSVersion)
+	mapSet(sm, cfsMirage, zs.Mirage)
+	mapSet(sm, cfsOpportunisticEncryption, zs.OpportunisticEncryption)
+	mapSet(sm, cfsOpportunisticOnion, zs.OpportunisticOnion)
+	mapSet(sm, cfsOrangeToOrange, zs.OrangeToOrange)
+	mapSet(sm, cfsOriginErrorPagePassThru, zs.OriginErrorPagePassThru)
+	mapSet(sm, cfsPolish, zs.Polish)
+	mapSet(sm, cfsPrefetchPreload, zs.PrefetchPreload)
+	mapSet(sm, cfsPrivacyPass, zs.PrivacyPass)
+	mapSet(sm, cfsPseudoIPv4, zs.PseudoIPv4)
+	mapSet(sm, cfsResponseBuffering, zs.ResponseBuffering)
+	mapSet(sm, cfsRocketLoader, zs.RocketLoader)
+	mapSet(sm, cfsSecurityLevel, zs.SecurityLevel)
+	mapSet(sm, cfsServerSideExclude, zs.ServerSideExclude)
+	mapSet(sm, cfsSortQueryStringForCache, zs.SortQueryStringForCache)
+	mapSet(sm, cfsSSL, zs.SSL)
+	mapSet(sm, cfsTLS13, zs.TLS13)
+	mapSet(sm, cfsTLSClientAuth, zs.TLSClientAuth)
+	mapSet(sm, cfsTrueClientIPHeader, zs.TrueClientIPHeader)
+	mapSet(sm, cfsVisitorIP, zs.VisitorIP)
+	mapSet(sm, cfsWAF, zs.WAF)
+	mapSet(sm, cfsWebP, zs.WebP)
+	mapSet(sm, cfsWebSockets, zs.WebSockets)
 	return sm
 }
 
 // GetChangedSettings builds a map of only the settings whose
 // values need to be updated.
-func GetChangedSettings(current, desired ZoneSettingsMap) []cloudflare.ZoneSetting {
+func GetChangedSettings(czs, dzs *v1alpha1.ZoneSettings) []cloudflare.ZoneSetting {
 	out := []cloudflare.ZoneSetting{}
+
+	current := zoneToSettingsMap(czs)
+	desired := zoneToSettingsMap(dzs)
+
 	for k, nv := range desired {
 		cv := current[k]
 		// If the current value and new value are not the same,
@@ -387,7 +380,7 @@ func GetChangedSettings(current, desired ZoneSettingsMap) []cloudflare.ZoneSetti
 
 // UpToDate checks if the remote resource is up to date with the
 // requested resource parameters.
-func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone) bool { //nolint:gocyclo
+func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone, ozs *v1alpha1.ZoneSettings) bool { //nolint:gocyclo
 	// NOTE: Gocyclo ignored here because this method has to check each field
 	// properly. Avoid putting any more complex logic here, if possible.
 
@@ -415,6 +408,16 @@ func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone) bool { //nolint:
 		return false
 	}
 
+	// Compare settings
+	// NOTE: If any settings contain lists or complex structures
+	// it may be necessary to modify this to sort those structures or
+	// compare them in a different manner.
+	// Have a look at https://pkg.go.dev/github.com/google/go-cmp@v0.5.4/cmp/cmpopts
+	// to see if what you're looking for is supported by the cmp library
+	// before implementing here.
+	if !cmp.Equal(*ozs, spec.Settings) {
+		return false
+	}
 	return true
 }
 
@@ -461,14 +464,15 @@ func UpdateZone(ctx context.Context, client Client, zoneID string, spec v1alpha1
 	}
 
 	// We don't store observed settings so look them up before changing.
-	curSettings, err := LoadSettingsForZone(ctx, client, zoneID)
+	curSettings := v1alpha1.ZoneSettings{}
+	err = LoadSettingsForZone(ctx, client, zoneID, &curSettings)
 	if err != nil {
 		return errors.Wrap(err, errUpdateSettings)
 	}
 
 	// See if any settings were updated, otherwise return
 	// update is complete.
-	cs := GetChangedSettings(curSettings, ZoneToSettingsMap(&spec.Settings))
+	cs := GetChangedSettings(&curSettings, &spec.Settings)
 	if len(cs) < 1 {
 		return nil
 	}
