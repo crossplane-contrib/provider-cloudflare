@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	// Cloudflare returns this code when a record isnt found
+	// Cloudflare returns this code when a record isnt found.
 	errRecordNotFound = "81044"
 )
 
@@ -41,21 +41,21 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with DNS Records.
-func NewClient(cfg clients.Config) Client {
+func NewClient(cfg clients.Config) (Client, error) {
 	return clients.NewClient(cfg)
 }
 
 // IsRecordNotFound returns true if the passed error indicates
 // a Record was not found.
 func IsRecordNotFound(err error) bool {
-	errStr := err.Error()
-	return strings.Contains(errStr, errRecordNotFound)
+	return strings.Contains(err.Error(), errRecordNotFound)
 }
 
-// GenerateObservation creates an observation of a cloudflare Record
-func GenerateObservation(in cloudflare.DNSRecord) v1alpha1.DNSRecordObservation {
-	return v1alpha1.DNSRecordObservation{
+// GenerateObservation creates an observation of a cloudflare Record.
+func GenerateObservation(in cloudflare.DNSRecord) v1alpha1.RecordObservation {
+	return v1alpha1.RecordObservation{
 		Proxiable:  in.Proxiable,
+		FQDN:       in.Name,
 		Zone:       in.ZoneName,
 		Locked:     in.Locked,
 		CreatedOn:  &metav1.Time{Time: in.CreatedOn},
@@ -63,33 +63,34 @@ func GenerateObservation(in cloudflare.DNSRecord) v1alpha1.DNSRecordObservation 
 	}
 }
 
-// LateInitialize initializes RecordParameters based on the remote resource
-func LateInitialize(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
+// LateInitialize initializes RecordParameters based on the remote resource.
+func LateInitialize(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) bool {
 	if spec == nil {
 		return false
 	}
 
 	li := false
-	if spec.Proxied == nil {
+	if spec.Proxied == nil && o.Proxied != nil {
 		spec.Proxied = o.Proxied
 		li = true
 	}
 
-	if spec.Priority == nil {
-		spec.Priority = o.Priority
+	if spec.Priority == nil && o.Priority != nil {
+		pri := int32(*o.Priority)
+		spec.Priority = &pri
 		li = true
 	}
 
 	return li
 }
 
-// UpToDate checks if the remote resource is up to date with the
+// UpToDate checks if the remote Record is up to date with the
 // requested resource parameters.
-func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool { //nolint:gocyclo
+func UpToDate(spec *v1alpha1.RecordParameters, o cloudflare.DNSRecord) bool { //nolint:gocyclo
 	// NOTE(bagricola): The complexity here is simply repeated
 	// if statements checking for updated fields. You should think
 	// before adding further complexity to this method, but adding
-	// more field checks is not an issue.
+	// more field checks should not be an issue.
 	if spec == nil {
 		return true
 	}
@@ -112,7 +113,7 @@ func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
 		return false
 	}
 
-	if spec.TTL != nil && *spec.TTL != o.TTL {
+	if spec.TTL != nil && *spec.TTL != int64(o.TTL) {
 		return false
 	}
 
@@ -120,23 +121,28 @@ func UpToDate(spec *v1alpha1.DNSRecordParameters, o cloudflare.DNSRecord) bool {
 		return false
 	}
 
-	if spec.Priority != nil && o.Priority != nil && *spec.Priority != *o.Priority {
+	if spec.Priority != nil && o.Priority != nil && *spec.Priority != int32(*o.Priority) {
 		return false
 	}
 
 	return true
 }
 
-// UpdateRecord updates mutable values on a Record
-func UpdateRecord(ctx context.Context, client Client, recordID string, spec *v1alpha1.DNSRecordParameters) error {
+// UpdateRecord updates mutable values on a DNS Record.
+func UpdateRecord(ctx context.Context, client Client, recordID string, spec *v1alpha1.RecordParameters) error {
+	// Cloudflare probably should not rely on the int type like this
+	ttl := int(*spec.TTL)
 
 	rr := cloudflare.DNSRecord{
-		Type:     *spec.Type,
-		Name:     spec.Name,
-		TTL:      *spec.TTL,
-		Content:  spec.Content,
-		Proxied:  spec.Proxied,
-		Priority: spec.Priority,
+		Type:    *spec.Type,
+		Name:    spec.Name,
+		TTL:     ttl,
+		Content: spec.Content,
+		Proxied: spec.Proxied,
+	}
+
+	if spec.Priority != nil {
+		*rr.Priority = uint16(*spec.Priority)
 	}
 
 	return client.UpdateDNSRecord(ctx, *spec.Zone, recordID, rr)

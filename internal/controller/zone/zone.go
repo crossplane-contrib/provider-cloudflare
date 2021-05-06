@@ -18,9 +18,9 @@ package zone
 
 import (
 	"context"
+	"time"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
 	"k8s.io/client-go/util/workqueue"
@@ -74,6 +74,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
+		managed.WithPollInterval(5*time.Minute),
 		// Do not initialize external-name field.
 		managed.WithInitializers(),
 	)
@@ -89,7 +90,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 // is called.
 type connector struct {
 	kube                  client.Client
-	newCloudflareClientFn func(cfg clients.Config) zones.Client
+	newCloudflareClientFn func(cfg clients.Config) (zones.Client, error)
 }
 
 // Connect produces a valid configuration for a Cloudflare API
@@ -106,7 +107,12 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errClientConfig)
 	}
 
-	return &external{client: c.newCloudflareClientFn(*config)}, nil
+	client, err := c.newCloudflareClientFn(*config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &external{client: client}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an
@@ -131,34 +137,28 @@ func (e *external) Observe(ctx context.Context,
 
 	z, err := e.client.ZoneDetails(ctx, zid)
 	if err != nil {
-		if zones.IsZoneNotFound(err) {
-			return managed.ExternalObservation{ResourceExists: false}, nil
-		}
-		return managed.ExternalObservation{ResourceExists: false},
-			errors.Wrap(err, errZoneLookup)
+		return managed.ExternalObservation{},
+			errors.Wrap(resource.Ignore(zones.IsZoneNotFound, err), errZoneLookup)
 	}
 
 	cr.Status.AtProvider = zones.GenerateObservation(z)
 
 	if cr.Status.AtProvider.Status == zoneStatusActive {
 		cr.Status.SetConditions(rtv1.Available())
+	} else {
+		cr.Status.SetConditions(rtv1.Unavailable())
 	}
 
-	observedSettings, err := zones.LoadSettingsForZone(ctx, e.client, z.ID)
-
-	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false},
+	observedSettings := &v1alpha1.ZoneSettings{}
+	if err := zones.LoadSettingsForZone(ctx, e.client, z.ID, observedSettings); err != nil {
+		return managed.ExternalObservation{ResourceExists: true},
 			errors.Wrap(err, errZoneObservation)
 	}
 
-	desiredSettings := zones.ZoneToSettingsMap(&cr.Spec.ForProvider.Settings)
-
 	return managed.ExternalObservation{
-		ResourceExists: true,
-		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, z,
-			observedSettings, desiredSettings),
-		ResourceUpToDate: zones.UpToDate(&cr.Spec.ForProvider, z) &&
-			cmp.Equal(observedSettings, desiredSettings),
+		ResourceExists:          true,
+		ResourceLateInitialized: zones.LateInitialize(&cr.Spec.ForProvider, z, observedSettings),
+		ResourceUpToDate:        zones.UpToDate(&cr.Spec.ForProvider, z, observedSettings),
 	}, nil
 }
 
@@ -187,8 +187,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errZoneCreation)
 	}
 
-	cr.SetConditions(rtv1.Creating())
-
 	z, err := e.client.CreateZone(
 		ctx,
 		cr.Spec.ForProvider.Name,
@@ -201,6 +199,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	cr.Status.AtProvider = zones.GenerateObservation(z)
+
 	meta.SetExternalName(cr, z.ID)
 
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
@@ -223,7 +222,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 			ctx,
 			e.client,
 			zid,
-			&cr.Spec.ForProvider,
+			cr.Spec.ForProvider,
 		),
 		errZoneUpdate)
 }
@@ -233,12 +232,14 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotZone)
 	}
+
 	zid := meta.GetExternalName(cr)
+
 	// Delete should never be called on a nonexistent resource
 	if zid == "" {
 		return errors.New(errZoneDeletion)
 	}
-	cr.SetConditions(rtv1.Deleting())
+
 	_, err := e.client.DeleteZone(ctx, zid)
 	return errors.Wrap(err, errZoneDeletion)
 }

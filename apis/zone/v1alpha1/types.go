@@ -25,34 +25,40 @@ import (
 // ZoneSettings represents settings on a Zone
 type ZoneSettings struct {
 	// AlwaysOnline enables or disables Always Online
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	AlwaysOnline *bool `json:"alwaysOnline,omitempty"`
+	AlwaysOnline *string `json:"alwaysOnline,omitempty"`
 
 	// AdvancedDDOS enables or disables Advanced DDoS mitigation
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	AdvancedDDOS *bool `json:"advancedDdos,omitempty"`
+	AdvancedDDOS *string `json:"advancedDdos,omitempty"`
 
 	// AlwaysUseHTTPS enables or disables Always use HTTPS
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	AlwaysUseHTTPS *bool `json:"alwaysUseHttps,omitempty"`
+	AlwaysUseHTTPS *string `json:"alwaysUseHttps,omitempty"`
 
 	// AutomaticHTTPSRewrites enables or disables Automatic HTTPS Rewrites
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	AutomaticHTTPSRewrites *bool `json:"automaticHttpsRewrites,omitempty"`
+	AutomaticHTTPSRewrites *string `json:"automaticHttpsRewrites,omitempty"`
 
 	// Brotli enables or disables Brotli
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	Brotli *bool `json:"brotli,omitempty"`
+	Brotli *string `json:"brotli,omitempty"`
 
 	// BrowserCacheTTL configures the browser cache ttl.
 	// 0 means respect existing headers
 	// +kubebuilder:validation:Enum=0;30;60;300;1200;1800;3600;7200;10800;14400;18000;28800;43200;57600;72000;86400;172800;259200;345600;432000;691200;1382400;2073600;2678400;5356800;16070400;31536000
 	// +optional
-	BrowserCacheTTL *int `json:"browserCacheTtl,omitempty"`
+	BrowserCacheTTL *int64 `json:"browserCacheTtl,omitempty"`
 
 	// BrowserCheck enables or disables Browser check
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	BrowserCheck *bool `json:"browserCheck,omitempty"`
+	BrowserCheck *string `json:"browserCheck,omitempty"`
 
 	// CacheLevel configures the cache level
 	// +kubebuilder:validation:Enum=bypass;basic;simplified;aggressive;cache_everything
@@ -62,7 +68,7 @@ type ZoneSettings struct {
 	// ChallengeTTL configures the edge cache ttl
 	// +kubebuilder:validation:Enum=300;900;1800;2700;3600;7200;10800;14400;28800;57600;86400;604800;2592000;31536000
 	// +optional
-	ChallengeTTL *int `json:"challengeTtl,omitempty"`
+	ChallengeTTL *int64 `json:"challengeTtl,omitempty"`
 
 	// CnameFlattening configures CNAME flattening
 	// +kubebuilder:validation:Enum=flatten_at_root;flatten_all;flatten_none
@@ -70,44 +76,52 @@ type ZoneSettings struct {
 	CnameFlattening *string `json:"cnameFlattening,omitempty"`
 
 	// DevelopmentMode enables or disables Development mode
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	DevelopmentMode *bool `json:"developmentMode,omitempty"`
+	DevelopmentMode *string `json:"developmentMode,omitempty"`
 
 	// EdgeCacheTTL configures the edge cache ttl
 	// +optional
-	EdgeCacheTTL *int `json:"edgeCacheTtl,omitempty"`
+	EdgeCacheTTL *int64 `json:"edgeCacheTtl,omitempty"`
 
 	// EmailObfuscation enables or disables Email obfuscation
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	EmailObfuscation *bool `json:"emailObfuscation,omitempty"`
+	EmailObfuscation *string `json:"emailObfuscation,omitempty"`
 
 	// HotlinkProtection enables or disables Hotlink protection
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	HotlinkProtection *bool `json:"hotlinkProtection,omitempty"`
+	HotlinkProtection *string `json:"hotlinkProtection,omitempty"`
 
 	// HTTP2 enables or disables HTTP2
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	HTTP2 *bool `json:"http2,omitempty"`
+	HTTP2 *string `json:"http2,omitempty"`
 
 	// HTTP3 enables or disables HTTP3
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	HTTP3 *bool `json:"http3,omitempty"`
+	HTTP3 *string `json:"http3,omitempty"`
 
 	// IPGeolocation enables or disables IP Geolocation
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	IPGeolocation *bool `json:"ipGeolocation,omitempty"`
+	IPGeolocation *string `json:"ipGeolocation,omitempty"`
 
 	// IPv6 enables or disables IPv6
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	IPv6 *bool `json:"ipv6,omitempty"`
+	IPv6 *string `json:"ipv6,omitempty"`
 
 	// LogToCloudflare enables or disables Logging to cloudflare
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	LogToCloudflare *bool `json:"logToCloudflare,omitempty"`
+	LogToCloudflare *string `json:"logToCloudflare,omitempty"`
 
 	// MaxUpload configures the maximum upload payload size
 	// +optional
-	MaxUpload *int `json:"maxUpload,omitempty"`
+	MaxUpload *int64 `json:"maxUpload,omitempty"`
 
 	// MinTLSVersion configures the minimum TLS version
 	// +kubebuilder:validation:Enum="1.0";"1.1";"1.2";"1.3"
@@ -115,24 +129,29 @@ type ZoneSettings struct {
 	MinTLSVersion *string `json:"minTLSVersion,omitempty"`
 
 	// Mirage enables or disables Mirage
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	Mirage *bool `json:"mirage,omitempty"`
+	Mirage *string `json:"mirage,omitempty"`
 
 	// OpportunisticEncryption enables or disables Opportunistic encryption
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	OpportunisticEncryption *bool `json:"opportunisticEncryption,omitempty"`
+	OpportunisticEncryption *string `json:"opportunisticEncryption,omitempty"`
 
 	// OpportunisticOnion enables or disables Opportunistic onion
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	OpportunisticOnion *bool `json:"opportunisticOnion,omitempty"`
+	OpportunisticOnion *string `json:"opportunisticOnion,omitempty"`
 
 	// OrangeToOrange enables or disables Orange to orange
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	OrangeToOrange *bool `json:"orangeToOrange,omitempty"`
+	OrangeToOrange *string `json:"orangeToOrange,omitempty"`
 
 	// OriginErrorPagePassThru enables or disables Mirage
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	OriginErrorPagePassThru *bool `json:"originErrorPagePassThru,omitempty"`
+	OriginErrorPagePassThru *string `json:"originErrorPagePassThru,omitempty"`
 
 	// Polish configures the Polish setting
 	// +kubebuilder:validation:Enum=off;lossless;lossy
@@ -140,12 +159,14 @@ type ZoneSettings struct {
 	Polish *string `json:"polish,omitempty"`
 
 	// PrefetchPreload enables or disables Prefetch preload
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	PrefetchPreload *bool `json:"prefetchPreload,omitempty"`
+	PrefetchPreload *string `json:"prefetchPreload,omitempty"`
 
 	// PrivacyPass enables or disables Privacy pass
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	PrivacyPass *bool `json:"privacyPass,omitempty"`
+	PrivacyPass *string `json:"privacyPass,omitempty"`
 
 	// PseudoIPv4 configures the Pseudo IPv4 setting
 	// +kubebuilder:validation:Enum=off;add_header;overwrite_header
@@ -153,12 +174,14 @@ type ZoneSettings struct {
 	PseudoIPv4 *string `json:"pseudoIpv4,omitempty"`
 
 	// ResponseBuffering enables or disables Response buffering
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	ResponseBuffering *bool `json:"responseBuffering,omitempty"`
+	ResponseBuffering *string `json:"responseBuffering,omitempty"`
 
 	// RocketLoader enables or disables Rocket loader
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	RocketLoader *bool `json:"rocketLoader,omitempty"`
+	RocketLoader *string `json:"rocketLoader,omitempty"`
 
 	// SecurityLevel configures the Security level
 	// +kubebuilder:validation:Enum=off;essentially_off;low;medium;high;under_attack
@@ -166,12 +189,14 @@ type ZoneSettings struct {
 	SecurityLevel *string `json:"securityLevel,omitempty"`
 
 	// ServerSideExclude enables or disables Server side exclude
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	ServerSideExclude *bool `json:"serverSideExclude,omitempty"`
+	ServerSideExclude *string `json:"serverSideExclude,omitempty"`
 
 	// SortQueryStringForCache enables or disables Sort query string for cache
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	SortQueryStringForCache *bool `json:"sortQueryStringForCache,omitempty"`
+	SortQueryStringForCache *string `json:"sortQueryStringForCache,omitempty"`
 
 	// SSL configures the SSL mode
 	// +kubebuilder:validation:Enum=off;flexible;full;strict;origin_pull
@@ -184,32 +209,39 @@ type ZoneSettings struct {
 	TLS13 *string `json:"tls13,omitempty"`
 
 	// TLSClientAuth enables or disables TLS client authentication
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	TLSClientAuth *bool `json:"tlsClientAuth,omitempty"`
+	TLSClientAuth *string `json:"tlsClientAuth,omitempty"`
 
 	// TrueClientIPHeader enables or disables True client IP Header
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	TrueClientIPHeader *bool `json:"trueClientIPHeader,omitempty"`
+	TrueClientIPHeader *string `json:"trueClientIPHeader,omitempty"`
 
 	// VisitorIP enables or disables Visitor IP
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	VisitorIP *bool `json:"visitorIP,omitempty"`
+	VisitorIP *string `json:"visitorIP,omitempty"`
 
 	// WAF enables or disables the Web application firewall
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	WAF *bool `json:"waf,omitempty"`
+	WAF *string `json:"waf,omitempty"`
 
 	// WebP enables or disables WebP
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	WebP *bool `json:"webP,omitempty"`
+	WebP *string `json:"webP,omitempty"`
 
 	// WebSockets enables or disables Web sockets
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	WebSockets *bool `json:"webSockets,omitempty"`
+	WebSockets *string `json:"webSockets,omitempty"`
 
 	// ZeroRTT enables or disables Zero RTT
+	// +kubebuilder:validation:Enum=off;on
 	// +optional
-	ZeroRTT *bool `json:"zeroRtt,omitempty"`
+	ZeroRTT *string `json:"zeroRtt,omitempty"`
 }
 
 // ZoneParameters are the configurable fields of a Zone.
@@ -237,7 +269,7 @@ type ZoneParameters struct {
 	// when a new Zone is created.
 	// WARNING: JumpStart causes Cloudflare to automatically create
 	// DNS records without the involvement of Crossplane. This means
-	// you will have no DNSRecord instances representing records
+	// you will have no Record instances representing records
 	// created in this manner, and you will have to import them
 	// manually if you want to manage them with Crossplane.
 	// +kubebuilder:default=false
@@ -353,7 +385,8 @@ type ZoneStatus struct {
 
 // A Zone is a set of common settings applied to one or more domains.
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.status"
 // +kubebuilder:printcolumn:name="ACCOUNT",type="string",JSONPath=".status.atProvider.accountId"
 // +kubebuilder:printcolumn:name="PLAN",type="string",JSONPath=".status.atProvider.plan"
@@ -369,7 +402,7 @@ type Zone struct {
 
 // +kubebuilder:object:root=true
 
-// ZoneList contains a list of Zone
+// ZoneList contains a list of Zone objects.
 type ZoneList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

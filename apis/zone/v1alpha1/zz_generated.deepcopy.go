@@ -164,37 +164,37 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	*out = *in
 	if in.AlwaysOnline != nil {
 		in, out := &in.AlwaysOnline, &out.AlwaysOnline
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.AdvancedDDOS != nil {
 		in, out := &in.AdvancedDDOS, &out.AdvancedDDOS
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.AlwaysUseHTTPS != nil {
 		in, out := &in.AlwaysUseHTTPS, &out.AlwaysUseHTTPS
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.AutomaticHTTPSRewrites != nil {
 		in, out := &in.AutomaticHTTPSRewrites, &out.AutomaticHTTPSRewrites
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.Brotli != nil {
 		in, out := &in.Brotli, &out.Brotli
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.BrowserCacheTTL != nil {
 		in, out := &in.BrowserCacheTTL, &out.BrowserCacheTTL
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.BrowserCheck != nil {
 		in, out := &in.BrowserCheck, &out.BrowserCheck
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.CacheLevel != nil {
@@ -204,7 +204,7 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.ChallengeTTL != nil {
 		in, out := &in.ChallengeTTL, &out.ChallengeTTL
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.CnameFlattening != nil {
@@ -214,52 +214,52 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.DevelopmentMode != nil {
 		in, out := &in.DevelopmentMode, &out.DevelopmentMode
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.EdgeCacheTTL != nil {
 		in, out := &in.EdgeCacheTTL, &out.EdgeCacheTTL
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.EmailObfuscation != nil {
 		in, out := &in.EmailObfuscation, &out.EmailObfuscation
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.HotlinkProtection != nil {
 		in, out := &in.HotlinkProtection, &out.HotlinkProtection
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.HTTP2 != nil {
 		in, out := &in.HTTP2, &out.HTTP2
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.HTTP3 != nil {
 		in, out := &in.HTTP3, &out.HTTP3
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.IPGeolocation != nil {
 		in, out := &in.IPGeolocation, &out.IPGeolocation
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.IPv6 != nil {
 		in, out := &in.IPv6, &out.IPv6
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.LogToCloudflare != nil {
 		in, out := &in.LogToCloudflare, &out.LogToCloudflare
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.MaxUpload != nil {
 		in, out := &in.MaxUpload, &out.MaxUpload
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.MinTLSVersion != nil {
@@ -269,27 +269,27 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.Mirage != nil {
 		in, out := &in.Mirage, &out.Mirage
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.OpportunisticEncryption != nil {
 		in, out := &in.OpportunisticEncryption, &out.OpportunisticEncryption
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.OpportunisticOnion != nil {
 		in, out := &in.OpportunisticOnion, &out.OpportunisticOnion
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.OrangeToOrange != nil {
 		in, out := &in.OrangeToOrange, &out.OrangeToOrange
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.OriginErrorPagePassThru != nil {
 		in, out := &in.OriginErrorPagePassThru, &out.OriginErrorPagePassThru
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.Polish != nil {
@@ -299,12 +299,12 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.PrefetchPreload != nil {
 		in, out := &in.PrefetchPreload, &out.PrefetchPreload
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.PrivacyPass != nil {
 		in, out := &in.PrivacyPass, &out.PrivacyPass
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.PseudoIPv4 != nil {
@@ -314,12 +314,12 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.ResponseBuffering != nil {
 		in, out := &in.ResponseBuffering, &out.ResponseBuffering
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.RocketLoader != nil {
 		in, out := &in.RocketLoader, &out.RocketLoader
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.SecurityLevel != nil {
@@ -329,12 +329,12 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.ServerSideExclude != nil {
 		in, out := &in.ServerSideExclude, &out.ServerSideExclude
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.SortQueryStringForCache != nil {
 		in, out := &in.SortQueryStringForCache, &out.SortQueryStringForCache
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.SSL != nil {
@@ -349,37 +349,37 @@ func (in *ZoneSettings) DeepCopyInto(out *ZoneSettings) {
 	}
 	if in.TLSClientAuth != nil {
 		in, out := &in.TLSClientAuth, &out.TLSClientAuth
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.TrueClientIPHeader != nil {
 		in, out := &in.TrueClientIPHeader, &out.TrueClientIPHeader
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.VisitorIP != nil {
 		in, out := &in.VisitorIP, &out.VisitorIP
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.WAF != nil {
 		in, out := &in.WAF, &out.WAF
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.WebP != nil {
 		in, out := &in.WebP, &out.WebP
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.WebSockets != nil {
 		in, out := &in.WebSockets, &out.WebSockets
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 	if in.ZeroRTT != nil {
 		in, out := &in.ZeroRTT, &out.ZeroRTT
-		*out = new(bool)
+		*out = new(string)
 		**out = **in
 	}
 }

@@ -33,32 +33,42 @@ import (
 
 const (
 	errGetPC        = "cannot get ProviderConfig"
+	errPCRef        = "providerConfigRef not set"
 	errTrackPCUsage = "cannot track ProviderConfig usage"
-	errGetCreds     = "cannot get credentials"
-	errNoAuth       = "email or api key not provided"
-
-	// cfgBoolTrue represents a boolean true value in the Cloudflare API
-	cfsBoolTrue = "on"
-
-	// cfgBoolFalse represents a boolean false value in the Cloudflare API
-	cfsBoolFalse = "off"
+	errNoAuth       = "auth details not valid"
 )
+
+// AuthByAPIKey represents the details required to authenticate
+// with the cloudflare API using a users' global API Key and
+// Email address.
+type AuthByAPIKey struct {
+	Key   *string `json:"apiKey,omitempty"`
+	Email *string `json:"email,omitempty"`
+}
+
+// AuthByAPIToken represents the details required to authenticate
+// with the cloudflare API using an API token.
+type AuthByAPIToken struct {
+	Token *string `json:"token,omitempty"`
+}
 
 // Config represents the API configuration required to create
 // a new client.
-// TODO: Lowercase the JSON keys
 type Config struct {
-	APIKey string `json:"APIKey"`
-	Email  string `json:"Email"`
+	*AuthByAPIKey   `json:",inline"`
+	*AuthByAPIToken `json:",inline"`
 }
 
-// NewClient creates new Cloudflare Client with provided Credentials.
-func NewClient(c Config) *cloudflare.API {
-	api, err := cloudflare.New(c.APIKey, c.Email)
-	if err != nil {
-		panic(err)
+// NewClient creates a new Cloudflare Client with provided Credentials.
+func NewClient(c Config) (*cloudflare.API, error) {
+	if c.AuthByAPIKey != nil && c.AuthByAPIKey.Key != nil &&
+		c.AuthByAPIKey.Email != nil {
+		return cloudflare.New(*c.AuthByAPIKey.Key, *c.AuthByAPIKey.Email)
 	}
-	return api
+	if c.AuthByAPIToken != nil && c.AuthByAPIToken.Token != nil {
+		return cloudflare.NewWithAPIToken(*c.AuthByAPIToken.Token)
+	}
+	return nil, errors.New(errNoAuth)
 }
 
 // GetConfig returns a valid Cloudflare API configuration
@@ -67,7 +77,7 @@ func GetConfig(ctx context.Context, c client.Client, mg resource.Managed) (*Conf
 	case mg.GetProviderConfigReference() != nil:
 		return UseProviderConfig(ctx, c, mg)
 	default:
-		return nil, errors.New("providerConfigRef is not given")
+		return nil, errors.New(errPCRef)
 	}
 
 }
@@ -87,7 +97,7 @@ func UseProviderConfig(ctx context.Context, c client.Client, mg resource.Managed
 	cd := pc.Spec.Credentials
 	data, err := resource.CommonCredentialExtractor(ctx, cd.Source, c, cd.CommonCredentialSelectors)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+		return nil, errors.Wrap(err, errGetPC)
 	}
 	return UseProviderSecret(ctx, data)
 }
@@ -99,36 +109,13 @@ func UseProviderSecret(ctx context.Context, data []byte) (*Config, error) {
 	if err := json.Unmarshal(data, config); err != nil {
 		return nil, err
 	}
-	if config.APIKey == "" || config.Email == "" {
-		return nil, errors.New(errNoAuth)
-	}
 	return config, nil
 }
 
-// ToBoolean converts an interface from the Cloudflare API
-// into a bool pointer, if it contains a string with the
-// relevant boolean value.
-func ToBoolean(in interface{}) *bool {
-	if v, ok := in.(string); ok {
-		// Only match known true and false values.
-		// Returning nil for unknown values means
-		// the setting will be ignored.
-		if v == cfsBoolTrue {
-			o := true
-			return &o
-		}
-		if v == cfsBoolFalse {
-			o := false
-			return &o
-		}
-	}
-	return nil
-}
-
 // ToNumber converts an interface from the Cloudflare API
-// into an int pointer, if it contains an existing int or
-// float64 value.
-func ToNumber(in interface{}) *int {
+// into an int64 pointer, if it contains an existing int,
+// int64 or float64 value.
+func ToNumber(in interface{}) *int64 {
 	// I believe cloudflare-go just decodes values using encoding/json,
 	// which defaults to returning a float64 for numbers. We could probably
 	// just cast and check for a float64 and ignore the int, but we don't
@@ -136,9 +123,12 @@ func ToNumber(in interface{}) *int {
 	// storage type in kubernetes anyway.
 	switch cv := in.(type) {
 	case int:
+		o := int64(cv)
+		return &o
+	case int64:
 		return &cv
 	case float64:
-		o := int(cv)
+		o := int64(cv)
 		return &o
 	default:
 	}

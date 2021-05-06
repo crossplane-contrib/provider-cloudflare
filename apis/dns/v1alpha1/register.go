@@ -37,14 +37,14 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// DNSRecord type metadata.
+// Record type metadata.
 var (
-	DNSRecordKind             = reflect.TypeOf(DNSRecord{}).Name()
-	DNSRecordGroupKind        = schema.GroupKind{Group: Group, Kind: DNSRecordKind}.String()
-	DNSRecordKindAPIVersion   = DNSRecordKind + "." + SchemeGroupVersion.String()
-	DNSRecordGroupVersionKind = SchemeGroupVersion.WithKind(DNSRecordKind)
+	RecordKind             = reflect.TypeOf(Record{}).Name()
+	RecordGroupKind        = schema.GroupKind{Group: Group, Kind: RecordKind}.String()
+	RecordKindAPIVersion   = RecordKind + "." + SchemeGroupVersion.String()
+	RecordGroupVersionKind = SchemeGroupVersion.WithKind(RecordKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&DNSRecord{}, &DNSRecordList{})
+	SchemeBuilder.Register(&Record{}, &RecordList{})
 }

@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package dns contains group DNSRecord API versions
+// Package dns contains group Record API versions
 package dns

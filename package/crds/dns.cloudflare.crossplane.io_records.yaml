@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: dnsrecords.dns.cloudflare.crossplane.io
+  name: records.dns.cloudflare.crossplane.io
 spec:
   group: dns.cloudflare.crossplane.io
   names:
@@ -12,21 +12,21 @@ spec:
     - crossplane
     - managed
     - cloudflare
-    kind: DNSRecord
-    listKind: DNSRecordList
-    plural: dnsrecords
-    singular: dnsrecord
+    kind: Record
+    listKind: RecordList
+    plural: records
+    singular: record
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.bindingPhase
-      name: STATUS
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
       type: string
-    - jsonPath: .status.atProvider.status
-      name: STATE
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
       type: string
-    - jsonPath: .spec.classRef.name
-      name: CLASS
+    - jsonPath: .status.atProvider.fqdn
+      name: FQDN
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -34,51 +34,62 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A DNSRecord is a set of DNS Records.
+        description: A Record represents a single DNS Record managed on a Zone.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
-            description: A DNSRecordSpec defines the desired state of a DNSRecord.
+            description: A RecordSpec defines the desired state of a DNS Record.
             properties:
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
                 enum:
                 - Orphan
                 - Delete
                 type: string
               forProvider:
-                description: DNSRecordParameters are the configurable fields of a DNS Record.
+                description: RecordParameters are the configurable fields of a DNS
+                  Record.
                 properties:
                   content:
                     description: Content of the DNS Record
                     type: string
                   name:
-                    description: Name of the DNS record.
+                    description: Name of the DNS Record.
                     maxLength: 255
                     type: string
                   priority:
-                    description: Priority of a record
+                    description: Priority of a record.
+                    format: int32
                     maximum: 65535
                     minimum: 0
                     type: integer
                   proxied:
-                    description: Proxied enables or disables proxying traffic via Cloudflare
+                    description: Proxied enables or disables proxying traffic via
+                      Cloudflare.
                     type: boolean
                   ttl:
                     default: 1
-                    description: TTL of the DNS record
+                    description: TTL of the DNS Record.
+                    format: int64
                     minimum: 0
                     type: integer
                   type:
                     default: A
-                    description: Type is the type of DNS record.
+                    description: Type is the type of DNS Record.
                     enum:
                     - A
                     - AAAA
@@ -100,10 +111,11 @@ spec:
                     - URI
                     type: string
                   zone:
-                    description: ZoneID this DNS record is for.
+                    description: ZoneID this DNS Record is managed on.
                     type: string
                   zoneRef:
-                    description: ZoneRef references the zone object this DNS Record is for.
+                    description: ZoneRef references the Zone object this DNS Record
+                      is managed on.
                     properties:
                       name:
                         description: Name of the referenced object.
@@ -112,15 +124,18 @@ spec:
                     - name
                     type: object
                   zoneSelector:
-                    description: ZoneSelector selects the zone object this DNS Record is for.
+                    description: ZoneSelector selects the Zone object this DNS Record
+                      is managed on.
                     properties:
                       matchControllerRef:
-                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
                         type: boolean
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: MatchLabels ensures an object with matching labels is selected.
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
                         type: object
                     type: object
                 required:
@@ -128,7 +143,9 @@ spec:
                 - name
                 type: object
               providerConfigRef:
-                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -137,7 +154,9 @@ spec:
                 - name
                 type: object
               providerRef:
-                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -146,7 +165,11 @@ spec:
                 - name
                 type: object
               writeConnectionSecretToRef:
-                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
                 properties:
                   name:
                     description: Name of the secret.
@@ -162,22 +185,35 @@ spec:
             - forProvider
             type: object
           status:
-            description: A DNSRecordStatus represents the observed state of a DNSRecord.
+            description: A RecordStatus represents the observed state of a DNS Record.
             properties:
               atProvider:
-                description: DNSRecordObservation are the observable fields of a DNSRecord.
+                description: RecordObservation is the observable fields of a DNS Record.
                 properties:
                   createdOn:
+                    description: CreatedOn indicates when this record was created
+                      on Cloudflare.
                     format: date-time
                     type: string
+                  fqdn:
+                    description: FQDN contains the full FQDN of the created record
+                      (Record Name + Zone).
+                    type: string
                   locked:
+                    description: Locked indicates if this record is locked or not.
                     type: boolean
                   modifiedOn:
+                    description: ModifiedOn indicates when this record was modified
+                      on Cloudflare.
                     format: date-time
                     type: string
                   proxiable:
+                    description: Proxiable indicates whether this record _can be_
+                      proxied via Cloudflare.
                     type: boolean
                   zone:
+                    description: Zone contains the name of the Zone this record is
+                      managed on.
                     type: string
                 type: object
               conditions:
@@ -186,20 +222,25 @@ spec:
                   description: A Condition that may apply to a resource.
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
                       format: date-time
                       type: string
                     message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
                       type: string
                     reason:
-                      description: A Reason for this condition's last transition from one status to another.
+                      description: A Reason for this condition's last transition from
+                        one status to another.
                       type: string
                     status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
                       type: string
                     type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
                       type: string
                   required:
                   - lastTransitionTime

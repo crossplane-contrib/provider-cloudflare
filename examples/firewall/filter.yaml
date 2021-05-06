@@ -1,0 +1,14 @@
+apiVersion: firewall.cloudflare.crossplane.io/v1alpha1
+kind: Filter
+metadata:
+  name: wordpress-logins 
+spec:
+  forProvider:
+    expression: >
+      http.request.uri.path ~ "^.*/wp-login.php$" or 
+      http.request.uri.path ~ "^.*/xmlrpc.php$"
+    description: Identify wordpress login URLs
+    zoneRef:
+      name: example
+  providerConfigRef:
+    name: example

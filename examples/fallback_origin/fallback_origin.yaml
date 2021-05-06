@@ -1,0 +1,24 @@
+apiVersion: sslsaas.cloudflare.crossplane.io/v1alpha1
+kind: FallbackOrigin
+metadata:
+  name: fallback
+spec:
+  forProvider:
+    zone: 123
+    origin: dns.entry.in.zone
+
+  providerConfigRef:
+    name: example
+---
+apiVersion: sslsaas.cloudflare.crossplane.io/v1alpha1
+kind: FallbackOrigin
+metadata:
+  name: fallback2
+spec:
+  forProvider:
+    zone: 124
+    originRef:
+      name: dns-record-resource-name
+
+  providerConfigRef:
+    name: example

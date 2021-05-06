@@ -1,5 +1,5 @@
 apiVersion: dns.cloudflare.crossplane.io/v1alpha1
-kind: DNSRecord
+kind: Record
 metadata:
   name: apex
 spec:
