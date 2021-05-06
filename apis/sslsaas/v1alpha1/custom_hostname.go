@@ -170,7 +170,7 @@ type CustomHostnameParameters struct {
 // CustomHostnameObservation are the observable fields of a custom hostname.
 type CustomHostnameObservation struct {
 	Status             cloudflare.CustomHostnameStatus `json:"status"`
-	VerificationErrors []string                        `json:"verification_errors,omitempty"`
+	VerificationErrors []string                        `json:"verificationErrors,omitempty"`
 	SSL                CustomHostnameSSLObserved       `json:"ssl"`
 }
 

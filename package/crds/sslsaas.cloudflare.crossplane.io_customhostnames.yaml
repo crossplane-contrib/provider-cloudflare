@@ -285,7 +285,7 @@ spec:
                     description: CustomHostnameStatus is the enumeration of valid
                       state values in the CustomHostnameSSL
                     type: string
-                  verification_errors:
+                  verificationErrors:
                     items:
                       type: string
                     type: array
