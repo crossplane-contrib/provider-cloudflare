@@ -31,7 +31,10 @@ import (
 
 const (
 	errUpdateFilter         = "error updating filter"
+	errFilterNotFound       = "error filter not found"
+	errCreateFilter         = "error creating filter"
 	errCreateFilterBadCount = "create returned wrong number of filters"
+	errSpecNil              = "filter spec is empty"
 )
 
 // Client is a Cloudflare API client that implements methods for working
@@ -41,7 +44,7 @@ type Client interface {
 	CreateFilters(ctx context.Context, zoneID string, firewallFilters []cloudflare.Filter) ([]cloudflare.Filter, error)
 	UpdateFilter(ctx context.Context, zoneID string, firewallFilter cloudflare.Filter) (cloudflare.Filter, error)
 	DeleteFilter(ctx context.Context, zoneID, firewallFilterID string) error
-	Filter(ctx context.Context, zoneID, filterID string) (cloudflare.Filter, error)
+	Filter(ctx context.Context, zoneID, firewallFilterID string) (cloudflare.Filter, error)
 }
 
 // NewClient returns a new Cloudflare API client for working with Firewall rules.
@@ -61,7 +64,7 @@ func GenerateObservation(in cloudflare.Filter) v1alpha1.FilterObservation {
 }
 
 // LateInitialize initializes FilterParameters based on the remote resource
-func LateInitialize(spec *v1alpha1.FilterParameters, r cloudflare.Filter) bool {
+func LateInitialize(spec *v1alpha1.FilterParameters, f cloudflare.Filter) bool {
 
 	if spec == nil {
 		return false
@@ -69,8 +72,13 @@ func LateInitialize(spec *v1alpha1.FilterParameters, r cloudflare.Filter) bool {
 
 	li := false
 
+	if spec.Description == nil && len(f.Description) > 0 {
+		spec.Description = &f.Description
+		li = true
+	}
+
 	if spec.Paused == nil {
-		spec.Paused = &r.Paused
+		spec.Paused = &f.Paused
 		li = true
 	}
 
@@ -103,6 +111,11 @@ func UpToDate(spec *v1alpha1.FilterParameters, f cloudflare.Filter) bool {
 
 // CreateFilter creates a new Filter
 func CreateFilter(ctx context.Context, client Client, spec *v1alpha1.FilterParameters) (*cloudflare.Filter, error) {
+
+	if spec == nil {
+		return nil, errors.New(errSpecNil)
+	}
+
 	f := cloudflare.Filter{
 		Expression: strings.TrimSpace(spec.Expression),
 	}
@@ -121,7 +134,7 @@ func CreateFilter(ctx context.Context, client Client, spec *v1alpha1.FilterParam
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errCreateFilter)
 	}
 
 	// If creation worked then we should have _one_ filter
@@ -143,11 +156,11 @@ func CreateFilter(ctx context.Context, client Client, spec *v1alpha1.FilterParam
 }
 
 // UpdateFilter updates mutable values on a Filter
-func UpdateFilter(ctx context.Context, client Client, ruleID string, spec *v1alpha1.FilterParameters) error { //nolint:gocyclo
-	// Get current firewall rule status
-	f, err := client.Filter(ctx, *spec.Zone, ruleID)
+func UpdateFilter(ctx context.Context, client Client, filterID string, spec *v1alpha1.FilterParameters) error { //nolint:gocyclo
+	// Get current firewall filter status
+	f, err := client.Filter(ctx, *spec.Zone, filterID)
 	if err != nil {
-		return errors.Wrap(err, errUpdateFilter)
+		return errors.Wrap(err, errFilterNotFound)
 	}
 
 	f.Expression = strings.TrimSpace(spec.Expression)
@@ -162,5 +175,5 @@ func UpdateFilter(ctx context.Context, client Client, ruleID string, spec *v1alp
 
 	// Update Filter
 	_, err = client.UpdateFilter(ctx, *spec.Zone, f)
-	return err
+	return errors.Wrap(err, errUpdateFilter)
 }

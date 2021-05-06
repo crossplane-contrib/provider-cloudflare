@@ -33,6 +33,8 @@ import (
 
 const (
 	errUpdateRule = "error updating firewall rule"
+	errCreateRule = "error creating firewall rule"
+	errSpecNil    = "rule spec is empty"
 )
 
 // Client is a Cloudflare API client that implements methods for working
@@ -78,7 +80,8 @@ func bypassProductsToProducts(bypassProducts []v1alpha1.RuleBypassProduct) []str
 }
 
 // LateInitialize initializes RuleParameters based on the remote resource
-func LateInitialize(spec *v1alpha1.RuleParameters, r cloudflare.FirewallRule) bool {
+func LateInitialize(spec *v1alpha1.RuleParameters, r cloudflare.FirewallRule) bool { //nolint:gocyclo
+	// NOTE: Gocyclo ignored here because this method has to check each field.
 
 	if spec == nil {
 		return false
@@ -89,10 +92,17 @@ func LateInitialize(spec *v1alpha1.RuleParameters, r cloudflare.FirewallRule) bo
 		spec.BypassProducts = productsToBypassProducts(r.Products)
 		li = true
 	}
+
 	if spec.Paused == nil {
 		spec.Paused = &r.Paused
 		li = true
 	}
+
+	if spec.Description == nil && len(r.Description) > 0 {
+		spec.Description = &r.Description
+		li = true
+	}
+
 	// Note that the cloudflare field itself can be a float, but
 	// we represent it in the Kubernetes API as an int32.
 	// We think this gives users adequate ability to control
@@ -159,6 +169,11 @@ func UpToDate(spec *v1alpha1.RuleParameters, r cloudflare.FirewallRule) bool { /
 
 // CreateRule creates a new Rule
 func CreateRule(ctx context.Context, client Client, spec *v1alpha1.RuleParameters) (*cloudflare.FirewallRule, error) {
+
+	if spec == nil {
+		return nil, errors.New(errSpecNil)
+	}
+
 	r := cloudflare.FirewallRule{
 		Action: spec.Action,
 		Filter: cloudflare.Filter{
@@ -184,7 +199,7 @@ func CreateRule(ctx context.Context, client Client, spec *v1alpha1.RuleParameter
 	)
 
 	if err != nil || len(res) != 1 {
-		return nil, err
+		return nil, errors.Wrap(err, errCreateRule)
 	}
 
 	return &res[0], nil
@@ -221,5 +236,5 @@ func UpdateRule(ctx context.Context, client Client, ruleID string, spec *v1alpha
 
 	// Update firewall rule
 	_, err = client.UpdateFirewallRule(ctx, *spec.Zone, r)
-	return err
+	return errors.Wrap(err, errUpdateRule)
 }

@@ -189,6 +189,13 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.Wrap(errors.New(errNoZone), errFilterUpdate)
 	}
 
+	rid := meta.GetExternalName(cr)
+
+	// Update should never be called on a nonexistent resource
+	if rid == "" {
+		return managed.ExternalUpdate{}, errors.New(errFilterUpdate)
+	}
+
 	return managed.ExternalUpdate{},
 		errors.Wrap(
 			filter.UpdateFilter(ctx, e.client, meta.GetExternalName(cr), &cr.Spec.ForProvider),
@@ -204,6 +211,13 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 
 	if cr.Spec.ForProvider.Zone == nil {
 		return errors.Wrap(errors.New(errNoZone), errFilterDeletion)
+	}
+
+	rid := meta.GetExternalName(cr)
+
+	// Delete should never be called on a nonexistent resource
+	if rid == "" {
+		return errors.New(errFilterDeletion)
 	}
 
 	return errors.Wrap(
