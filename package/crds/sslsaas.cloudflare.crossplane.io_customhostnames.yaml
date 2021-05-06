@@ -28,31 +28,68 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A CustomHostname is a custom hostname required to use SSL for SaaS.
+        description: A CustomHostname is a custom hostname required to use SSL for
+          SaaS.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
-            description: A CustomHostnameSpec defines the desired state of a custom hostname.
+            description: A CustomHostnameSpec defines the desired state of a custom
+              hostname.
             properties:
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
                 enum:
                 - Orphan
                 - Delete
                 type: string
               forProvider:
-                description: CustomHostnameParameters represents the settings of a CustomHostname
+                description: CustomHostnameParameters represents the settings of a
+                  CustomHostname
                 properties:
                   customOriginServer:
-                    description: CustomOriginServer for a Custom Hostname A valid hostname that’s been added to your DNS zone as an A, AAAA, or CNAME record.
+                    description: CustomOriginServer for a Custom Hostname A valid
+                      hostname that’s been added to your DNS zone as an A, AAAA, or
+                      CNAME record.
                     type: string
+                  customOriginServerRef:
+                    description: CustomOriginServerRef references the Record object
+                      that this Custom Hostname should point to.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  customOriginServerSelector:
+                    description: CustomOriginServerSelector selects the Record object
+                      that this Custom Hostname should point to.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
                   hostname:
                     description: Hostname for the custom hostname.
                     format: hostname
@@ -63,38 +100,47 @@ spec:
                     properties:
                       customCertificate:
                         default: ""
-                        description: Custom Certificate used for this Custom Hostname If provided then Cloudflare will not attempt to generate an ACME certificate
+                        description: Custom Certificate used for this Custom Hostname
+                          If provided then Cloudflare will not attempt to generate
+                          an ACME certificate
                         type: string
                       customKey:
                         default: ""
-                        description: Custom Certificate Key used for this Custom Hostname If provided then Cloudflare will not attempt to generate an ACME certificate
+                        description: Custom Certificate Key used for this Custom Hostname
+                          If provided then Cloudflare will not attempt to generate
+                          an ACME certificate
                         type: string
                       method:
                         default: http
-                        description: Domain control validation (DCV) method used for this custom hostname.
+                        description: Domain control validation (DCV) method used for
+                          this custom hostname.
                         enum:
                         - http
                         - txt
                         - email
                         type: string
                       settings:
-                        description: CustomHostnameSSLSettings represents the SSL settings for a custom hostname.
+                        description: CustomHostnameSSLSettings represents the SSL
+                          settings for a custom hostname.
                         properties:
                           ciphers:
-                            description: An allowlist of ciphers for TLS termination. These ciphers must be in the BoringSSL format.
+                            description: An allowlist of ciphers for TLS termination.
+                              These ciphers must be in the BoringSSL format.
                             items:
                               type: string
                             type: array
                           http2:
                             default: "on"
-                            description: Whether or not HTTP2 is enabled for the Custom Hostname
+                            description: Whether or not HTTP2 is enabled for the Custom
+                              Hostname
                             enum:
                             - "on"
                             - "off"
                             type: string
                           minTLSVersion:
                             default: "1.2"
-                            description: The minimum TLS version supported for the Custom Hostname
+                            description: The minimum TLS version supported for the
+                              Custom Hostname
                             enum:
                             - "1.0"
                             - "1.1"
@@ -103,7 +149,8 @@ spec:
                             type: string
                           tls13:
                             default: "on"
-                            description: Whether or not TLS 1.3 is enabled for the Custom Hostname
+                            description: Whether or not TLS 1.3 is enabled for the
+                              Custom Hostname
                             enum:
                             - "on"
                             - "off"
@@ -111,20 +158,23 @@ spec:
                         type: object
                       type:
                         default: dv
-                        description: Level of validation to be used for this custom hostname. Domain validation (dv) must be used.
+                        description: Level of validation to be used for this custom
+                          hostname. Domain validation (dv) must be used.
                         enum:
                         - dv
                         type: string
                       wildcard:
                         default: false
-                        description: Indicates whether the certificate for the custom hostname covers a wildcard.
+                        description: Indicates whether the certificate for the custom
+                          hostname covers a wildcard.
                         type: boolean
                     type: object
                   zone:
                     description: ZoneID this custom hostname is for.
                     type: string
                   zoneRef:
-                    description: ZoneRef references the zone object this custom hostname is for.
+                    description: ZoneRef references the zone object this custom hostname
+                      is for.
                     properties:
                       name:
                         description: Name of the referenced object.
@@ -133,20 +183,25 @@ spec:
                     - name
                     type: object
                   zoneSelector:
-                    description: ZoneSelector selects the zone object this custom hostname is for.
+                    description: ZoneSelector selects the zone object this custom
+                      hostname is for.
                     properties:
                       matchControllerRef:
-                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
                         type: boolean
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: MatchLabels ensures an object with matching labels is selected.
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
                         type: object
                     type: object
                 type: object
               providerConfigRef:
-                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -155,7 +210,9 @@ spec:
                 - name
                 type: object
               providerRef:
-                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -164,7 +221,11 @@ spec:
                 - name
                 type: object
               writeConnectionSecretToRef:
-                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
                 properties:
                   name:
                     description: Name of the secret.
@@ -180,13 +241,16 @@ spec:
             - forProvider
             type: object
           status:
-            description: A CustomHostnameStatus represents the observed state of a custom hostname.
+            description: A CustomHostnameStatus represents the observed state of a
+              custom hostname.
             properties:
               atProvider:
-                description: CustomHostnameObservation are the observable fields of a custom hostname.
+                description: CustomHostnameObservation are the observable fields of
+                  a custom hostname.
                 properties:
                   ssl:
-                    description: CustomHostnameSSLObserved represents the Observed SSL section in a given custom hostname.
+                    description: CustomHostnameSSLObserved represents the Observed
+                      SSL section in a given custom hostname.
                     properties:
                       certificateAuthority:
                         type: string
@@ -202,7 +266,8 @@ spec:
                         type: string
                       validationErrors:
                         items:
-                          description: CustomHostnameSSLValidationErrors represents errors that occurred during SSL validation.
+                          description: CustomHostnameSSLValidationErrors represents
+                            errors that occurred during SSL validation.
                           properties:
                             message:
                               type: string
@@ -217,7 +282,8 @@ spec:
                     - status
                     type: object
                   status:
-                    description: CustomHostnameStatus is the enumeration of valid state values in the CustomHostnameSSL
+                    description: CustomHostnameStatus is the enumeration of valid
+                      state values in the CustomHostnameSSL
                     type: string
                   verification_errors:
                     items:
@@ -233,20 +299,25 @@ spec:
                   description: A Condition that may apply to a resource.
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
                       format: date-time
                       type: string
                     message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
                       type: string
                     reason:
-                      description: A Reason for this condition's last transition from one status to another.
+                      description: A Reason for this condition's last transition from
+                        one status to another.
                       type: string
                     status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
                       type: string
                     type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
                       type: string
                   required:
                   - lastTransitionTime

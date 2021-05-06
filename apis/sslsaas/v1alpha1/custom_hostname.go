@@ -22,7 +22,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	dns "github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
+	zone "github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 	"github.com/cloudflare/cloudflare-go"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -141,6 +142,15 @@ type CustomHostnameParameters struct {
 	// A valid hostname that’s been added to your DNS zone as an A, AAAA, or CNAME record.
 	CustomOriginServer *string `json:"customOriginServer,omitempty"`
 
+	// CustomOriginServerRef references the Record object that this Custom Hostname should point to.
+	// +immutable
+	// +optional
+	CustomOriginServerRef *xpv1.Reference `json:"customOriginServerRef,omitempty"`
+
+	// CustomOriginServerSelector selects the Record object that this Custom Hostname should point to.
+	// +optional
+	CustomOriginServerSelector *xpv1.Selector `json:"customOriginServerSelector,omitempty"`
+
 	// ZoneID this custom hostname is for.
 	// +immutable
 	// +optional
@@ -152,6 +162,7 @@ type CustomHostnameParameters struct {
 	ZoneRef *xpv1.Reference `json:"zoneRef,omitempty"`
 
 	// ZoneSelector selects the zone object this custom hostname is for.
+	// +immutable
 	// +optional
 	ZoneSelector *xpv1.Selector `json:"zoneSelector,omitempty"`
 }
@@ -203,12 +214,26 @@ type CustomHostnameList struct {
 func (dr *CustomHostname) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, dr)
 
-	// Resolve spec.forProvider.zone
+	// Resolve spec.forProvider.customOriginServer to FQDN from DNS Record
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(dr.Spec.ForProvider.CustomOriginServer),
+		Reference:    dr.Spec.ForProvider.CustomOriginServerRef,
+		Selector:     dr.Spec.ForProvider.CustomOriginServerSelector,
+		To:           reference.To{Managed: &dns.Record{}, List: &dns.RecordList{}},
+		Extract:      dns.RecordFQDN(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "spec.forProvider.customOriginServer")
+	}
+	dr.Spec.ForProvider.CustomOriginServer = reference.ToPtrValue(rsp.ResolvedValue)
+	dr.Spec.ForProvider.CustomOriginServerRef = rsp.ResolvedReference
+
+	// Resolve spec.forProvider.zone
+	rsp, err = r.Resolve(ctx, reference.ResolutionRequest{
 		CurrentValue: reference.FromPtrValue(dr.Spec.ForProvider.Zone),
 		Reference:    dr.Spec.ForProvider.ZoneRef,
 		Selector:     dr.Spec.ForProvider.ZoneSelector,
-		To:           reference.To{Managed: &v1alpha1.Zone{}, List: &v1alpha1.ZoneList{}},
+		To:           reference.To{Managed: &zone.Zone{}, List: &zone.ZoneList{}},
 		Extract:      reference.ExternalName(),
 	})
 	if err != nil {

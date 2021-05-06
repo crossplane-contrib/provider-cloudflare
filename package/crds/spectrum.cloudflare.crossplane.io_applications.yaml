@@ -28,40 +28,54 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A Application is a set of common settings applied to one or more domains.
+        description: A Application is a set of common settings applied to one or more
+          domains.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
-            description: A ApplicationSpec defines the desired state of a Spectrum Application.
+            description: A ApplicationSpec defines the desired state of a Spectrum
+              Application.
             properties:
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
                 enum:
                 - Orphan
                 - Delete
                 type: string
               forProvider:
-                description: ApplicationParameters are the configurable fields of a Spectrum Application.
+                description: ApplicationParameters are the configurable fields of
+                  a Spectrum Application.
                 properties:
                   argoSmartRouting:
-                    description: ArgoSmartRouting enables Argo Smart Routing for this application.
+                    description: ArgoSmartRouting enables Argo Smart Routing for this
+                      application.
                     type: boolean
                   dns:
-                    description: The name and type of DNS record for the Spectrum application.
+                    description: The name and type of DNS record for the Spectrum
+                      application.
                     properties:
                       name:
-                        description: Name is the name of the DNS record associated with the application.
+                        description: Name is the name of the DNS record associated
+                          with the application.
                         format: hostname
                         type: string
                       type:
-                        description: Type is the type of edge IP configuration specified Only valid with CNAME DNS names
+                        description: Type is the type of edge IP configuration specified
+                          Only valid with CNAME DNS names
                         enum:
                         - CNAME
                         - ADDRESS
@@ -71,17 +85,20 @@ spec:
                     - type
                     type: object
                   edgeIPs:
-                    description: EdgeIPs is the anycast edge IP configuration for the hostname of this application.
+                    description: EdgeIPs is the anycast edge IP configuration for
+                      the hostname of this application.
                     properties:
                       connectivity:
-                        description: Connectivity is IP versions supported for inbound connections on Spectrum anycast IPs.
+                        description: Connectivity is IP versions supported for inbound
+                          connections on Spectrum anycast IPs.
                         enum:
                         - all
                         - ipv4
                         - ipv6
                         type: string
                       ips:
-                        description: IPs is a slice of customer owned IPs we broadcast via anycast for this hostname and application.
+                        description: IPs is a slice of customer owned IPs we broadcast
+                          via anycast for this hostname and application.
                         items:
                           type: string
                         type: array
@@ -101,14 +118,16 @@ spec:
                     description: OriginDNS is the DNS entry when using DNS Origins
                     properties:
                       name:
-                        description: Name is the name of the Origin DNS for the Spectrum Application
+                        description: Name is the name of the Origin DNS for the Spectrum
+                          Application
                         format: hostname
                         type: string
                     required:
                     - name
                     type: object
                   originDirect:
-                    description: OriginDirect is a list of destination addresses to the origin.
+                    description: OriginDirect is a list of destination addresses to
+                      the origin.
                     items:
                       type: string
                     type: array
@@ -116,7 +135,8 @@ spec:
                     description: OriginPort is the port range when using Origin DNS
                     properties:
                       end:
-                        description: End is the end of a port range for a Spectrum Application
+                        description: End is the end of a port range for a Spectrum
+                          Application
                         format: int32
                         maximum: 65535
                         minimum: 1
@@ -128,7 +148,8 @@ spec:
                         minimum: 1
                         type: integer
                       start:
-                        description: Start is the start of a port range for a Spectrum Application
+                        description: Start is the start of a port range for a Spectrum
+                          Application
                         format: int32
                         maximum: 65535
                         minimum: 1
@@ -138,7 +159,8 @@ spec:
                     description: Protocol port configuration at Cloudflare’s edge.
                     type: string
                   proxyProtocol:
-                    description: ProxyProtocol enables / sets the Proxy Protocol to the origin.
+                    description: ProxyProtocol enables / sets the Proxy Protocol to
+                      the origin.
                     enum:
                     - "off"
                     - v1
@@ -146,7 +168,8 @@ spec:
                     - simple
                     type: string
                   tls:
-                    description: TLS is the type of TLS termination associated with the application.
+                    description: TLS is the type of TLS termination associated with
+                      the application.
                     enum:
                     - "off"
                     - flexible
@@ -154,7 +177,8 @@ spec:
                     - strict
                     type: string
                   trafficType:
-                    description: TrafficType determines how data travels from the edge to the origin.
+                    description: TrafficType determines how data travels from the
+                      edge to the origin.
                     enum:
                     - direct
                     - http
@@ -164,7 +188,8 @@ spec:
                     description: ZoneID this Spectrum Application is managed on.
                     type: string
                   zoneRef:
-                    description: ZoneRef references the Zone object this Spectrum Application is managed on.
+                    description: ZoneRef references the Zone object this Spectrum
+                      Application is managed on.
                     properties:
                       name:
                         description: Name of the referenced object.
@@ -173,22 +198,27 @@ spec:
                     - name
                     type: object
                   zoneSelector:
-                    description: ZoneSelector selects the Zone object this Spectrum Application is managed on.
+                    description: ZoneSelector selects the Zone object this Spectrum
+                      Application is managed on.
                     properties:
                       matchControllerRef:
-                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
                         type: boolean
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: MatchLabels ensures an object with matching labels is selected.
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
                         type: object
                     type: object
                 required:
                 - protocol
                 type: object
               providerConfigRef:
-                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -197,7 +227,9 @@ spec:
                 - name
                 type: object
               providerRef:
-                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -206,7 +238,11 @@ spec:
                 - name
                 type: object
               writeConnectionSecretToRef:
-                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
                 properties:
                   name:
                     description: Name of the secret.
@@ -222,10 +258,12 @@ spec:
             - forProvider
             type: object
           status:
-            description: A ApplicationStatus represents the observed state of a Spectrum Application.
+            description: A ApplicationStatus represents the observed state of a Spectrum
+              Application.
             properties:
               atProvider:
-                description: ApplicationObservation are the observable fields of a Spectrum Application.
+                description: ApplicationObservation are the observable fields of a
+                  Spectrum Application.
                 properties:
                   createdOn:
                     format: date-time
@@ -240,20 +278,25 @@ spec:
                   description: A Condition that may apply to a resource.
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
                       format: date-time
                       type: string
                     message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
                       type: string
                     reason:
-                      description: A Reason for this condition's last transition from one status to another.
+                      description: A Reason for this condition's last transition from
+                        one status to another.
                       type: string
                     status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
                       type: string
                     type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
                       type: string
                   required:
                   - lastTransitionTime

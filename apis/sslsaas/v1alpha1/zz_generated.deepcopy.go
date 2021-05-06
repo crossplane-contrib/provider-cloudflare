@@ -150,6 +150,16 @@ func (in *CustomHostnameParameters) DeepCopyInto(out *CustomHostnameParameters) 
 		*out = new(string)
 		**out = **in
 	}
+	if in.CustomOriginServerRef != nil {
+		in, out := &in.CustomOriginServerRef, &out.CustomOriginServerRef
+		*out = new(v1.Reference)
+		**out = **in
+	}
+	if in.CustomOriginServerSelector != nil {
+		in, out := &in.CustomOriginServerSelector, &out.CustomOriginServerSelector
+		*out = new(v1.Selector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Zone != nil {
 		in, out := &in.Zone, &out.Zone
 		*out = new(string)
