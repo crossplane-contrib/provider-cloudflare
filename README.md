@@ -5,6 +5,11 @@ that manages Cloudflare resources via their V4 API (`cloudflare-go`). It comes
 with the following resources:
 
 - A `Zone` resource type that manages Cloudflare Zones.
+- A `Record` resource type that manages Cloudflare DNS Records on a Zone.
+- `Rule` and `Filter` resource types that manage Firewall Rules and Filters.
+- An `Application` resource type that manages Spectrum Applications on a Zone.
+- `CustomHostname` and `FallbackOrigin` types which manage SSL for SaaS settings on a Zone.
+- A `Route` type which manages Cloudflare Worker Route Bindings.
 
 
 ## Developing
