@@ -417,6 +417,7 @@ func TestUpdateZone(t *testing.T) {
 }
 
 func TestLoadSettingsForZone(t *testing.T) {
+	errBoom := errors.New("boom")
 	type fields struct {
 		client Client
 	}
@@ -438,6 +439,24 @@ func TestLoadSettingsForZone(t *testing.T) {
 		args   args
 		want   want
 	}{
+		"ErrorLookupSettings": {
+			reason: "LoadSettingsForZone should return an error when the API call returns an error",
+			fields: fields{
+				client: fake.MockClient{
+					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
+						return nil, errBoom
+					},
+				},
+			},
+			args: args{
+				id: "abcd",
+				zs: v1alpha1.ZoneSettings{ZeroRTT: ptr.StringPtr("yes")},
+			},
+			want: want{
+				err: errors.Wrap(errBoom, errLoadSettings),
+				o:   v1alpha1.ZoneSettings{ZeroRTT: ptr.StringPtr("yes")},
+			},
+		},
 		"LoadUnknownSetting": {
 			// Note: This is an academic test - all of the keys we use are static strings
 			// So we _cannot_ load a setting into a struct without knowing about it.
@@ -446,11 +465,6 @@ func TestLoadSettingsForZone(t *testing.T) {
 			reason: "LoadSettingsForZone should not error when reading unknown settings",
 			fields: fields{
 				client: fake.MockClient{
-					// When the ZoneDetails method is called on this fake client,
-					// return an error that we can compare.
-					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
-						return cloudflare.Zone{}, nil
-					},
 					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
 						return &cloudflare.ZoneSettingResponse{
 							Result: []cloudflare.ZoneSetting{
