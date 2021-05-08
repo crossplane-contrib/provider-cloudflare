@@ -37,6 +37,7 @@ import (
 	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	filter "github.com/benagricola/provider-cloudflare/internal/clients/firewall/filter"
+	metrics "github.com/benagricola/provider-cloudflare/internal/metrics"
 )
 
 const (
@@ -62,11 +63,15 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		MaxConcurrentReconciles: maxConcurrency,
 	}
 
+	hc := metrics.NewInstrumentedHTTPClient(name)
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.FilterGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
-			kube:                  mgr.GetClient(),
-			newCloudflareClientFn: filter.NewClient}),
+			kube: mgr.GetClient(),
+			newCloudflareClientFn: func(cfg clients.Config) (filter.Client, error) {
+				return filter.NewClient(cfg, hc)
+			},
+		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		managed.WithPollInterval(5*time.Minute),

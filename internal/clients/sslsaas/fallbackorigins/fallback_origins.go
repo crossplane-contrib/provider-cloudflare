@@ -18,12 +18,14 @@ package fallbackorigins
 
 import (
 	"context"
-	"errors"
+	"net/http"
 	"strings"
+
+	"github.com/cloudflare/cloudflare-go"
+	"github.com/pkg/errors"
 
 	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	"github.com/cloudflare/cloudflare-go"
 )
 
 const (
@@ -45,8 +47,8 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with Fallback Origins.
-func NewClient(cfg clients.Config) (Client, error) {
-	return clients.NewClient(cfg)
+func NewClient(cfg clients.Config, hc *http.Client) (Client, error) {
+	return clients.NewClient(cfg, hc)
 }
 
 // IsFallbackOriginNotFound returns true if the passed error indicates

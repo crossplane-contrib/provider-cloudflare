@@ -18,6 +18,7 @@ package record
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/cloudflare/cloudflare-go"
@@ -84,7 +85,7 @@ func TestConnect(t *testing.T) {
 
 	type fields struct {
 		kube      client.Client
-		newClient func(cfg clients.Config) (records.Client, error)
+		newClient func(cfg clients.Config, hc *http.Client) (records.Client, error)
 	}
 
 	type args struct {
@@ -157,7 +158,10 @@ func TestConnect(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e := &connector{kube: tc.fields.kube, newCloudflareClientFn: tc.fields.newClient}
+			nc := func(cfg clients.Config) (records.Client, error) {
+				return tc.fields.newClient(cfg, nil)
+			}
+			e := &connector{kube: tc.fields.kube, newCloudflareClientFn: nc}
 			_, err := e.Connect(tc.args.ctx, tc.args.mg)
 			if diff := cmp.Diff(tc.want, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\n%s\ne.Connect(...): -want error, +got error:\n%s\n", tc.reason, diff)

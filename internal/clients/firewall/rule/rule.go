@@ -18,6 +18,7 @@ package rule
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -45,8 +46,8 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with Firewall rules.
-func NewClient(cfg clients.Config) (Client, error) {
-	return clients.NewClient(cfg)
+func NewClient(cfg clients.Config, hc *http.Client) (Client, error) {
+	return clients.NewClient(cfg, hc)
 }
 
 // IsRuleNotFound returns true if the passed error indicates

@@ -18,6 +18,7 @@ package route
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/benagricola/provider-cloudflare/apis/workers/v1alpha1"
@@ -40,8 +41,8 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with Worker Routes.
-func NewClient(cfg clients.Config) (Client, error) {
-	return clients.NewClient(cfg)
+func NewClient(cfg clients.Config, hc *http.Client) (Client, error) {
+	return clients.NewClient(cfg, hc)
 }
 
 // IsRouteNotFound returns true if the passed error indicates

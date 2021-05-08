@@ -18,6 +18,7 @@ package zones
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -121,8 +122,8 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with Zones.
-func NewClient(cfg clients.Config) (Client, error) {
-	return clients.NewClient(cfg)
+func NewClient(cfg clients.Config, hc *http.Client) (Client, error) {
+	return clients.NewClient(cfg, hc)
 }
 
 // GenerateObservation creates an observation of a cloudflare Zone

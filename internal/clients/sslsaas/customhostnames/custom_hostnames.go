@@ -18,6 +18,7 @@ package customhostnames
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
@@ -41,8 +42,8 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with Custom Hostnames.
-func NewClient(cfg clients.Config) (Client, error) {
-	return clients.NewClient(cfg)
+func NewClient(cfg clients.Config, hc *http.Client) (Client, error) {
+	return clients.NewClient(cfg, hc)
 }
 
 // IsCustomHostnameNotFound returns true if the passed error indicates

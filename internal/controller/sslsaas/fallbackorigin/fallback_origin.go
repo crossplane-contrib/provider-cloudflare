@@ -38,6 +38,7 @@ import (
 	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	fallbackorigins "github.com/benagricola/provider-cloudflare/internal/clients/sslsaas/fallbackorigins"
+	metrics "github.com/benagricola/provider-cloudflare/internal/metrics"
 )
 
 const (
@@ -66,11 +67,15 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		MaxConcurrentReconciles: maxConcurrency,
 	}
 
+	hc := metrics.NewInstrumentedHTTPClient(name)
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.FallbackOriginGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
-			kube:                  mgr.GetClient(),
-			newCloudflareClientFn: fallbackorigins.NewClient}),
+			kube: mgr.GetClient(),
+			newCloudflareClientFn: func(cfg clients.Config) (fallbackorigins.Client, error) {
+				return fallbackorigins.NewClient(cfg, hc)
+			},
+		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		managed.WithPollInterval(5*time.Minute),

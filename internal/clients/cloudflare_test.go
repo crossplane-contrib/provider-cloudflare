@@ -329,7 +329,7 @@ func TestNewClient(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, err := NewClient(tc.args.config)
+			got, err := NewClient(tc.args.config, nil)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\n%s\nNewClient(...): -want error, +got error:\n%s\n", tc.reason, diff)
 			}

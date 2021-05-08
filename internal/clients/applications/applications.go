@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/http"
 	"strings"
 
 	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
@@ -47,8 +48,8 @@ type Client interface {
 }
 
 // NewClient returns a new Cloudflare API client for working with Spectrum Applications.
-func NewClient(cfg clients.Config) (Client, error) {
-	return clients.NewClient(cfg)
+func NewClient(cfg clients.Config, hc *http.Client) (Client, error) {
+	return clients.NewClient(cfg, hc)
 }
 
 // IsApplicationNotFound returns true if the passed error indicates

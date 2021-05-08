@@ -19,6 +19,7 @@ package clients
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/pkg/errors"
@@ -60,13 +61,18 @@ type Config struct {
 }
 
 // NewClient creates a new Cloudflare Client with provided Credentials.
-func NewClient(c Config) (*cloudflare.API, error) {
+func NewClient(c Config, hc *http.Client) (*cloudflare.API, error) {
+	if hc == nil {
+		hc = http.DefaultClient
+	}
+	ohc := cloudflare.HTTPClient(hc)
+
 	if c.AuthByAPIKey != nil && c.AuthByAPIKey.Key != nil &&
 		c.AuthByAPIKey.Email != nil {
-		return cloudflare.New(*c.AuthByAPIKey.Key, *c.AuthByAPIKey.Email)
+		return cloudflare.New(*c.AuthByAPIKey.Key, *c.AuthByAPIKey.Email, ohc)
 	}
 	if c.AuthByAPIToken != nil && c.AuthByAPIToken.Token != nil {
-		return cloudflare.NewWithAPIToken(*c.AuthByAPIToken.Token)
+		return cloudflare.NewWithAPIToken(*c.AuthByAPIToken.Token, ohc)
 	}
 	return nil, errors.New(errNoAuth)
 }

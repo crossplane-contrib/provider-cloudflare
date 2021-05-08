@@ -18,6 +18,7 @@ package route
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/cloudflare/cloudflare-go"
@@ -27,7 +28,7 @@ import (
 	pcv1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
 	"github.com/benagricola/provider-cloudflare/apis/workers/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	Routes "github.com/benagricola/provider-cloudflare/internal/clients/workers/route"
+	routes "github.com/benagricola/provider-cloudflare/internal/clients/workers/route"
 	"github.com/benagricola/provider-cloudflare/internal/clients/workers/route/fake"
 
 	corev1 "k8s.io/api/core/v1"
@@ -84,7 +85,7 @@ func TestConnect(t *testing.T) {
 
 	type fields struct {
 		kube      client.Client
-		newClient func(cfg clients.Config) (Routes.Client, error)
+		newClient func(cfg clients.Config, hc *http.Client) (routes.Client, error)
 	}
 
 	type args struct {
@@ -138,7 +139,7 @@ func TestConnect(t *testing.T) {
 						return nil
 					}),
 				},
-				newClient: Routes.NewClient,
+				newClient: routes.NewClient,
 			},
 			args: args{
 				mg: &v1alpha1.Route{
@@ -157,7 +158,10 @@ func TestConnect(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e := &connector{kube: tc.fields.kube, newCloudflareClientFn: tc.fields.newClient}
+			nc := func(cfg clients.Config) (routes.Client, error) {
+				return tc.fields.newClient(cfg, nil)
+			}
+			e := &connector{kube: tc.fields.kube, newCloudflareClientFn: nc}
 			_, err := e.Connect(tc.args.ctx, tc.args.mg)
 			if diff := cmp.Diff(tc.want, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\n%s\ne.Connect(...): -want error, +got error:\n%s\n", tc.reason, diff)
@@ -170,7 +174,7 @@ func TestObserve(t *testing.T) {
 	errBoom := errors.New("boom")
 
 	type fields struct {
-		client Routes.Client
+		client routes.Client
 	}
 
 	type args struct {
@@ -313,7 +317,7 @@ func TestCreate(t *testing.T) {
 	errBoom := errors.New("boom")
 
 	type fields struct {
-		client Routes.Client
+		client routes.Client
 	}
 
 	type args struct {
@@ -430,7 +434,7 @@ func TestUpdate(t *testing.T) {
 	errBoom := errors.New("boom")
 
 	type fields struct {
-		client Routes.Client
+		client routes.Client
 	}
 
 	type args struct {
@@ -573,7 +577,7 @@ func TestDelete(t *testing.T) {
 	errBoom := errors.New("boom")
 
 	type fields struct {
-		client Routes.Client
+		client routes.Client
 	}
 
 	type args struct {

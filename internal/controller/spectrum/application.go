@@ -39,6 +39,7 @@ import (
 	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	applications "github.com/benagricola/provider-cloudflare/internal/clients/applications"
+	metrics "github.com/benagricola/provider-cloudflare/internal/metrics"
 )
 
 const (
@@ -64,11 +65,15 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		MaxConcurrentReconciles: maxConcurrency,
 	}
 
+	hc := metrics.NewInstrumentedHTTPClient(name)
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1alpha1.ApplicationGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
-			kube:                  mgr.GetClient(),
-			newCloudflareClientFn: applications.NewClient}),
+			kube: mgr.GetClient(),
+			newCloudflareClientFn: func(cfg clients.Config) (applications.Client, error) {
+				return applications.NewClient(cfg, hc)
+			},
+		}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 		managed.WithPollInterval(5*time.Minute),
