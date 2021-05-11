@@ -65,8 +65,24 @@ func GenerateObservation(in cloudflare.CustomHostname) v1alpha1.CustomHostnameOb
 		ValidationErrors: in.SSL.ValidationErrors,
 	}
 
+	// Cloudflare API does not capitalise DNS record type in this field.
+	// We capitalise it ourselves so it's consistent with other usage
+	// on this provider.
+	ovdnst := strings.ToUpper(in.OwnershipVerification.Type)
+
 	return v1alpha1.CustomHostnameObservation{
-		Status:             in.Status,
+		Status: in.Status,
+		OwnershipVerification: v1alpha1.CustomHostnameOwnershipVerification{
+			DNSRecord: &v1alpha1.CustomHostnameOwnershipVerificationDNS{
+				Type:  &ovdnst,
+				Name:  &in.OwnershipVerification.Name,
+				Value: &in.OwnershipVerification.Value,
+			},
+			HTTPFile: &v1alpha1.CustomHostnameOwnershipVerificationHTTP{
+				URL:  &in.OwnershipVerificationHTTP.HTTPUrl,
+				Body: &in.OwnershipVerificationHTTP.HTTPBody,
+			},
+		},
 		VerificationErrors: in.VerificationErrors,
 		SSL:                ssl,
 	}
@@ -84,7 +100,8 @@ func UpToDate(spec *v1alpha1.CustomHostnameParameters, o cloudflare.CustomHostna
 	}
 
 	// Check if mutable fields are up to date with resource
-	if spec.CustomOriginServer != nil && o.CustomOriginServer != "" && *spec.CustomOriginServer != o.CustomOriginServer {
+	if spec.CustomOriginServer != nil && o.CustomOriginServer != "" &&
+		*spec.CustomOriginServer != o.CustomOriginServer {
 		return false
 	}
 

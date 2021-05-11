@@ -25,6 +25,12 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: SYNCED
       type: string
+    - jsonPath: .spec.forProvider.hostname
+      name: HOSTNAME
+      type: string
+    - jsonPath: .spec.forProvider.customOriginServer
+      name: CUSTOM ORIGIN
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -248,6 +254,41 @@ spec:
                 description: CustomHostnameObservation are the observable fields of
                   a custom hostname.
                 properties:
+                  ownershipVerification:
+                    description: CustomHostnameOwnershipVerification represents ownership
+                      verification status of a given custom hostname.
+                    properties:
+                      dnsRecord:
+                        description: DNSRecord represents ownership verification status
+                          using a DNS record on the domain in question.
+                        properties:
+                          name:
+                            description: Name is the name of the DNS record that must
+                              be created to verify this Hostname.
+                            type: string
+                          type:
+                            description: Type is the type of the DNS record that must
+                              be created to verify ownership of this hostname.
+                            type: string
+                          value:
+                            description: Value is the value of the DNS record that
+                              must be created to verify ownership of this hostname.
+                            type: string
+                        type: object
+                      httpFile:
+                        description: HTTPFile represents ownership verification status
+                          using a file accessed over HTTP.
+                        properties:
+                          body:
+                            description: Body is the contents of the above file that
+                              must be readable to verify ownership of this hostname.
+                            type: string
+                          url:
+                            description: URL is the location where a file must be
+                              made available to verify ownership of this hostname.
+                            type: string
+                        type: object
+                    type: object
                   ssl:
                     description: CustomHostnameSSLObserved represents the Observed
                       SSL section in a given custom hostname.
@@ -290,7 +331,6 @@ spec:
                       type: string
                     type: array
                 required:
-                - ssl
                 - status
                 type: object
               conditions:

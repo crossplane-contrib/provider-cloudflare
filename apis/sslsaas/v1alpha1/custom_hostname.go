@@ -60,11 +60,41 @@ type CustomHostnameSSLSettings struct {
 	// HTTP3         *string  `json:"http3,omitempty"`
 }
 
-// CustomHostnameOwnershipVerification represents ownership verification status of a given custom hostname.
-type CustomHostnameOwnershipVerification struct {
-	Type  *string `json:"type,omitempty"`
-	Name  *string `json:"name,omitempty"`
+// CustomHostnameOwnershipVerificationDNS represents the verification
+// information using DNS for this Custom hostname.
+type CustomHostnameOwnershipVerificationDNS struct {
+	// Name is the name of the DNS record that must be created to verify
+	// this Hostname.
+	Name *string `json:"name,omitempty"`
+	// Type is the type of the DNS record that must be created to verify
+	// ownership of this hostname.
+	Type *string `json:"type,omitempty"`
+	// Value is the value of the DNS record that must be created to verify
+	// ownership of this hostname.
 	Value *string `json:"value,omitempty"`
+}
+
+// CustomHostnameOwnershipVerificationHTTP represents the verification
+// information using HTTP for this Custom hostname.
+type CustomHostnameOwnershipVerificationHTTP struct {
+	// URL is the location where a file must be made available to verify
+	// ownership of this hostname.
+	URL *string `json:"url,omitempty"`
+	// Body is the contents of the above file that must be readable to verify
+	// ownership of this hostname.
+	Body *string `json:"body,omitempty"`
+}
+
+// CustomHostnameOwnershipVerification represents ownership verification status
+// of a given custom hostname.
+type CustomHostnameOwnershipVerification struct {
+	// DNSRecord represents ownership verification status using a DNS record on
+	// the domain in question.
+	DNSRecord *CustomHostnameOwnershipVerificationDNS `json:"dnsRecord,omitempty"`
+
+	// HTTPFile represents ownership verification status using a file accessed
+	// over HTTP.
+	HTTPFile *CustomHostnameOwnershipVerificationHTTP `json:"httpFile,omitempty"`
 }
 
 // CustomHostnameSSL represents the SSL section in a given custom hostname.
@@ -115,7 +145,7 @@ type CustomHostnameSSLObserved struct {
 	// Following fields are in the API but not supported in go library yet
 	// TxtName          string                              `json:"txt_name,omitempty"`
 	// TxtValue         string                              `json:"txt_value,omitempty"`
-	// UplaodedOn metav1.Time `json:"uploaded_on,omitempty"`
+	// UploadedOn metav1.Time `json:"uploaded_on,omitempty"`
 	// ExpiresOn  metav1.Time `json:"expires_on,omitempty"`
 
 	// Waiting on 0.15 to release
@@ -168,9 +198,10 @@ type CustomHostnameParameters struct {
 
 // CustomHostnameObservation are the observable fields of a custom hostname.
 type CustomHostnameObservation struct {
-	Status             cloudflare.CustomHostnameStatus `json:"status"`
-	VerificationErrors []string                        `json:"verificationErrors,omitempty"`
-	SSL                CustomHostnameSSLObserved       `json:"ssl"`
+	Status                cloudflare.CustomHostnameStatus     `json:"status"`
+	OwnershipVerification CustomHostnameOwnershipVerification `json:"ownershipVerification,omitempty"`
+	VerificationErrors    []string                            `json:"verificationErrors,omitempty"`
+	SSL                   CustomHostnameSSLObserved           `json:"ssl,omitempty"`
 }
 
 // A CustomHostnameSpec defines the desired state of a custom hostname.
@@ -191,6 +222,8 @@ type CustomHostnameStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
+// +kubebuilder:printcolumn:name="HOSTNAME",type="string",JSONPath=".spec.forProvider.hostname"
+// +kubebuilder:printcolumn:name="CUSTOM ORIGIN",type="string",JSONPath=".spec.forProvider.customOriginServer"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,cloudflare}
 type CustomHostname struct {
 	metav1.TypeMeta   `json:",inline"`
