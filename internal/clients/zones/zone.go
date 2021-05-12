@@ -403,6 +403,13 @@ func UpToDate(spec *v1alpha1.ZoneParameters, z cloudflare.Zone, ozs *v1alpha1.Zo
 		return false
 	}
 
+	// sortSlicesOpt := cmpopts.SortSlices(func(x, y string) bool {
+	// 	return x < y
+	// })
+	// if !cmp.Equal(in.ClientIDList, observed.ClientIDList, sortSlicesOpt, cmpopts.EquateEmpty()) {
+	// 	return false
+	// }
+
 	// TODO: Does this handle nameservers in the wrong order?
 	if (spec.VanityNameServers != nil && !cmp.Equal(spec.VanityNameServers, z.VanityNS)) ||
 		(spec.VanityNameServers == nil && len(z.VanityNS) > 0) {
