@@ -47,13 +47,11 @@ const (
 
 	errClientConfig = "error getting client config"
 
-	errCustomHostnameLookup              = "cannot lookup custom hostname"
-	errCustomHostnameCreation            = "cannot create custom hostname"
-	errCustomHostnameCreationSSLSettings = "cannot create custom hostname, invalid SSL Settings Config"
-	errCustomHostnameCreationSSL         = "cannot create custom hostname, invalid SSL Config"
-	errCustomHostnameUpdate              = "cannot update record"
-	errCustomHostnameDeletion            = "cannot delete record"
-	errCustomHostnameNoZone              = "cannot create custom hostname no zone found"
+	errCustomHostnameLookup   = "cannot lookup custom hostname"
+	errCustomHostnameCreation = "cannot create custom hostname"
+	errCustomHostnameUpdate   = "cannot update record"
+	errCustomHostnameDeletion = "cannot delete record"
+	errCustomHostnameNoZone   = "cannot create custom hostname no zone found"
 
 	customHostnameStatusActive = "active"
 
@@ -182,69 +180,55 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotCustomHostname)
 	}
 
+	// Zone is required to create a custom hostname on
 	if cr.Spec.ForProvider.Zone == nil {
 		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreation)
 	}
 
-	if cr.Spec.ForProvider.Hostname == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreation)
+	sslSettings := cloudflare.CustomHostnameSSLSettings{
+		Ciphers: cr.Spec.ForProvider.SSL.Settings.Ciphers,
 	}
 
 	// Check the SSL Settings Config
-	if cr.Spec.ForProvider.SSL.Settings.HTTP2 == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreationSSLSettings)
+	if cr.Spec.ForProvider.SSL.Settings.HTTP2 != nil {
+		sslSettings.HTTP2 = *cr.Spec.ForProvider.SSL.Settings.HTTP2
 	}
 
-	if cr.Spec.ForProvider.SSL.Settings.TLS13 == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreationSSLSettings)
+	if cr.Spec.ForProvider.SSL.Settings.TLS13 != nil {
+		sslSettings.TLS13 = *cr.Spec.ForProvider.SSL.Settings.TLS13
 	}
 
-	if cr.Spec.ForProvider.SSL.Settings.MinTLSVersion == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreationSSLSettings)
-	}
-
-	sslSettings := cloudflare.CustomHostnameSSLSettings{
-		HTTP2:         *cr.Spec.ForProvider.SSL.Settings.HTTP2,
-		TLS13:         *cr.Spec.ForProvider.SSL.Settings.TLS13,
-		MinTLSVersion: *cr.Spec.ForProvider.SSL.Settings.MinTLSVersion,
-		Ciphers:       cr.Spec.ForProvider.SSL.Settings.Ciphers,
-	}
-
-	// Check the SSL Config
-	if cr.Spec.ForProvider.SSL.Method == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreationSSL)
-	}
-
-	if cr.Spec.ForProvider.SSL.Type == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreationSSL)
-	}
-
-	if cr.Spec.ForProvider.SSL.CustomCertificate == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreationSSL)
-	}
-
-	if cr.Spec.ForProvider.SSL.CustomKey == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreationSSL)
-	}
-
-	if cr.Spec.ForProvider.SSL.Wildcard == nil {
-		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreationSSL)
+	if cr.Spec.ForProvider.SSL.Settings.MinTLSVersion != nil {
+		sslSettings.MinTLSVersion = *cr.Spec.ForProvider.SSL.Settings.MinTLSVersion
 	}
 
 	ssl := cloudflare.CustomHostnameSSL{
-		Method:            *cr.Spec.ForProvider.SSL.Method,
-		Type:              *cr.Spec.ForProvider.SSL.Type,
-		CustomCertificate: *cr.Spec.ForProvider.SSL.CustomCertificate,
-		CustomKey:         *cr.Spec.ForProvider.SSL.CustomKey,
-		Wildcard:          cr.Spec.ForProvider.SSL.Wildcard,
-		Settings:          sslSettings,
+		Wildcard: cr.Spec.ForProvider.SSL.Wildcard,
+		Settings: sslSettings,
+	}
+
+	// Check the SSL Config
+	if cr.Spec.ForProvider.SSL.Method != nil {
+		ssl.Method = *cr.Spec.ForProvider.SSL.Method
+	}
+
+	if cr.Spec.ForProvider.SSL.Type != nil {
+		ssl.Type = *cr.Spec.ForProvider.SSL.Type
+	}
+
+	if cr.Spec.ForProvider.SSL.CustomCertificate != nil {
+		ssl.CustomCertificate = *cr.Spec.ForProvider.SSL.CustomCertificate
+	}
+
+	if cr.Spec.ForProvider.SSL.CustomKey != nil {
+		ssl.CustomKey = *cr.Spec.ForProvider.SSL.CustomKey
 	}
 
 	rch, err := e.client.CreateCustomHostname(
 		ctx,
 		*cr.Spec.ForProvider.Zone,
 		cloudflare.CustomHostname{
-			Hostname: *cr.Spec.ForProvider.Hostname,
+			Hostname: cr.Spec.ForProvider.Hostname,
 			SSL:      ssl,
 		},
 	)

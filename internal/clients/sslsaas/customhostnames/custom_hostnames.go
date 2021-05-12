@@ -133,23 +133,46 @@ func UpToDate(spec *v1alpha1.CustomHostnameParameters, o cloudflare.CustomHostna
 func UpdateCustomHostname(ctx context.Context, client Client, chID string, spec *v1alpha1.CustomHostnameParameters) error {
 
 	sslSettings := cloudflare.CustomHostnameSSLSettings{
-		HTTP2:         *spec.SSL.Settings.HTTP2,
-		TLS13:         *spec.SSL.Settings.TLS13,
-		MinTLSVersion: *spec.SSL.Settings.MinTLSVersion,
-		Ciphers:       spec.SSL.Settings.Ciphers,
+		Ciphers: spec.SSL.Settings.Ciphers,
+	}
+
+	// Check the SSL Settings Config
+	if spec.SSL.Settings.HTTP2 != nil {
+		sslSettings.HTTP2 = *spec.SSL.Settings.HTTP2
+	}
+
+	if spec.SSL.Settings.TLS13 != nil {
+		sslSettings.TLS13 = *spec.SSL.Settings.TLS13
+	}
+
+	if spec.SSL.Settings.MinTLSVersion != nil {
+		sslSettings.MinTLSVersion = *spec.SSL.Settings.MinTLSVersion
 	}
 
 	ssl := cloudflare.CustomHostnameSSL{
-		Method:            *spec.SSL.Method,
-		Type:              *spec.SSL.Type,
-		CustomCertificate: *spec.SSL.CustomCertificate,
-		CustomKey:         *spec.SSL.CustomKey,
-		Wildcard:          spec.SSL.Wildcard,
-		Settings:          sslSettings,
+		Wildcard: spec.SSL.Wildcard,
+		Settings: sslSettings,
+	}
+
+	// Check the SSL Config
+	if spec.SSL.Method != nil {
+		ssl.Method = *spec.SSL.Method
+	}
+
+	if spec.SSL.Type != nil {
+		ssl.Type = *spec.SSL.Type
+	}
+
+	if spec.SSL.CustomCertificate != nil {
+		ssl.CustomCertificate = *spec.SSL.CustomCertificate
+	}
+
+	if spec.SSL.CustomKey != nil {
+		ssl.CustomKey = *spec.SSL.CustomKey
 	}
 
 	ch := cloudflare.CustomHostname{
-		Hostname: *spec.Hostname,
+		Hostname: spec.Hostname,
 		SSL:      ssl,
 	}
 	_, er := client.UpdateCustomHostname(ctx, *spec.Zone, chID, ch)

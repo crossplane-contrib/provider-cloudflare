@@ -105,13 +105,11 @@ spec:
                     description: SSL Settings for a Custom Hostname
                     properties:
                       customCertificate:
-                        default: ""
                         description: Custom Certificate used for this Custom Hostname
                           If provided then Cloudflare will not attempt to generate
                           an ACME certificate
                         type: string
                       customKey:
-                        default: ""
                         description: Custom Certificate Key used for this Custom Hostname
                           If provided then Cloudflare will not attempt to generate
                           an ACME certificate
@@ -170,7 +168,6 @@ spec:
                         - dv
                         type: string
                       wildcard:
-                        default: false
                         description: Indicates whether the certificate for the custom
                           hostname covers a wildcard.
                         type: boolean
@@ -203,6 +200,8 @@ spec:
                           is selected.
                         type: object
                     type: object
+                required:
+                - hostname
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that

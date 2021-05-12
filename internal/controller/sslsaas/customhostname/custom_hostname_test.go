@@ -62,7 +62,7 @@ func withZone(zoneID string) customHostnameModifier {
 }
 
 func withHostname(hostname string) customHostnameModifier {
-	return func(r *v1alpha1.CustomHostname) { r.Spec.ForProvider.Hostname = &hostname }
+	return func(r *v1alpha1.CustomHostname) { r.Spec.ForProvider.Hostname = hostname }
 }
 
 func withSSLSettings(settings *v1alpha1.CustomHostnameSSL) customHostnameModifier {

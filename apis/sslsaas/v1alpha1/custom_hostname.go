@@ -114,17 +114,14 @@ type CustomHostnameSSL struct {
 	Settings CustomHostnameSSLSettings `json:"settings,omitempty"`
 
 	// Indicates whether the certificate for the custom hostname covers a wildcard.
-	// +kubebuilder:default=false
 	Wildcard *bool `json:"wildcard,omitempty"`
 
 	// Custom Certificate used for this Custom Hostname
 	// If provided then Cloudflare will not attempt to generate an ACME certificate
-	// +kubebuilder:default=""
 	CustomCertificate *string `json:"customCertificate,omitempty"`
 
 	// Custom Certificate Key used for this Custom Hostname
 	// If provided then Cloudflare will not attempt to generate an ACME certificate
-	// +kubebuilder:default=""
 	CustomKey *string `json:"customKey,omitempty"`
 
 	// Following fields are in the API but not supported in go library yet
@@ -162,7 +159,7 @@ type CustomHostnameParameters struct {
 	// +kubebuilder:validation:Format=hostname
 	// +kubebuilder:validation:MaxLength=255
 	// +immutable
-	Hostname *string `json:"hostname,omitempty"`
+	Hostname string `json:"hostname"`
 
 	// SSL Settings for a Custom Hostname
 	// +optional
@@ -170,6 +167,7 @@ type CustomHostnameParameters struct {
 
 	// CustomOriginServer for a Custom Hostname
 	// A valid hostname that’s been added to your DNS zone as an A, AAAA, or CNAME record.
+	// +optional
 	CustomOriginServer *string `json:"customOriginServer,omitempty"`
 
 	// CustomOriginServerRef references the Record object that this Custom Hostname should point to.
