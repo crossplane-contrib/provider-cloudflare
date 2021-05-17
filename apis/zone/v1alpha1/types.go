@@ -22,6 +22,59 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
+// MinifySettings represents the minify settings on a Zone
+type MinifySettings struct {
+	// CSS enables or disables minifying CSS assets
+	// +kubebuilder:validation:Enum=off;on
+	// +optional
+	CSS *string `json:"css,omitempty"`
+	// HTML enables or disables minifying HTML assets
+	// +kubebuilder:validation:Enum=off;on
+	// +optional
+	HTML *string `json:"html,omitempty"`
+	// JS enables or disables minifying JS assets
+	// +kubebuilder:validation:Enum=off;on
+	// +optional
+	JS *string `json:"js,omitempty"`
+}
+
+// MobileRedirectSettings represents the mobile_redirect settings on a Zone
+type MobileRedirectSettings struct {
+	// Status enables or disables mobile redirection
+	// +kubebuilder:validation:Enum=off;on
+	// +optional
+	Status *string `json:"status,omitempty"`
+	// Subdomain defines the subdomain prefix to redirect mobile devices to
+	// +optional
+	Subdomain *string `json:"subdomain,omitempty"`
+	// StripURI defines whether or not to strip the path from the URI when redirecting
+	// +optional
+	StripURI *bool `json:"stripURI,omitempty"`
+}
+
+// StrictTransportSecuritySettings represents the STS settings on a Zone's security headers
+type StrictTransportSecuritySettings struct {
+	// Enabled enables or disables STS settings
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+	// MaxAge defines the maximum age in seconds of the STS
+	// +optional
+	MaxAge *int64 `json:"maxAge,omitempty"`
+	// IncludeSubdomains defines whether or not to include all subdomains
+	// +optional
+	IncludeSubdomains *bool `json:"includeSubdomains,omitempty"`
+	// NoSniff defines whether or not to include 'X-Content-Type-Options: nosniff' header
+	// +optional
+	NoSniff *bool `json:"noSniff,omitempty"`
+}
+
+// SecurityHeaderSettings represents the security headers on a Zone
+type SecurityHeaderSettings struct {
+	// StrictTransportSecurity defines the STS settings on a Zone
+	// +optional
+	StrictTransportSecurity *StrictTransportSecuritySettings `json:"strictTransportSecurity,omitempty"`
+}
+
 // ZoneSettings represents settings on a Zone
 type ZoneSettings struct {
 	// AlwaysOnline enables or disables Always Online
@@ -69,6 +122,10 @@ type ZoneSettings struct {
 	// +kubebuilder:validation:Enum=300;900;1800;2700;3600;7200;10800;14400;28800;57600;86400;604800;2592000;31536000
 	// +optional
 	ChallengeTTL *int64 `json:"challengeTtl,omitempty"`
+
+	// Ciphers configures which ciphers are allowed for TLS termination
+	// +optional
+	Ciphers []string `json:"ciphers,omitempty"`
 
 	// CnameFlattening configures CNAME flattening
 	// +kubebuilder:validation:Enum=flatten_at_root;flatten_all;flatten_none
@@ -123,6 +180,10 @@ type ZoneSettings struct {
 	// +optional
 	MaxUpload *int64 `json:"maxUpload,omitempty"`
 
+	// Minify configures minify settings for certain assets
+	// +optional
+	Minify *MinifySettings `json:"minify,omitempty"`
+
 	// MinTLSVersion configures the minimum TLS version
 	// +kubebuilder:validation:Enum="1.0";"1.1";"1.2";"1.3"
 	// +optional
@@ -132,6 +193,10 @@ type ZoneSettings struct {
 	// +kubebuilder:validation:Enum=off;on
 	// +optional
 	Mirage *string `json:"mirage,omitempty"`
+
+	// MobileRedirect configures automatic redirections to mobile-optimized subdomains
+	// +optional
+	MobileRedirect *MobileRedirectSettings `json:"mobileRedirect,omitempty"`
 
 	// OpportunisticEncryption enables or disables Opportunistic encryption
 	// +kubebuilder:validation:Enum=off;on
@@ -182,6 +247,10 @@ type ZoneSettings struct {
 	// +kubebuilder:validation:Enum=off;on
 	// +optional
 	RocketLoader *string `json:"rocketLoader,omitempty"`
+
+	// SecurityHeader defines the security headers for a Zone
+	// +optional
+	SecurityHeader *SecurityHeaderSettings `json:"securityHeader,omitempty"`
 
 	// SecurityLevel configures the Security level
 	// +kubebuilder:validation:Enum=off;essentially_off;low;medium;high;under_attack

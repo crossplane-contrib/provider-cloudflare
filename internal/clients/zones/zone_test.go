@@ -100,8 +100,12 @@ func TestLateInitialize(t *testing.T) {
 					PlanID:            ptr.StringPtr("dead"),
 					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
 					Settings: v1alpha1.ZoneSettings{
-						// This setting will be lateInited
-						AdvancedDDOS: nil,
+						// These settings will be lateInited
+						AdvancedDDOS:   nil,
+						Minify:         nil,
+						MobileRedirect: nil,
+						SecurityHeader: nil,
+						Ciphers:        nil,
 						// This setting will not be overwritten
 						BrowserCacheTTL: ptr.Int64Ptr(900),
 					},
@@ -122,9 +126,31 @@ func TestLateInitialize(t *testing.T) {
 				},
 				// 'Current' Settings are those settings that were observed
 				// from the API.
-				// Only AdvancedDDOS should be late-inited here.
+				// AdvancedDDOS, Minify and SecurityHeader should be late-inited here.
 				czs: &v1alpha1.ZoneSettings{
-					AdvancedDDOS:    ptr.StringPtr("yes"),
+					AdvancedDDOS: ptr.StringPtr("yes"),
+					Minify: &v1alpha1.MinifySettings{
+						CSS:  ptr.StringPtr("on"),
+						HTML: ptr.StringPtr("on"),
+						JS:   ptr.StringPtr("on"),
+					},
+					MobileRedirect: &v1alpha1.MobileRedirectSettings{
+						Status:    ptr.StringPtr("on"),
+						Subdomain: ptr.StringPtr("m"),
+						StripURI:  ptr.BoolPtr(false),
+					},
+					SecurityHeader: &v1alpha1.SecurityHeaderSettings{
+						StrictTransportSecurity: &v1alpha1.StrictTransportSecuritySettings{
+							Enabled:           ptr.BoolPtr(true),
+							MaxAge:            ptr.Int64(86400),
+							IncludeSubdomains: ptr.BoolPtr(true),
+							NoSniff:           ptr.BoolPtr(true),
+						},
+					},
+					Ciphers: []string{
+						"ECDHE-RSA-AES128-GCM-SHA256",
+						"AES128-SHA",
+					},
 					BrowserCacheTTL: ptr.Int64Ptr(3600),
 				},
 			},
@@ -136,8 +162,128 @@ func TestLateInitialize(t *testing.T) {
 					PlanID:            ptr.StringPtr("dead"),
 					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
 					Settings: v1alpha1.ZoneSettings{
-						AdvancedDDOS:    ptr.StringPtr("yes"),
+						AdvancedDDOS: ptr.StringPtr("yes"),
+						Minify: &v1alpha1.MinifySettings{
+							CSS:  ptr.StringPtr("on"),
+							HTML: ptr.StringPtr("on"),
+							JS:   ptr.StringPtr("on"),
+						},
+						MobileRedirect: &v1alpha1.MobileRedirectSettings{
+							Status:    ptr.StringPtr("on"),
+							Subdomain: ptr.StringPtr("m"),
+							StripURI:  ptr.BoolPtr(false),
+						},
+						SecurityHeader: &v1alpha1.SecurityHeaderSettings{
+							StrictTransportSecurity: &v1alpha1.StrictTransportSecuritySettings{
+								Enabled:           ptr.BoolPtr(true),
+								MaxAge:            ptr.Int64(86400),
+								IncludeSubdomains: ptr.BoolPtr(true),
+								NoSniff:           ptr.BoolPtr(true),
+							},
+						},
+						Ciphers: []string{
+							"ECDHE-RSA-AES128-GCM-SHA256",
+							"AES128-SHA",
+						},
 						BrowserCacheTTL: ptr.Int64Ptr(900),
+					},
+				},
+			},
+		},
+		"SuccessSettingsPartial": {
+			reason: "LateInit should update partially set settings from a Zone",
+			args: args{
+				zp: &v1alpha1.ZoneParameters{
+					AccountID:         ptr.StringPtr("beef"),
+					Paused:            ptr.BoolPtr(false),
+					PlanID:            ptr.StringPtr("dead"),
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
+					Settings: v1alpha1.ZoneSettings{
+						// nil settings under the top-level setting will be lateInited
+						Minify: &v1alpha1.MinifySettings{
+							CSS:  nil,
+							HTML: nil,
+							JS:   ptr.StringPtr("off"),
+						},
+						MobileRedirect: &v1alpha1.MobileRedirectSettings{
+							Status:    ptr.StringPtr("on"),
+							Subdomain: nil,
+							StripURI:  ptr.BoolPtr(true),
+						},
+						SecurityHeader: &v1alpha1.SecurityHeaderSettings{
+							StrictTransportSecurity: &v1alpha1.StrictTransportSecuritySettings{
+								Enabled:           ptr.BoolPtr(true),
+								MaxAge:            ptr.Int64Ptr(86400),
+								NoSniff:           nil,
+								IncludeSubdomains: nil,
+							},
+						},
+					},
+				},
+				z: cloudflare.Zone{
+					Account: cloudflare.Account{
+						ID: "beef",
+					},
+					Plan: cloudflare.ZonePlan{
+						ZonePlanCommon: cloudflare.ZonePlanCommon{
+							ID: "dead",
+						},
+					},
+					// This field should not be late-inited, as the value
+					// is already set false in zp
+					Paused:   false,
+					VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
+				},
+				// 'Current' Settings are those settings that were observed
+				// from the API.
+				// CSS and HTML under Minify should be late-inited here.
+				czs: &v1alpha1.ZoneSettings{
+					Minify: &v1alpha1.MinifySettings{
+						CSS:  ptr.StringPtr("on"),
+						HTML: ptr.StringPtr("off"),
+						JS:   ptr.StringPtr("on"),
+					},
+					MobileRedirect: &v1alpha1.MobileRedirectSettings{
+						Status:    ptr.StringPtr("on"),
+						Subdomain: ptr.StringPtr("m"),
+						StripURI:  ptr.BoolPtr(false),
+					},
+					SecurityHeader: &v1alpha1.SecurityHeaderSettings{
+						StrictTransportSecurity: &v1alpha1.StrictTransportSecuritySettings{
+							Enabled:           ptr.BoolPtr(false),
+							MaxAge:            ptr.Int64Ptr(66700),
+							NoSniff:           ptr.BoolPtr(true),
+							IncludeSubdomains: ptr.BoolPtr(true),
+						},
+					},
+				},
+			},
+			want: want{
+				o: true,
+				zp: &v1alpha1.ZoneParameters{
+					Paused:            ptr.BoolPtr(false),
+					AccountID:         ptr.StringPtr("beef"),
+					PlanID:            ptr.StringPtr("dead"),
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
+					Settings: v1alpha1.ZoneSettings{
+						Minify: &v1alpha1.MinifySettings{
+							CSS:  ptr.StringPtr("on"),
+							HTML: ptr.StringPtr("off"),
+							JS:   ptr.StringPtr("off"),
+						},
+						MobileRedirect: &v1alpha1.MobileRedirectSettings{
+							Status:    ptr.StringPtr("on"),
+							Subdomain: ptr.StringPtr("m"),
+							StripURI:  ptr.BoolPtr(true),
+						},
+						SecurityHeader: &v1alpha1.SecurityHeaderSettings{
+							StrictTransportSecurity: &v1alpha1.StrictTransportSecuritySettings{
+								Enabled:           ptr.BoolPtr(true),
+								MaxAge:            ptr.Int64Ptr(86400),
+								NoSniff:           ptr.BoolPtr(true),
+								IncludeSubdomains: ptr.BoolPtr(true),
+							},
+						},
 					},
 				},
 			},
@@ -521,6 +667,168 @@ func TestLoadSettingsForZone(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.want.o, *got); diff != "" {
 				t.Errorf("\n%s\nLoadSettingsForZone(...): -want, +got:\n%s\n", tc.reason, diff)
+			}
+		})
+	}
+}
+
+func TestSecurityHeaderSettingsToMap(t *testing.T) {
+	type args struct {
+		settings *v1alpha1.SecurityHeaderSettings
+	}
+
+	type want struct {
+		o map[string]interface{}
+	}
+
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   want
+	}{
+		"Success": {
+			reason: "securityHeaderSettingsToMap should return a valid map type",
+			args: args{
+				settings: &v1alpha1.SecurityHeaderSettings{
+					StrictTransportSecurity: &v1alpha1.StrictTransportSecuritySettings{
+						Enabled:           ptr.BoolPtr(true),
+						MaxAge:            ptr.Int64Ptr(86400),
+						IncludeSubdomains: ptr.BoolPtr(true),
+						NoSniff:           ptr.BoolPtr(true),
+					},
+				},
+			},
+			want: want{
+				o: map[string]interface{}{
+					cfsStrictTransportSecurity: map[string]interface{}{
+						cfsStrictTransportSecurityEnabled:           true,
+						cfsStrictTransportSecurityIncludeSubdomains: true,
+						cfsStrictTransportSecurityMaxAge:            int64(86400),
+						cfsStrictTransportSecurityNoSniff:           true,
+					},
+				},
+			},
+		},
+		"SuccessEmpty": {
+			reason: "securityHeaderSettingsToMap should return an empty map when no settings are provided",
+			args: args{
+				settings: &v1alpha1.SecurityHeaderSettings{},
+			},
+			want: want{
+				o: map[string]interface{}{},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := securityHeaderSettingsToMap(tc.args.settings)
+			if diff := cmp.Diff(tc.want.o, got); diff != "" {
+				t.Errorf("\n%s\nsecurityHeaderSettingsToMap(...): -want, +got:\n%s\n", tc.reason, diff)
+			}
+		})
+	}
+}
+
+func TestMobileRedirectSettingsToMap(t *testing.T) {
+	type args struct {
+		settings *v1alpha1.MobileRedirectSettings
+	}
+
+	type want struct {
+		o map[string]interface{}
+	}
+
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   want
+	}{
+		"Success": {
+			reason: "mobileRedirectSettingsToMap should return a valid map type",
+			args: args{
+				settings: &v1alpha1.MobileRedirectSettings{
+					Status:    ptr.StringPtr("on"),
+					Subdomain: ptr.StringPtr("m"),
+					StripURI:  ptr.BoolPtr(false),
+				},
+			},
+			want: want{
+				o: map[string]interface{}{
+					cfsMobileRedirectStatus:    "on",
+					cfsMobileRedirectSubdomain: "m",
+					cfsMobileRedirectStripURI:  false,
+				},
+			},
+		},
+		"SuccessEmpty": {
+			reason: "mobileRedirectSettingsToMap should return an empty map when no settings are provided",
+			args: args{
+				settings: &v1alpha1.MobileRedirectSettings{},
+			},
+			want: want{
+				o: map[string]interface{}{},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := mobileRedirectSettingsToMap(tc.args.settings)
+			if diff := cmp.Diff(tc.want.o, got); diff != "" {
+				t.Errorf("\n%s\nmobileRedirectSettingsToMap(...): -want, +got:\n%s\n", tc.reason, diff)
+			}
+		})
+	}
+}
+
+func TestMinifySettingsToMap(t *testing.T) {
+	type args struct {
+		settings *v1alpha1.MinifySettings
+	}
+
+	type want struct {
+		o map[string]interface{}
+	}
+
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   want
+	}{
+		"Success": {
+			reason: "minifySettingsToMap should return a valid map type",
+			args: args{
+				settings: &v1alpha1.MinifySettings{
+					CSS:  ptr.StringPtr("on"),
+					HTML: ptr.StringPtr("on"),
+					JS:   ptr.StringPtr("on"),
+				},
+			},
+			want: want{
+				o: map[string]interface{}{
+					cfsMinifyCSS:  "on",
+					cfsMinifyHTML: "on",
+					cfsMinifyJS:   "on",
+				},
+			},
+		},
+		"SuccessEmpty": {
+			reason: "minifySettingsToMap should return an empty map when no settings are provided",
+			args: args{
+				settings: &v1alpha1.MinifySettings{},
+			},
+			want: want{
+				o: map[string]interface{}{},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := minifySettingsToMap(tc.args.settings)
+			if diff := cmp.Diff(tc.want.o, got); diff != "" {
+				t.Errorf("\n%s\nminifySettingsToMap(...): -want, +got:\n%s\n", tc.reason, diff)
 			}
 		})
 	}

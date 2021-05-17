@@ -52,51 +52,153 @@ const (
 	// DO NOT CHANGE THIS
 	errZoneInvalidID = "Invalid zone identifier"
 
-	cfsZeroRTT                 = "0rtt"
-	cfsAdvancedDDOS            = "advanced_ddos"
-	cfsAlwaysOnline            = "always_online"
-	cfsAlwaysUseHTTPS          = "always_use_https"
-	cfsAutomaticHTTPSRewrites  = "automatic_https_rewrites"
-	cfsBrotli                  = "brotli"
-	cfsBrowserCacheTTL         = "browser_cache_ttl"
-	cfsBrowserCheck            = "browser_check"
-	cfsCacheLevel              = "cache_level"
-	cfsChallengeTTL            = "challenge_ttl"
-	cfsCnameFlattening         = "cname_flattening"
-	cfsDevelopmentMode         = "development_mode"
-	cfsEdgeCacheTTL            = "edge_cache_ttl"
-	cfsEmailObfuscation        = "email_obfuscation"
-	cfsHotlinkProtection       = "hotlink_protection"
-	cfsHTTP2                   = "http2"
-	cfsHTTP3                   = "http3"
-	cfsIPGeolocation           = "ip_geolocation"
-	cfsIPv6                    = "ipv6"
-	cfsLogToCloudflare         = "log_to_cloudflare"
-	cfsMaxUpload               = "max_upload"
-	cfsMinTLSVersion           = "min_tls_version"
-	cfsMirage                  = "mirage"
-	cfsOpportunisticEncryption = "opportunistic_encryption"
-	cfsOpportunisticOnion      = "opportunistic_onion"
-	cfsOrangeToOrange          = "orange_to_orange"
-	cfsOriginErrorPagePassThru = "origin_error_page_pass_thru"
-	cfsPolish                  = "polish"
-	cfsPrefetchPreload         = "prefetch_preload"
-	cfsPrivacyPass             = "privacy_pass"
-	cfsPseudoIPv4              = "pseudo_ipv4"
-	cfsResponseBuffering       = "response_buffering"
-	cfsRocketLoader            = "rocket_loader"
-	cfsSecurityLevel           = "security_level"
-	cfsServerSideExclude       = "server_side_exclude"
-	cfsSortQueryStringForCache = "sort_query_string_for_cache"
-	cfsSSL                     = "ssl"
-	cfsTLS13                   = "tls_1_3"
-	cfsTLSClientAuth           = "tls_client_auth"
-	cfsTrueClientIPHeader      = "true_client_ip_header"
-	cfsVisitorIP               = "visitor_ip"
-	cfsWAF                     = "waf"
-	cfsWebP                    = "webp"
-	cfsWebSockets              = "websockets"
+	cfsZeroRTT                                  = "0rtt"
+	cfsAdvancedDDOS                             = "advanced_ddos"
+	cfsAlwaysOnline                             = "always_online"
+	cfsAlwaysUseHTTPS                           = "always_use_https"
+	cfsAutomaticHTTPSRewrites                   = "automatic_https_rewrites"
+	cfsBrotli                                   = "brotli"
+	cfsBrowserCacheTTL                          = "browser_cache_ttl"
+	cfsBrowserCheck                             = "browser_check"
+	cfsCacheLevel                               = "cache_level"
+	cfsChallengeTTL                             = "challenge_ttl"
+	cfsCiphers                                  = "ciphers"
+	cfsCnameFlattening                          = "cname_flattening"
+	cfsDevelopmentMode                          = "development_mode"
+	cfsEdgeCacheTTL                             = "edge_cache_ttl"
+	cfsEmailObfuscation                         = "email_obfuscation"
+	cfsHotlinkProtection                        = "hotlink_protection"
+	cfsHTTP2                                    = "http2"
+	cfsHTTP3                                    = "http3"
+	cfsIPGeolocation                            = "ip_geolocation"
+	cfsIPv6                                     = "ipv6"
+	cfsLogToCloudflare                          = "log_to_cloudflare"
+	cfsMaxUpload                                = "max_upload"
+	cfsMinify                                   = "minify"
+	cfsMinifyHTML                               = "html"
+	cfsMinifyJS                                 = "js"
+	cfsMinifyCSS                                = "css"
+	cfsMinTLSVersion                            = "min_tls_version"
+	cfsMirage                                   = "mirage"
+	cfsMobileRedirect                           = "mobile_redirect"
+	cfsMobileRedirectStatus                     = "status"
+	cfsMobileRedirectSubdomain                  = "mobile_subdomain"
+	cfsMobileRedirectStripURI                   = "strip_uri"
+	cfsOpportunisticEncryption                  = "opportunistic_encryption"
+	cfsOpportunisticOnion                       = "opportunistic_onion"
+	cfsOrangeToOrange                           = "orange_to_orange"
+	cfsOriginErrorPagePassThru                  = "origin_error_page_pass_thru"
+	cfsPolish                                   = "polish"
+	cfsPrefetchPreload                          = "prefetch_preload"
+	cfsPrivacyPass                              = "privacy_pass"
+	cfsPseudoIPv4                               = "pseudo_ipv4"
+	cfsResponseBuffering                        = "response_buffering"
+	cfsRocketLoader                             = "rocket_loader"
+	cfsSecurityHeader                           = "security_header"
+	cfsStrictTransportSecurity                  = "strict_transport_security"
+	cfsStrictTransportSecurityEnabled           = "enabled"
+	cfsStrictTransportSecurityIncludeSubdomains = "include_subdomains"
+	cfsStrictTransportSecurityMaxAge            = "max_age"
+	cfsStrictTransportSecurityNoSniff           = "nosniff"
+	cfsSecurityLevel                            = "security_level"
+	cfsServerSideExclude                        = "server_side_exclude"
+	cfsSortQueryStringForCache                  = "sort_query_string_for_cache"
+	cfsSSL                                      = "ssl"
+	cfsTLS13                                    = "tls_1_3"
+	cfsTLSClientAuth                            = "tls_client_auth"
+	cfsTrueClientIPHeader                       = "true_client_ip_header"
+	cfsVisitorIP                                = "visitor_ip"
+	cfsWAF                                      = "waf"
+	cfsWebP                                     = "webp"
+	cfsWebSockets                               = "websockets"
 )
+
+// toMinifySettings converts an interface from the Cloudflare API
+// into a MinifySettings type.
+func toMinifySettings(in interface{}) *v1alpha1.MinifySettings {
+	if m, ok := in.(map[string]interface{}); ok {
+		minifySettings := &v1alpha1.MinifySettings{}
+		for key, value := range m {
+			sval := clients.ToString(value)
+			switch key {
+			case cfsMinifyCSS:
+				minifySettings.CSS = sval
+			case cfsMinifyJS:
+				minifySettings.JS = sval
+			case cfsMinifyHTML:
+				minifySettings.HTML = sval
+			}
+		}
+
+		return minifySettings
+	}
+
+	return nil
+}
+
+// toMobileRedirectSettings converts an interface from the Cloudflare API
+// into a MinifySettings type.
+func toMobileRedirectSettings(in interface{}) *v1alpha1.MobileRedirectSettings {
+	if m, ok := in.(map[string]interface{}); ok {
+		mobileRedirectSettings := &v1alpha1.MobileRedirectSettings{}
+		for key, value := range m {
+			switch key {
+			case cfsMobileRedirectStatus:
+				mobileRedirectSettings.Status = clients.ToString(value)
+			case cfsMobileRedirectSubdomain:
+				mobileRedirectSettings.Subdomain = clients.ToString(value)
+			case cfsMobileRedirectStripURI:
+				mobileRedirectSettings.StripURI = clients.ToBool(value)
+			}
+		}
+
+		return mobileRedirectSettings
+	}
+
+	return nil
+}
+
+// toStrictTransportSecuritySettings
+func toStrictTransportSecuritySettings(in interface{}) *v1alpha1.StrictTransportSecuritySettings {
+	if m, ok := in.(map[string]interface{}); ok {
+		stsSettings := &v1alpha1.StrictTransportSecuritySettings{}
+		for key, value := range m {
+			switch key {
+			case cfsStrictTransportSecurityEnabled:
+				stsSettings.Enabled = clients.ToBool(value)
+			case cfsStrictTransportSecurityMaxAge:
+				stsSettings.MaxAge = clients.ToNumber(value)
+			case cfsStrictTransportSecurityIncludeSubdomains:
+				stsSettings.IncludeSubdomains = clients.ToBool(value)
+			case cfsStrictTransportSecurityNoSniff:
+				stsSettings.NoSniff = clients.ToBool(value)
+			default:
+			}
+		}
+
+		return stsSettings
+	}
+
+	return nil
+}
+
+// toSecurityHeaderSettings converts an interface from the Cloudflare API
+// into a SecurityHeaderSettings type.
+func toSecurityHeaderSettings(in interface{}) *v1alpha1.SecurityHeaderSettings {
+	if m, ok := in.(map[string]interface{}); ok {
+		securityHeaderSettings := &v1alpha1.SecurityHeaderSettings{}
+		for key, value := range m {
+			switch key { //nolint:gocritic
+			case cfsStrictTransportSecurity:
+				securityHeaderSettings.StrictTransportSecurity = toStrictTransportSecuritySettings(value)
+			}
+		}
+
+		return securityHeaderSettings
+	}
+
+	return nil
+}
 
 // ZoneSettingsMap contains pairs of keys and values
 // that represent settings on a Zone.
@@ -187,9 +289,80 @@ func LateInitialize(spec *v1alpha1.ZoneParameters, z cloudflare.Zone,
 	return li
 }
 
-// LateInitializeSettings initializes Settings based on the remote resource
-func LateInitializeSettings(observed, desired ZoneSettingsMap, initOn *v1alpha1.ZoneSettings) bool {
+func lateInitializeMinifySettings(observed, desired *v1alpha1.MinifySettings) bool {
 	li := false
+
+	if desired.CSS == nil {
+		desired.CSS = observed.CSS
+		li = true
+	}
+	if desired.HTML == nil {
+		desired.HTML = observed.HTML
+		li = true
+	}
+	if desired.JS == nil {
+		desired.JS = observed.JS
+		li = true
+	}
+
+	return li
+}
+
+func lateInitializeMobileRedirectSettings(observed, desired *v1alpha1.MobileRedirectSettings) bool {
+	li := false
+
+	if desired.Status == nil {
+		desired.Status = observed.Status
+		li = true
+	}
+	if desired.Subdomain == nil {
+		desired.Subdomain = observed.Subdomain
+		li = true
+	}
+	if desired.StripURI == nil {
+		desired.StripURI = observed.StripURI
+		li = true
+	}
+
+	return li
+}
+
+func lateInitializeSecurityHeaderSettings(observed, desired *v1alpha1.SecurityHeaderSettings) bool {
+	li := false
+
+	if desired.StrictTransportSecurity == nil {
+		desired.StrictTransportSecurity = observed.StrictTransportSecurity
+		return true
+	}
+
+	osts := observed.StrictTransportSecurity
+	dsts := desired.StrictTransportSecurity
+
+	if dsts.Enabled == nil {
+		dsts.Enabled = osts.Enabled
+		li = true
+	}
+	if dsts.MaxAge == nil {
+		dsts.MaxAge = osts.MaxAge
+		li = true
+	}
+	if dsts.IncludeSubdomains == nil {
+		dsts.IncludeSubdomains = osts.IncludeSubdomains
+		li = true
+	}
+	if dsts.NoSniff == nil {
+		dsts.NoSniff = osts.NoSniff
+		li = true
+	}
+
+	return li
+}
+
+// LateInitializeSettings initializes Settings based on the remote resource
+func LateInitializeSettings(observed, desired ZoneSettingsMap, initOn *v1alpha1.ZoneSettings) bool { //nolint:gocyclo
+	// Gocyclo disabled - perhaps the "complex" setting `else` branch should be extracted out?
+	li := false
+	nestedLateInit := false
 
 	// For each setting we retrieved from the API
 	for k, v := range observed {
@@ -202,14 +375,38 @@ func LateInitializeSettings(observed, desired ZoneSettingsMap, initOn *v1alpha1.
 		if _, ok := desired[k]; !ok {
 			desired[k] = v
 			li = true
+		} else {
+			// Handle "complex" settings specially.
+			// These might be set in our spec, but still have nested settings
+			// that need late initialisation from the remote state.
+			switch k {
+			case cfsMinify:
+				obsMinify := toMinifySettings(v)
+				if obsMinify != nil {
+					nestedLateInit = lateInitializeMinifySettings(obsMinify, initOn.Minify)
+				}
+
+			case cfsMobileRedirect:
+				obsMobileRedirect := toMobileRedirectSettings(v)
+				if obsMobileRedirect != nil {
+					nestedLateInit = lateInitializeMobileRedirectSettings(obsMobileRedirect, initOn.MobileRedirect)
+				}
+
+			case cfsSecurityHeader:
+				obsSecurityHeader := toSecurityHeaderSettings(v)
+				if obsSecurityHeader != nil {
+					nestedLateInit = lateInitializeSecurityHeaderSettings(obsSecurityHeader, initOn.SecurityHeader)
+				}
+			}
 		}
 	}
-	// If we lateInited any fields, update them on the
+	// If we lateInited any top-level fields, update them on the
 	// Zone settings.
 	if li {
 		settingsMapToZone(desired, initOn)
 	}
-	return li
+
+	return li || nestedLateInit
 }
 
 // LoadSettingsForZone loads Zone settings from the cloudflare API
@@ -250,6 +447,7 @@ func settingsMapToZone(sm ZoneSettingsMap, zs *v1alpha1.ZoneSettings) {
 	zs.BrowserCheck = clients.ToString(sm[cfsBrowserCheck])
 	zs.CacheLevel = clients.ToString(sm[cfsCacheLevel])
 	zs.ChallengeTTL = clients.ToNumber(sm[cfsChallengeTTL])
+	zs.Ciphers = clients.ToStringSlice(sm[cfsCiphers])
 	zs.CnameFlattening = clients.ToString(sm[cfsCnameFlattening])
 	zs.DevelopmentMode = clients.ToString(sm[cfsDevelopmentMode])
 	zs.EdgeCacheTTL = clients.ToNumber(sm[cfsEdgeCacheTTL])
@@ -261,8 +459,10 @@ func settingsMapToZone(sm ZoneSettingsMap, zs *v1alpha1.ZoneSettings) {
 	zs.IPv6 = clients.ToString(sm[cfsIPv6])
 	zs.LogToCloudflare = clients.ToString(sm[cfsLogToCloudflare])
 	zs.MaxUpload = clients.ToNumber(sm[cfsMaxUpload])
+	zs.Minify = toMinifySettings(sm[cfsMinify])
 	zs.MinTLSVersion = clients.ToString(sm[cfsMinTLSVersion])
 	zs.Mirage = clients.ToString(sm[cfsMirage])
+	zs.MobileRedirect = toMobileRedirectSettings(sm[cfsMobileRedirect])
 	zs.OpportunisticEncryption = clients.ToString(sm[cfsOpportunisticEncryption])
 	zs.OpportunisticOnion = clients.ToString(sm[cfsOpportunisticOnion])
 	zs.OrangeToOrange = clients.ToString(sm[cfsOrangeToOrange])
@@ -273,6 +473,7 @@ func settingsMapToZone(sm ZoneSettingsMap, zs *v1alpha1.ZoneSettings) {
 	zs.PseudoIPv4 = clients.ToString(sm[cfsPseudoIPv4])
 	zs.ResponseBuffering = clients.ToString(sm[cfsResponseBuffering])
 	zs.RocketLoader = clients.ToString(sm[cfsRocketLoader])
+	zs.SecurityHeader = toSecurityHeaderSettings(sm[cfsSecurityHeader])
 	zs.SecurityLevel = clients.ToString(sm[cfsSecurityLevel])
 	zs.ServerSideExclude = clients.ToString(sm[cfsServerSideExclude])
 	zs.SortQueryStringForCache = clients.ToString(sm[cfsSortQueryStringForCache])
@@ -286,7 +487,72 @@ func settingsMapToZone(sm ZoneSettingsMap, zs *v1alpha1.ZoneSettings) {
 	zs.WebSockets = clients.ToString(sm[cfsWebSockets])
 }
 
-func mapSet(sm ZoneSettingsMap, key string, value interface{}) {
+// minifySettingsToMap converts a MinifySettings struct to the shape expected by the
+// Cloudflare API. This may not necessarily exactly match our local JSON format
+func minifySettingsToMap(settings *v1alpha1.MinifySettings) map[string]interface{} {
+	m := make(map[string]interface{})
+
+	if settings.CSS != nil {
+		m[cfsMinifyCSS] = *settings.CSS
+	}
+	if settings.HTML != nil {
+		m[cfsMinifyHTML] = *settings.HTML
+	}
+	if settings.JS != nil {
+		m[cfsMinifyJS] = *settings.JS
+	}
+
+	return m
+}
+
+// mobileRedirectSettingsToMap converts a MobileRedirectSettings struct to the shape expected by the
+// Cloudflare API. This may not necessarily exactly match our local JSON format
+func mobileRedirectSettingsToMap(settings *v1alpha1.MobileRedirectSettings) map[string]interface{} {
+	m := make(map[string]interface{})
+
+	if settings.Status != nil {
+		m[cfsMobileRedirectStatus] = *settings.Status
+	}
+	if settings.StripURI != nil {
+		m[cfsMobileRedirectStripURI] = *settings.StripURI
+	}
+	if settings.Subdomain != nil {
+		m[cfsMobileRedirectSubdomain] = *settings.Subdomain
+	}
+
+	return m
+}
+
+// securityHeaderSettingsToMap converts a MobileRedirectSettings struct to the shape expected by the
+// Cloudflare API. This may not necessarily exactly match our local JSON format
+func securityHeaderSettingsToMap(settings *v1alpha1.SecurityHeaderSettings) map[string]interface{} {
+	m := make(map[string]interface{})
+
+	if settings.StrictTransportSecurity != nil {
+		sts := settings.StrictTransportSecurity
+		stsSettings := make(map[string]interface{})
+
+		if sts.Enabled != nil {
+			stsSettings[cfsStrictTransportSecurityEnabled] = *sts.Enabled
+		}
+		if sts.IncludeSubdomains != nil {
+			stsSettings[cfsStrictTransportSecurityIncludeSubdomains] = *sts.IncludeSubdomains
+		}
+		if sts.MaxAge != nil {
+			stsSettings[cfsStrictTransportSecurityMaxAge] = *sts.MaxAge
+		}
+		if sts.NoSniff != nil {
+			stsSettings[cfsStrictTransportSecurityNoSniff] = *sts.NoSniff
+		}
+
+		m[cfsStrictTransportSecurity] = stsSettings
+	}
+
+	return m
+}
+
+func mapSet(sm ZoneSettingsMap, key string, value interface{}) { //nolint:gocyclo
+	// Gocyclo ignored here in anticipation of later refactoring
 	// Note for clarity: These case statements _cannot_ be combined
 	// as they are extracting the individual value type pointers
 	// from the interface that is passed in.
@@ -298,6 +564,22 @@ func mapSet(sm ZoneSettingsMap, key string, value interface{}) {
 	case *int64:
 		if vt != nil {
 			sm[key] = *vt
+		}
+	case []string:
+		if vt != nil {
+			sm[key] = vt
+		}
+	case *v1alpha1.MinifySettings:
+		if vt != nil {
+			sm[key] = minifySettingsToMap(vt)
+		}
+	case *v1alpha1.MobileRedirectSettings:
+		if vt != nil {
+			sm[key] = mobileRedirectSettingsToMap(vt)
+		}
+	case *v1alpha1.SecurityHeaderSettings:
+		if vt != nil {
+			sm[key] = securityHeaderSettingsToMap(vt)
 		}
 	// Empty pointer values are ignored
 	default:
@@ -319,6 +601,7 @@ func zoneToSettingsMap(zs *v1alpha1.ZoneSettings) ZoneSettingsMap {
 	mapSet(sm, cfsBrowserCheck, zs.BrowserCheck)
 	mapSet(sm, cfsCacheLevel, zs.CacheLevel)
 	mapSet(sm, cfsChallengeTTL, zs.ChallengeTTL)
+	mapSet(sm, cfsCiphers, zs.Ciphers)
 	mapSet(sm, cfsCnameFlattening, zs.CnameFlattening)
 	mapSet(sm, cfsDevelopmentMode, zs.DevelopmentMode)
 	mapSet(sm, cfsEdgeCacheTTL, zs.EdgeCacheTTL)
@@ -330,8 +613,10 @@ func zoneToSettingsMap(zs *v1alpha1.ZoneSettings) ZoneSettingsMap {
 	mapSet(sm, cfsIPv6, zs.IPv6)
 	mapSet(sm, cfsLogToCloudflare, zs.LogToCloudflare)
 	mapSet(sm, cfsMaxUpload, zs.MaxUpload)
+	mapSet(sm, cfsMinify, zs.Minify)
 	mapSet(sm, cfsMinTLSVersion, zs.MinTLSVersion)
 	mapSet(sm, cfsMirage, zs.Mirage)
+	mapSet(sm, cfsMobileRedirect, zs.MobileRedirect)
 	mapSet(sm, cfsOpportunisticEncryption, zs.OpportunisticEncryption)
 	mapSet(sm, cfsOpportunisticOnion, zs.OpportunisticOnion)
 	mapSet(sm, cfsOrangeToOrange, zs.OrangeToOrange)
@@ -342,6 +627,7 @@ func zoneToSettingsMap(zs *v1alpha1.ZoneSettings) ZoneSettingsMap {
 	mapSet(sm, cfsPseudoIPv4, zs.PseudoIPv4)
 	mapSet(sm, cfsResponseBuffering, zs.ResponseBuffering)
 	mapSet(sm, cfsRocketLoader, zs.RocketLoader)
+	mapSet(sm, cfsSecurityHeader, zs.SecurityHeader)
 	mapSet(sm, cfsSecurityLevel, zs.SecurityLevel)
 	mapSet(sm, cfsServerSideExclude, zs.ServerSideExclude)
 	mapSet(sm, cfsSortQueryStringForCache, zs.SortQueryStringForCache)

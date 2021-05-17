@@ -149,3 +149,21 @@ func ToString(in interface{}) *string {
 	}
 	return nil
 }
+
+// ToBool converts an interface from the Cloudflare API
+// into a string pointer, if it contains an existing string.
+func ToBool(in interface{}) *bool {
+	if v, ok := in.(bool); ok {
+		return &v
+	}
+	return nil
+}
+
+// ToStringSlice converts an interface from the Cloudflare API
+// into a string slice.
+func ToStringSlice(in interface{}) []string {
+	if v, ok := in.([]string); ok {
+		return v
+	}
+	return nil
+}

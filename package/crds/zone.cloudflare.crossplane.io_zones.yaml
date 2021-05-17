@@ -200,6 +200,12 @@ spec:
                         - 31536000
                         format: int64
                         type: integer
+                      ciphers:
+                        description: Ciphers configures which ciphers are allowed
+                          for TLS termination
+                        items:
+                          type: string
+                        type: array
                       cnameFlattening:
                         description: CnameFlattening configures CNAME flattening
                         enum:
@@ -275,12 +281,54 @@ spec:
                         - "1.2"
                         - "1.3"
                         type: string
+                      minify:
+                        description: Minify configures minify settings for certain
+                          assets
+                        properties:
+                          css:
+                            description: CSS enables or disables minifying CSS assets
+                            enum:
+                            - "off"
+                            - "on"
+                            type: string
+                          html:
+                            description: HTML enables or disables minifying HTML assets
+                            enum:
+                            - "off"
+                            - "on"
+                            type: string
+                          js:
+                            description: JS enables or disables minifying JS assets
+                            enum:
+                            - "off"
+                            - "on"
+                            type: string
+                        type: object
                       mirage:
                         description: Mirage enables or disables Mirage
                         enum:
                         - "off"
                         - "on"
                         type: string
+                      mobileRedirect:
+                        description: MobileRedirect configures automatic redirections
+                          to mobile-optimized subdomains
+                        properties:
+                          status:
+                            description: Status enables or disables mobile redirection
+                            enum:
+                            - "off"
+                            - "on"
+                            type: string
+                          stripURI:
+                            description: StripURI defines whether or not to strip
+                              the path from the URI when redirecting
+                            type: boolean
+                          subdomain:
+                            description: Subdomain defines the subdomain prefix to
+                              redirect mobile devices to
+                            type: string
+                        type: object
                       opportunisticEncryption:
                         description: OpportunisticEncryption enables or disables Opportunistic
                           encryption
@@ -348,6 +396,32 @@ spec:
                         - "off"
                         - "on"
                         type: string
+                      securityHeader:
+                        description: SecurityHeader defines the security headers for
+                          a Zone
+                        properties:
+                          strictTransportSecurity:
+                            description: StrictTransportSecurity defines the STS settings
+                              on a Zone
+                            properties:
+                              enabled:
+                                description: Enabled enables or disables STS settings
+                                type: boolean
+                              includeSubdomains:
+                                description: IncludeSubdomains defines whether or
+                                  not to include all subdomains
+                                type: boolean
+                              maxAge:
+                                description: MaxAge defines the maximum age in seconds
+                                  of the STS
+                                format: int64
+                                type: integer
+                              noSniff:
+                                description: 'NoSniff defines whether or not to include
+                                  ''X-Content-Type-Options: nosniff'' header'
+                                type: boolean
+                            type: object
+                        type: object
                       securityLevel:
                         description: SecurityLevel configures the Security level
                         enum:
