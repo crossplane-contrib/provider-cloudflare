@@ -57,12 +57,13 @@ func IsCustomHostnameNotFound(err error) bool {
 func GenerateObservation(in cloudflare.CustomHostname) v1alpha1.CustomHostnameObservation {
 
 	ssl := v1alpha1.CustomHostnameSSLObserved{
-		Status:           in.SSL.Status,
-		HTTPUrl:          in.SSL.HTTPUrl,
-		HTTPBody:         in.SSL.HTTPBody,
-		CnameName:        in.SSL.CnameName,
-		CnameTarget:      in.SSL.CnameTarget,
-		ValidationErrors: in.SSL.ValidationErrors,
+		Status:               in.SSL.Status,
+		HTTPUrl:              in.SSL.HTTPUrl,
+		HTTPBody:             in.SSL.HTTPBody,
+		CnameName:            in.SSL.CnameName,
+		CnameTarget:          in.SSL.CnameTarget,
+		CertificateAuthority: in.SSL.CertificateAuthority,
+		ValidationErrors:     in.SSL.ValidationErrors,
 	}
 
 	// Cloudflare API does not capitalise DNS record type in this field.
