@@ -487,6 +487,16 @@ func TestUpToDate(t *testing.T) {
 
 func TestUpdateZone(t *testing.T) {
 	errBoom := errors.New("boom")
+
+	inputZoneID := "1234"
+	nsKey := cfsMinify
+
+	nsInputValue := v1alpha1.MinifySettings{
+		CSS:  ptr.StringPtr("on"),
+		HTML: ptr.StringPtr("off"),
+		JS:   ptr.StringPtr("bar"),
+	}
+
 	type fields struct {
 		client Client
 	}
@@ -519,7 +529,7 @@ func TestUpdateZone(t *testing.T) {
 				},
 			},
 			args: args{
-				id: "abcd",
+				id: inputZoneID,
 			},
 			want: want{
 				err: errors.Wrap(errBoom, errUpdateZone),
@@ -541,7 +551,7 @@ func TestUpdateZone(t *testing.T) {
 					// If it doesn't we return an error which will cause the test to fail.
 					MockEditZone: func(ctx context.Context, zoneID string, zoneOpts cloudflare.ZoneOptions) (cloudflare.Zone, error) {
 						var err error
-						if zoneID != "abcd" {
+						if zoneID != inputZoneID {
 							err = errors.New("zoneID value incorrect")
 						}
 						if *zoneOpts.Paused != false {
@@ -562,7 +572,7 @@ func TestUpdateZone(t *testing.T) {
 				},
 			},
 			args: args{
-				id: "abcd",
+				id: inputZoneID,
 				zp: v1alpha1.ZoneParameters{
 					Paused:            ptr.BoolPtr(false),
 					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
@@ -572,6 +582,89 @@ func TestUpdateZone(t *testing.T) {
 				err: nil,
 			},
 		},
+		"UpdateZoneSettings": {
+			reason: "UpdateZone should return no error when updating zone settings",
+			fields: fields{
+				client: fake.MockClient{
+					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
+						return cloudflare.Zone{
+							ID:       zoneID,
+							Name:     "testzone.com",
+							Paused:   true,
+							VanityNS: []string{"ns1.lele.com"},
+						}, nil
+					},
+					// When EditZone is called, check it receives the expected arguments.
+					// If it doesn't we return an error which will cause the test to fail.
+					MockEditZone: func(ctx context.Context, zoneID string, zoneOpts cloudflare.ZoneOptions) (cloudflare.Zone, error) {
+						var err error
+						if zoneID != inputZoneID {
+							err = errors.New("zoneID value incorrect")
+						}
+						if *zoneOpts.Paused != false {
+							err = errors.New("zoneOpts.Paused value incorrect")
+						}
+
+						if !cmp.Equal(zoneOpts.VanityNS,
+							[]string{"ns1.lele.com", "ns2.woowoo.org"}) {
+							err = errors.New("zoneOpts.VanityNS does not match")
+						}
+						// Returned zone is discarded by UpdateZone
+						return cloudflare.Zone{}, err
+					},
+					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
+						return &cloudflare.ZoneSettingResponse{
+							Result: []cloudflare.ZoneSetting{
+								{
+									ID:       nsKey,
+									Editable: true,
+									// Client should decode nested values from map string interface
+									Value: map[string]interface{}{
+										cfsMinifyCSS:  nsInputValue.CSS,
+										cfsMinifyHTML: nsInputValue.HTML,
+										cfsMinifyJS:   "foo", // This value should be overwritten
+									},
+								},
+							},
+						}, nil
+					},
+					MockUpdateZoneSettings: func(ctx context.Context, zoneID string, cs []cloudflare.ZoneSetting) (*cloudflare.ZoneSettingResponse, error) {
+						if zoneID != inputZoneID {
+							return nil, errors.New("zoneID value incorrect")
+						}
+						nsInputExpectedValue := map[string]interface{}{
+							cfsMinifyCSS:  *nsInputValue.CSS,
+							cfsMinifyHTML: *nsInputValue.HTML,
+							cfsMinifyJS:   *nsInputValue.JS,
+						}
+						// Must match our requested setting ID and value.
+						// If not, we return an error.
+						for _, setting := range cs {
+							if setting.ID == nsKey {
+								if cmp.Equal(nsInputExpectedValue, setting.Value) {
+									return nil, nil
+								}
+							}
+						}
+						return nil, errors.New("Nested complex setting not updated or invalid")
+					},
+				},
+			},
+			args: args{
+				id: inputZoneID,
+				zp: v1alpha1.ZoneParameters{
+					Paused:            ptr.BoolPtr(false),
+					VanityNameServers: []string{"ns1.lele.com", "ns2.woowoo.org"},
+					Settings: v1alpha1.ZoneSettings{
+						Minify: &nsInputValue,
+					},
+				},
+			},
+			want: want{
+				err: nil,
+			},
+		},
+		// TODO: Test SetPlan
 	}
 
 	for name, tc := range cases {
