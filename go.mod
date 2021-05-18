@@ -11,7 +11,7 @@ require (
 	github.com/prometheus/client_golang v1.10.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	k8s.io/api v0.20.2
-	k8s.io/apimachinery v0.21.0
+	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v0.20.2
 	k8s.io/utils v0.0.0-20210517184530-5a248b5acedc
 	sigs.k8s.io/controller-runtime v0.8.3
