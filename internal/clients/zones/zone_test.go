@@ -305,6 +305,28 @@ func TestUpToDate(t *testing.T) {
 				o: false,
 			},
 		},
+		"VanityNSTrue": {
+			reason: "UpToDate should return true if VanityNS field matches in any order",
+			args: args{
+				zp: &v1alpha1.ZoneParameters{
+					PlanID:            ptr.StringPtr("cake"),
+					Settings:          v1alpha1.ZoneSettings{},
+					VanityNameServers: []string{"ns2.woowoo.org", "ns1.lele.com"},
+				},
+				z: cloudflare.Zone{
+					PlanPending: cloudflare.ZonePlan{
+						ZonePlanCommon: cloudflare.ZonePlanCommon{
+							ID: "cake",
+						},
+					},
+					VanityNS: []string{"ns1.lele.com", "ns2.woowoo.org"},
+				},
+				ozs: &v1alpha1.ZoneSettings{},
+			},
+			want: want{
+				o: true,
+			},
+		},
 	}
 
 	for name, tc := range cases {
