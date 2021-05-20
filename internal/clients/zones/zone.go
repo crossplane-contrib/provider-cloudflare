@@ -655,7 +655,7 @@ func GetChangedSettings(czs, dzs *v1alpha1.ZoneSettings) []cloudflare.ZoneSettin
 		// If the current value and new value are not the same,
 		// append a ZoneSetting entry to the output list, in
 		// preparation for updating.
-		if cv != nv {
+		if !cmp.Equal(cv, nv) {
 			zs := cloudflare.ZoneSetting{
 				ID:    k,
 				Value: nv,
