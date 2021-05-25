@@ -22,6 +22,9 @@ import (
 	"strings"
 
 	"github.com/cloudflare/cloudflare-go"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
@@ -50,8 +53,7 @@ func NewClient(cfg clients.Config, hc *http.Client) (Client, error) {
 // IsCustomHostnameNotFound returns true if the passed error indicates
 // that the CustomHostname is not found (been deleted or not set at all).
 func IsCustomHostnameNotFound(err error) bool {
-	errStr := err.Error()
-	return strings.Contains(errStr, errCustomHostnameNotFound)
+	return strings.Contains(err.Error(), errCustomHostnameNotFound)
 }
 
 // GenerateObservation creates an observation of a cloudflare Custom Hostname
@@ -90,95 +92,73 @@ func GenerateObservation(in cloudflare.CustomHostname) v1alpha1.CustomHostnameOb
 	}
 }
 
+// CustomHostnameToParameters returns a CustomHostnameParameters representation of
+// a Cloudflare Custom Hostname.
+func CustomHostnameToParameters(in cloudflare.CustomHostname) v1alpha1.CustomHostnameParameters {
+	return v1alpha1.CustomHostnameParameters{
+		Hostname:           in.Hostname,
+		CustomOriginServer: clients.ToOptionalString(in.CustomOriginServer),
+		SSL: v1alpha1.CustomHostnameSSL{
+			// These fields are not optional in our API calls but are
+			// defaulted by us.
+			Method: clients.ToOptionalString(in.SSL.Method),
+			Type:   clients.ToOptionalString(in.SSL.Type),
+			Settings: v1alpha1.CustomHostnameSSLSettings{
+				HTTP2:         clients.ToOptionalString(in.SSL.Settings.HTTP2),
+				TLS13:         clients.ToOptionalString(in.SSL.Settings.TLS13),
+				MinTLSVersion: clients.ToOptionalString(in.SSL.Settings.MinTLSVersion),
+				Ciphers:       clients.ToStringSlice(in.SSL.Settings.Ciphers),
+			},
+			Wildcard:          clients.ToBool(in.SSL.Wildcard),
+			CustomCertificate: clients.ToOptionalString(in.SSL.CustomCertificate),
+			CustomKey:         clients.ToOptionalString(in.SSL.CustomKey),
+		},
+	}
+}
+
+// ParametersToCustomHostname returns a Cloudflare API representation of a Custom
+// Hostname from our CustomHostnameParameters.
+func ParametersToCustomHostname(in v1alpha1.CustomHostnameParameters) cloudflare.CustomHostname {
+	return cloudflare.CustomHostname{
+		Hostname: in.Hostname,
+		SSL: cloudflare.CustomHostnameSSL{
+			Method: *in.SSL.Method,
+			Type:   *in.SSL.Type,
+			Settings: cloudflare.CustomHostnameSSLSettings{
+				HTTP2:         *clients.ToOptionalString(in.SSL.Settings.HTTP2),
+				TLS13:         *clients.ToOptionalString(in.SSL.Settings.TLS13),
+				MinTLSVersion: *clients.ToOptionalString(in.SSL.Settings.MinTLSVersion),
+				Ciphers:       in.SSL.Settings.Ciphers,
+			},
+			Wildcard:          in.SSL.Wildcard,
+			CustomCertificate: *clients.ToOptionalString(in.SSL.CustomCertificate),
+			CustomKey:         *clients.ToOptionalString(in.SSL.CustomKey),
+		},
+	}
+}
+
 // UpToDate checks if the remote resource is up to date with the
 // requested resource parameters.
-func UpToDate(spec *v1alpha1.CustomHostnameParameters, o cloudflare.CustomHostname) bool { //nolint:gocyclo
-	// NOTE(bagricola): The complexity here is simply repeated
-	// if statements checking for updated fields. You should think
-	// before adding further complexity to this method, but adding
-	// more field checks is not an issue.
+func UpToDate(spec *v1alpha1.CustomHostnameParameters, o cloudflare.CustomHostname) bool {
 	if spec == nil {
 		return true
 	}
 
-	// Check if mutable fields are up to date with resource
-	if spec.CustomOriginServer != nil && o.CustomOriginServer != "" &&
-		*spec.CustomOriginServer != o.CustomOriginServer {
-		return false
-	}
-
-	// SSL
-	if spec.SSL.Method != nil && o.SSL.Method != "" && *spec.SSL.Method != o.SSL.Method {
-		return false
-	}
-
-	if spec.SSL.Type != nil && o.SSL.Type != "" && *spec.SSL.Type != o.SSL.Type {
-		return false
-	}
-
-	if spec.SSL.Wildcard != nil && o.SSL.Wildcard != nil && *spec.SSL.Wildcard != *o.SSL.Wildcard {
-		return false
-	}
-
-	if spec.SSL.CustomCertificate != nil && o.SSL.CustomCertificate != "" && *spec.SSL.CustomCertificate != o.SSL.CustomCertificate {
-		return false
-	}
-
-	if spec.SSL.CustomKey != nil && o.SSL.CustomKey != "" && *spec.SSL.CustomKey != o.SSL.CustomKey {
-		return false
-	}
-
-	return true
+	return cmp.Equal(*spec,
+		CustomHostnameToParameters(o),
+		cmpopts.EquateEmpty(),
+		cmpopts.IgnoreTypes(&xpv1.Reference{}, &xpv1.Selector{}, []xpv1.Reference{}),
+		cmpopts.IgnoreFields(v1alpha1.CustomHostnameParameters{}, "Zone"),
+	)
 }
 
-// UpdateCustomHostname updates mutable values on a Fallback Origin
-func UpdateCustomHostname(ctx context.Context, client Client, chID string, spec *v1alpha1.CustomHostnameParameters) error {
+// CreateCustomHostname creates a new Custom Hostname.
+func CreateCustomHostname(ctx context.Context, client Client, spec v1alpha1.CustomHostnameParameters) (*cloudflare.CustomHostnameResponse, error) {
+	return client.CreateCustomHostname(ctx, *spec.Zone, ParametersToCustomHostname(spec))
+}
 
-	sslSettings := cloudflare.CustomHostnameSSLSettings{
-		Ciphers: spec.SSL.Settings.Ciphers,
-	}
-
-	// Check the SSL Settings Config
-	if spec.SSL.Settings.HTTP2 != nil {
-		sslSettings.HTTP2 = *spec.SSL.Settings.HTTP2
-	}
-
-	if spec.SSL.Settings.TLS13 != nil {
-		sslSettings.TLS13 = *spec.SSL.Settings.TLS13
-	}
-
-	if spec.SSL.Settings.MinTLSVersion != nil {
-		sslSettings.MinTLSVersion = *spec.SSL.Settings.MinTLSVersion
-	}
-
-	ssl := cloudflare.CustomHostnameSSL{
-		Wildcard: spec.SSL.Wildcard,
-		Settings: sslSettings,
-	}
-
-	// Check the SSL Config
-	if spec.SSL.Method != nil {
-		ssl.Method = *spec.SSL.Method
-	}
-
-	if spec.SSL.Type != nil {
-		ssl.Type = *spec.SSL.Type
-	}
-
-	if spec.SSL.CustomCertificate != nil {
-		ssl.CustomCertificate = *spec.SSL.CustomCertificate
-	}
-
-	if spec.SSL.CustomKey != nil {
-		ssl.CustomKey = *spec.SSL.CustomKey
-	}
-
-	ch := cloudflare.CustomHostname{
-		Hostname: spec.Hostname,
-		SSL:      ssl,
-	}
-	_, er := client.UpdateCustomHostname(ctx, *spec.Zone, chID, ch)
-
-	return er
-
+// UpdateCustomHostname updates mutable values on a Custom Hostname.
+func UpdateCustomHostname(ctx context.Context, client Client, id string, spec v1alpha1.CustomHostnameParameters) error {
+	_, err := client.UpdateCustomHostname(ctx, *spec.Zone, id, ParametersToCustomHostname(spec))
+	return err
 }

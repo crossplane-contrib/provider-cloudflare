@@ -144,17 +144,43 @@ func ToNumber(in interface{}) *int64 {
 // ToString converts an interface from the Cloudflare API
 // into a string pointer, if it contains an existing string.
 func ToString(in interface{}) *string {
-	if v, ok := in.(string); ok {
-		return &v
+	return toString(in, false)
+}
+
+// ToOptionalString converts an interface from the Cloudflare API
+// into a string pointer, if it contains an existing string or
+// string pointer.
+// If the existing string is empty (""), it returns nil.
+func ToOptionalString(in interface{}) *string {
+	return toString(in, true)
+}
+
+// The assumption here is that the input value has no special
+// state for empty string and it means the same as "unset".
+func toString(in interface{}, optional bool) *string {
+	switch v := in.(type) {
+	case string:
+		if v != "" || !optional {
+			return &v
+		}
+	// No need for optional discovery here. If input is a
+	// pointer then we assume the optional case is when the
+	// pointer is nil.
+	case *string:
+		return v
 	}
 	return nil
 }
 
 // ToBool converts an interface from the Cloudflare API
-// into a string pointer, if it contains an existing string.
+// into a bool pointer, if it contains an existing bool
+// or bool pointer.
 func ToBool(in interface{}) *bool {
-	if v, ok := in.(bool); ok {
+	switch v := in.(type) {
+	case bool:
 		return &v
+	case *bool:
+		return v
 	}
 	return nil
 }

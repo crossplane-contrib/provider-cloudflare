@@ -29,6 +29,7 @@ import (
 )
 
 const (
+	hostname             = "myhostname.com"
 	customOrigin         = "origin.zone.com"
 	sslMethod            = "http"
 	sslType              = "dv"
@@ -73,6 +74,7 @@ func TestUpToDate(t *testing.T) {
 			reason: "UpToDate should return false if the spec does not match the resource",
 			args: args{
 				chp: &v1alpha1.CustomHostnameParameters{
+					Hostname:           hostname,
 					CustomOriginServer: ptr.StringPtr(customOrigin),
 					SSL: v1alpha1.CustomHostnameSSL{
 						Method:            ptr.StringPtr(sslMethod),
@@ -83,6 +85,7 @@ func TestUpToDate(t *testing.T) {
 					},
 				},
 				ch: cloudflare.CustomHostname{
+					Hostname:           hostname,
 					CustomOriginServer: "fancy.host.com",
 					SSL: cloudflare.CustomHostnameSSL{
 						Method:            "url",
@@ -101,20 +104,30 @@ func TestUpToDate(t *testing.T) {
 			reason: "UpToDate should return true if the spec matches the resource",
 			args: args{
 				chp: &v1alpha1.CustomHostnameParameters{
+					// Zone should be ignored as it cannot change
+					Zone:               ptr.StringPtr("1234"),
+					Hostname:           hostname,
 					CustomOriginServer: ptr.StringPtr(customOrigin),
 					SSL: v1alpha1.CustomHostnameSSL{
 						Method:            ptr.StringPtr(sslMethod),
 						Type:              ptr.StringPtr(sslType),
+						Settings:          v1alpha1.CustomHostnameSSLSettings{},
 						Wildcard:          ptr.BoolPtr(sslWildcard),
 						CustomCertificate: ptr.StringPtr(sslCustomCertificate),
 						CustomKey:         ptr.StringPtr(sslCustomKey),
 					},
 				},
 				ch: cloudflare.CustomHostname{
+					Hostname:           hostname,
 					CustomOriginServer: customOrigin,
 					SSL: cloudflare.CustomHostnameSSL{
-						Method:            sslMethod,
-						Type:              sslType,
+						Method: sslMethod,
+						Type:   sslType,
+						Settings: cloudflare.CustomHostnameSSLSettings{
+							// This should be converted to a nil pointer, which
+							// should match the undefined value above.
+							MinTLSVersion: "",
+						},
 						Wildcard:          ptr.BoolPtr(sslWildcard),
 						CustomCertificate: sslCustomCertificate,
 						CustomKey:         sslCustomKey,

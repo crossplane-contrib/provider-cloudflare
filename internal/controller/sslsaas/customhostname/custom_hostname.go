@@ -34,8 +34,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/cloudflare/cloudflare-go"
-
 	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	customhostnames "github.com/benagricola/provider-cloudflare/internal/clients/sslsaas/customhostnames"
@@ -52,7 +50,9 @@ const (
 	errCustomHostnameUpdate   = "cannot update record"
 	errCustomHostnameDeletion = "cannot delete record"
 	errCustomHostnameNoZone   = "cannot create custom hostname no zone found"
+)
 
+const (
 	customHostnameStatusActive = "active"
 
 	maxConcurrency = 5
@@ -173,64 +173,24 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}, nil
 }
 
-func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) { //nolint:gocyclo
-
+func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.CustomHostname)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCustomHostname)
 	}
 
-	// Zone is required to create a custom hostname on
-	if cr.Spec.ForProvider.Zone == nil {
+	// Zone is required to create a custom hostname on. SSL Method and Type
+	// Are required by the API call, but we default them. This is simply
+	// protection from panic if an unvalidated resource is created.
+	if cr.Spec.ForProvider.Zone == nil || cr.Spec.ForProvider.SSL.Method == nil ||
+		cr.Spec.ForProvider.SSL.Type == nil {
 		return managed.ExternalCreation{}, errors.New(errCustomHostnameCreation)
-	}
-
-	sslSettings := cloudflare.CustomHostnameSSLSettings{
-		Ciphers: cr.Spec.ForProvider.SSL.Settings.Ciphers,
-	}
-
-	// Check the SSL Settings Config
-	if cr.Spec.ForProvider.SSL.Settings.HTTP2 != nil {
-		sslSettings.HTTP2 = *cr.Spec.ForProvider.SSL.Settings.HTTP2
-	}
-
-	if cr.Spec.ForProvider.SSL.Settings.TLS13 != nil {
-		sslSettings.TLS13 = *cr.Spec.ForProvider.SSL.Settings.TLS13
-	}
-
-	if cr.Spec.ForProvider.SSL.Settings.MinTLSVersion != nil {
-		sslSettings.MinTLSVersion = *cr.Spec.ForProvider.SSL.Settings.MinTLSVersion
-	}
-
-	ssl := cloudflare.CustomHostnameSSL{
-		Wildcard: cr.Spec.ForProvider.SSL.Wildcard,
-		Settings: sslSettings,
-	}
-
-	// Check the SSL Config
-	if cr.Spec.ForProvider.SSL.Method != nil {
-		ssl.Method = *cr.Spec.ForProvider.SSL.Method
-	}
-
-	if cr.Spec.ForProvider.SSL.Type != nil {
-		ssl.Type = *cr.Spec.ForProvider.SSL.Type
-	}
-
-	if cr.Spec.ForProvider.SSL.CustomCertificate != nil {
-		ssl.CustomCertificate = *cr.Spec.ForProvider.SSL.CustomCertificate
-	}
-
-	if cr.Spec.ForProvider.SSL.CustomKey != nil {
-		ssl.CustomKey = *cr.Spec.ForProvider.SSL.CustomKey
 	}
 
 	rch, err := e.client.CreateCustomHostname(
 		ctx,
 		*cr.Spec.ForProvider.Zone,
-		cloudflare.CustomHostname{
-			Hostname: cr.Spec.ForProvider.Hostname,
-			SSL:      ssl,
-		},
+		customhostnames.ParametersToCustomHostname(cr.Spec.ForProvider),
 	)
 
 	if err != nil {
@@ -250,7 +210,8 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotCustomHostname)
 	}
 
-	if cr.Spec.ForProvider.Zone == nil {
+	if cr.Spec.ForProvider.Zone == nil || cr.Spec.ForProvider.SSL.Method == nil ||
+		cr.Spec.ForProvider.SSL.Type == nil {
 		return managed.ExternalUpdate{}, errors.New(errCustomHostnameUpdate)
 	}
 
@@ -261,11 +222,15 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errCustomHostnameUpdate)
 	}
 
-	er := customhostnames.UpdateCustomHostname(ctx, e.client, chid, &cr.Spec.ForProvider)
-
+	_, err := e.client.UpdateCustomHostname(
+		ctx,
+		*cr.Spec.ForProvider.Zone,
+		chid,
+		customhostnames.ParametersToCustomHostname(cr.Spec.ForProvider),
+	)
 	return managed.ExternalUpdate{},
 		errors.Wrap(
-			er,
+			err,
 			errCustomHostnameUpdate,
 		)
 }
