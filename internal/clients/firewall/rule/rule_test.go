@@ -7,9 +7,10 @@ import (
 
 	"github.com/cloudflare/cloudflare-go"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
 	"github.com/benagricola/provider-cloudflare/internal/clients/firewall/rule/fake"
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/pkg/errors"
 

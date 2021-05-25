@@ -22,9 +22,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
+
+	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 
 	"github.com/pkg/errors"
 )

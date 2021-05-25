@@ -19,12 +19,13 @@ package v1alpha1
 import (
 	"context"
 
-	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
 )
 
 // SpectrumApplicationDNS holds the external DNS configuration

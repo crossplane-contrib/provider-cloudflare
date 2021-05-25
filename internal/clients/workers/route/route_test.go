@@ -21,8 +21,9 @@ import (
 
 	"github.com/cloudflare/cloudflare-go"
 
-	"github.com/benagricola/provider-cloudflare/apis/workers/v1alpha1"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/benagricola/provider-cloudflare/apis/workers/v1alpha1"
 
 	ptr "k8s.io/utils/pointer"
 )

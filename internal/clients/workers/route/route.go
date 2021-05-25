@@ -21,9 +21,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/cloudflare/cloudflare-go"
+
 	"github.com/benagricola/provider-cloudflare/apis/workers/v1alpha1"
 	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	"github.com/cloudflare/cloudflare-go"
 )
 
 const (

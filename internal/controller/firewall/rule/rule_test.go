@@ -21,15 +21,17 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
 	"github.com/cloudflare/cloudflare-go"
+
+	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
 
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 
-	"github.com/benagricola/provider-cloudflare/internal/clients/firewall/rule"
-	"github.com/benagricola/provider-cloudflare/internal/clients/firewall/rule/fake"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+
+	"github.com/benagricola/provider-cloudflare/internal/clients/firewall/rule"
+	"github.com/benagricola/provider-cloudflare/internal/clients/firewall/rule/fake"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -37,12 +39,13 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	pcv1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	rtfake "github.com/crossplane/crossplane-runtime/pkg/resource/fake"
 	corev1 "k8s.io/api/core/v1"
 	ptr "k8s.io/utils/pointer"
+
+	pcv1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
+	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 )
 
 // Unlike many Kubernetes projects Crossplane does not use third party testing

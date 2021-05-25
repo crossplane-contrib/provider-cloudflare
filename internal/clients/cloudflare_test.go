@@ -36,10 +36,11 @@ import (
 	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-	v1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	rtfake "github.com/crossplane/crossplane-runtime/pkg/resource/fake"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
+
+	v1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
 )
 
 func TestGetConfig(t *testing.T) {

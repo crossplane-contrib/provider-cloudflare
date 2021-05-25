@@ -23,11 +23,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
+	clients "github.com/benagricola/provider-cloudflare/internal/clients"
 )
 
 const (
