@@ -22,7 +22,7 @@ package v1alpha1
 
 import (
 	cloudflare_go "github.com/cloudflare/cloudflare-go"
-	v1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/apis/common/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 

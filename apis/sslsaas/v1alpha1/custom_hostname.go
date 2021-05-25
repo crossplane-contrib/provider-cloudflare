@@ -100,29 +100,33 @@ type CustomHostnameOwnershipVerification struct {
 
 // CustomHostnameSSL represents the SSL section in a given custom hostname.
 type CustomHostnameSSL struct {
-
 	// Domain control validation (DCV) method used for this custom hostname.
 	// +kubebuilder:validation:Enum=http;txt;email
 	// +kubebuilder:default="http"
+	// +optional
 	Method *string `json:"method,omitempty"`
 
 	// Level of validation to be used for this custom hostname. Domain validation (dv) must be used.
 	// +kubebuilder:validation:Enum=dv
 	// +kubebuilder:default="dv"
+	// +optional
 	Type *string `json:"type,omitempty"`
 
 	// CustomHostnameSSLSettings represents the SSL settings for a custom hostname.
 	Settings CustomHostnameSSLSettings `json:"settings,omitempty"`
 
 	// Indicates whether the certificate for the custom hostname covers a wildcard.
+	// +optional
 	Wildcard *bool `json:"wildcard,omitempty"`
 
 	// Custom Certificate used for this Custom Hostname
 	// If provided then Cloudflare will not attempt to generate an ACME certificate
+	// +optional
 	CustomCertificate *string `json:"customCertificate,omitempty"`
 
 	// Custom Certificate Key used for this Custom Hostname
 	// If provided then Cloudflare will not attempt to generate an ACME certificate
+	// +optional
 	CustomKey *string `json:"customKey,omitempty"`
 
 	// Following fields are in the API but not supported in go library yet
