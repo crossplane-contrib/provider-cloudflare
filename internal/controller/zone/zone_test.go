@@ -261,7 +261,7 @@ func TestObserve(t *testing.T) {
 					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
 						return &cloudflare.ZoneSettingResponse{
 							Result: []cloudflare.ZoneSetting{
-								{ID: "edge_cache_ttl", Value: "7200", Editable: true},
+								{ID: "edge_cache_ttl", Value: 7200, Editable: true},
 							},
 						}, nil
 					},
@@ -298,7 +298,7 @@ func TestObserve(t *testing.T) {
 					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
 						return &cloudflare.ZoneSettingResponse{
 							Result: []cloudflare.ZoneSetting{
-								{ID: "edge_cache_ttl", Value: "7200", Editable: true},
+								{ID: "edge_cache_ttl", Value: 7200, Editable: true},
 								{ID: "0rtt", Value: "off", Editable: true},
 							},
 						}, nil
@@ -324,7 +324,7 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"Success": {
-			reason: "We should return ResourceLateInitialized: false and ResourceUpToDate: false when resource exactly matches remote",
+			reason: "We should return ResourceLateInitialized: false and ResourceUpToDate: true when resource exactly matches remote",
 			fields: fields{
 				client: fake.MockClient{
 					MockZoneDetails: func(ctx context.Context, zoneID string) (cloudflare.Zone, error) {
@@ -333,7 +333,7 @@ func TestObserve(t *testing.T) {
 					MockZoneSettings: func(ctx context.Context, zoneID string) (*cloudflare.ZoneSettingResponse, error) {
 						return &cloudflare.ZoneSettingResponse{
 							Result: []cloudflare.ZoneSetting{
-								{ID: "edge_cache_ttl", Value: "7200", Editable: true},
+								{ID: "edge_cache_ttl", Value: 7200, Editable: true},
 								{ID: "0rtt", Value: "off", Editable: true},
 							},
 						}, nil
@@ -343,7 +343,8 @@ func TestObserve(t *testing.T) {
 			args: args{
 				mg: zone(
 					withExternalName("1234beef"),
-					withPaused(ptr.BoolPtr(false)),
+					withPaused(ptr.BoolPtr(true)),
+					withEdgeCacheTTL(ptr.Int64Ptr(7200)),
 					withZeroRTT(ptr.StringPtr("off")),
 					withAccount(ptr.StringPtr("a1234")),
 					withPlan(ptr.StringPtr("a1235")),
@@ -353,7 +354,7 @@ func TestObserve(t *testing.T) {
 			want: want{
 				o: managed.ExternalObservation{
 					ResourceExists:          true,
-					ResourceUpToDate:        false,
+					ResourceUpToDate:        true,
 					ResourceLateInitialized: false,
 				},
 				err: nil,
