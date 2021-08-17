@@ -40,7 +40,7 @@ import (
 	rtfake "github.com/crossplane/crossplane-runtime/pkg/resource/fake"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	v1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
+	v1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/v1alpha1"
 )
 
 func TestGetConfig(t *testing.T) {

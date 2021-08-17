@@ -27,8 +27,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/pkg/errors"
 
-	dns "github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
-	zone "github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	dns "github.com/crossplane-contrib/provider-cloudflare/apis/dns/v1alpha1"
+	zone "github.com/crossplane-contrib/provider-cloudflare/apis/zone/v1alpha1"
 )
 
 // CustomHostnameSSLValidationErrors represents errors that occurred during SSL validation.

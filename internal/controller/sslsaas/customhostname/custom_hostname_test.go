@@ -36,11 +36,11 @@ import (
 	rtfake "github.com/crossplane/crossplane-runtime/pkg/resource/fake"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
-	pcv1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	customhostnames "github.com/benagricola/provider-cloudflare/internal/clients/sslsaas/customhostnames"
-	"github.com/benagricola/provider-cloudflare/internal/clients/sslsaas/customhostnames/fake"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/sslsaas/v1alpha1"
+	pcv1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
+	customhostnames "github.com/crossplane-contrib/provider-cloudflare/internal/clients/sslsaas/customhostnames"
+	"github.com/crossplane-contrib/provider-cloudflare/internal/clients/sslsaas/customhostnames/fake"
 )
 
 // Unlike many Kubernetes projects Crossplane does not use third party testing

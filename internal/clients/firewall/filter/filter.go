@@ -25,8 +25,8 @@ import (
 
 	"github.com/cloudflare/cloudflare-go"
 
-	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/firewall/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
 )
 
 const (

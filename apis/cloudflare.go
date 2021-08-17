@@ -20,13 +20,13 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
-	dnsv1alpha1 "github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
-	firewallv1alpha1 "github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
-	spectrumv1alpha1 "github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
-	sslsaasv1alpha1 "github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
-	cloudflarev1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
-	workersv1alpha1 "github.com/benagricola/provider-cloudflare/apis/workers/v1alpha1"
-	zonev1alpha1 "github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	dnsv1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/dns/v1alpha1"
+	firewallv1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/firewall/v1alpha1"
+	spectrumv1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/spectrum/v1alpha1"
+	sslsaasv1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/sslsaas/v1alpha1"
+	cloudflarev1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/v1alpha1"
+	workersv1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/workers/v1alpha1"
+	zonev1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/zone/v1alpha1"
 )
 
 func init() {

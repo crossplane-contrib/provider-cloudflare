@@ -24,8 +24,8 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/dns/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
 )
 
 const (
