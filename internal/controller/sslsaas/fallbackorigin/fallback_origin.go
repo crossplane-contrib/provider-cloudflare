@@ -35,10 +35,10 @@ import (
 
 	"github.com/cloudflare/cloudflare-go"
 
-	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	fallbackorigins "github.com/benagricola/provider-cloudflare/internal/clients/sslsaas/fallbackorigins"
-	metrics "github.com/benagricola/provider-cloudflare/internal/metrics"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/sslsaas/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
+	fallbackorigins "github.com/crossplane-contrib/provider-cloudflare/internal/clients/sslsaas/fallbackorigins"
+	metrics "github.com/crossplane-contrib/provider-cloudflare/internal/metrics"
 )
 
 const (

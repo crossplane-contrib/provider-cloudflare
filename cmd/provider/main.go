@@ -27,8 +27,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 
-	"github.com/benagricola/provider-cloudflare/apis"
-	"github.com/benagricola/provider-cloudflare/internal/controller"
+	"github.com/crossplane-contrib/provider-cloudflare/apis"
+	"github.com/crossplane-contrib/provider-cloudflare/internal/controller"
 )
 
 func main() {

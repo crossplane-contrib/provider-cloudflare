@@ -34,10 +34,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	filter "github.com/benagricola/provider-cloudflare/internal/clients/firewall/filter"
-	metrics "github.com/benagricola/provider-cloudflare/internal/metrics"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/firewall/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
+	filter "github.com/crossplane-contrib/provider-cloudflare/internal/clients/firewall/filter"
+	metrics "github.com/crossplane-contrib/provider-cloudflare/internal/metrics"
 )
 
 const (

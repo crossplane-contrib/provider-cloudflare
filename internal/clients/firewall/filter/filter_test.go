@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/benagricola/provider-cloudflare/apis/firewall/v1alpha1"
-	"github.com/benagricola/provider-cloudflare/internal/clients/firewall/filter/fake"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/firewall/v1alpha1"
+	"github.com/crossplane-contrib/provider-cloudflare/internal/clients/firewall/filter/fake"
 
 	"github.com/pkg/errors"
 

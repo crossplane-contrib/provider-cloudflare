@@ -29,7 +29,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/benagricola/provider-cloudflare/apis/v1alpha1"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/v1alpha1"
 )
 
 const (
