@@ -14,23 +14,22 @@ with the following resources:
 
 ## Developing
 
+Create a Kubernetes cluster:
+
+```console
+make cluster
+```
+
 Run against a Kubernetes cluster:
 
 ```console
 make run
 ```
 
-Install `latest` into Kubernetes cluster where Crossplane is installed:
+Install `latest` into current configured Kubernetes cluster:
 
 ```console
 make install
-```
-
-Install local build into [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/)
-cluster where Crossplane is installed:
-
-```console
-make install-local
 ```
 
 Build, push, and install:
