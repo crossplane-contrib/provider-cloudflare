@@ -25,7 +25,7 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
-	zone "github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	zone "github.com/crossplane-contrib/provider-cloudflare/apis/zone/v1alpha1"
 
 	"github.com/pkg/errors"
 )

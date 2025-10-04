@@ -25,11 +25,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
-	"github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
-	pcv1alpha1 "github.com/benagricola/provider-cloudflare/apis/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	records "github.com/benagricola/provider-cloudflare/internal/clients/records"
-	"github.com/benagricola/provider-cloudflare/internal/clients/records/fake"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/dns/v1alpha1"
+	pcv1alpha1 "github.com/crossplane-contrib/provider-cloudflare/apis/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
+	records "github.com/crossplane-contrib/provider-cloudflare/internal/clients/records"
+	"github.com/crossplane-contrib/provider-cloudflare/internal/clients/records/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
