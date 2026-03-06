@@ -1,4 +1,13 @@
-# provider-cloudflare
+# provider-cloudflare (archived)
+
+> [!WARNING]
+> This project has been archived as per [Crossplane's project
+> governance](https://github.com/crossplane/crossplane/blob/main/GOVERNANCE.md#archival-policy)
+> for community extension projects and is no longer actively maintained.
+>
+> It is recommended to use the
+> [provider-upjet-cloudflare](https://github.com/crossplane-contrib/provider-upjet-cloudflare)
+> project instead.
 
 `provider-cloudflare` is a [Crossplane](https://crossplane.io/) Provider
 that manages Cloudflare resources via their V4 API (`cloudflare-go`). It comes
