@@ -22,8 +22,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	dns "github.com/benagricola/provider-cloudflare/apis/dns/v1alpha1"
-	zone "github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	dns "github.com/crossplane-contrib/provider-cloudflare/apis/dns/v1alpha1"
+	zone "github.com/crossplane-contrib/provider-cloudflare/apis/zone/v1alpha1"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"

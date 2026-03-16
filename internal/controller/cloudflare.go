@@ -22,15 +22,15 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
-	"github.com/benagricola/provider-cloudflare/internal/controller/config"
-	record "github.com/benagricola/provider-cloudflare/internal/controller/dns"
-	filter "github.com/benagricola/provider-cloudflare/internal/controller/firewall/filter"
-	rule "github.com/benagricola/provider-cloudflare/internal/controller/firewall/rule"
-	application "github.com/benagricola/provider-cloudflare/internal/controller/spectrum"
-	customhostname "github.com/benagricola/provider-cloudflare/internal/controller/sslsaas/customhostname"
-	fallbackorigin "github.com/benagricola/provider-cloudflare/internal/controller/sslsaas/fallbackorigin"
-	route "github.com/benagricola/provider-cloudflare/internal/controller/workers/route"
-	zone "github.com/benagricola/provider-cloudflare/internal/controller/zone"
+	"github.com/crossplane-contrib/provider-cloudflare/internal/controller/config"
+	record "github.com/crossplane-contrib/provider-cloudflare/internal/controller/dns"
+	filter "github.com/crossplane-contrib/provider-cloudflare/internal/controller/firewall/filter"
+	rule "github.com/crossplane-contrib/provider-cloudflare/internal/controller/firewall/rule"
+	application "github.com/crossplane-contrib/provider-cloudflare/internal/controller/spectrum"
+	customhostname "github.com/crossplane-contrib/provider-cloudflare/internal/controller/sslsaas/customhostname"
+	fallbackorigin "github.com/crossplane-contrib/provider-cloudflare/internal/controller/sslsaas/fallbackorigin"
+	route "github.com/crossplane-contrib/provider-cloudflare/internal/controller/workers/route"
+	zone "github.com/crossplane-contrib/provider-cloudflare/internal/controller/zone"
 )
 
 // Setup creates all Template controllers with the supplied logger and adds them to
