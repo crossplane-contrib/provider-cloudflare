@@ -36,10 +36,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	zones "github.com/benagricola/provider-cloudflare/internal/clients/zones"
-	metrics "github.com/benagricola/provider-cloudflare/internal/metrics"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/zone/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
+	zones "github.com/crossplane-contrib/provider-cloudflare/internal/clients/zones"
+	metrics "github.com/crossplane-contrib/provider-cloudflare/internal/metrics"
 )
 
 const (

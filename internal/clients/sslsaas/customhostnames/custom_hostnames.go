@@ -26,8 +26,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/benagricola/provider-cloudflare/apis/sslsaas/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/sslsaas/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
 )
 
 const (

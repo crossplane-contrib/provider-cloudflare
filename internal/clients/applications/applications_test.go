@@ -29,8 +29,8 @@ import (
 
 	ptr "k8s.io/utils/pointer"
 
-	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
-	"github.com/benagricola/provider-cloudflare/internal/clients/applications/fake"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/spectrum/v1alpha1"
+	"github.com/crossplane-contrib/provider-cloudflare/internal/clients/applications/fake"
 )
 
 func TestUpToDate(t *testing.T) {

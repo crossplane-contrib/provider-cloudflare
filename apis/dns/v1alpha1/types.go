@@ -27,7 +27,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 
-	"github.com/benagricola/provider-cloudflare/apis/zone/v1alpha1"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/zone/v1alpha1"
 )
 
 // RecordParameters are the configurable fields of a DNS Record.

@@ -27,8 +27,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/spectrum/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
 )
 
 const (

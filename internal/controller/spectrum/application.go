@@ -36,10 +36,10 @@ import (
 
 	"github.com/cloudflare/cloudflare-go"
 
-	"github.com/benagricola/provider-cloudflare/apis/spectrum/v1alpha1"
-	clients "github.com/benagricola/provider-cloudflare/internal/clients"
-	applications "github.com/benagricola/provider-cloudflare/internal/clients/applications"
-	metrics "github.com/benagricola/provider-cloudflare/internal/metrics"
+	"github.com/crossplane-contrib/provider-cloudflare/apis/spectrum/v1alpha1"
+	clients "github.com/crossplane-contrib/provider-cloudflare/internal/clients"
+	applications "github.com/crossplane-contrib/provider-cloudflare/internal/clients/applications"
+	metrics "github.com/crossplane-contrib/provider-cloudflare/internal/metrics"
 )
 
 const (

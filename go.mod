@@ -1,4 +1,4 @@
-module github.com/benagricola/provider-cloudflare
+module github.com/crossplane-contrib/provider-cloudflare
 
 go 1.13
 
