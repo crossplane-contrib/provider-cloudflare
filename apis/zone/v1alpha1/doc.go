@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains the v1alpha1 group Zone resources of the Template provider.
+// Package v1alpha1 contains the v1alpha1 group Zone resources of the Cloudflare provider.
 // +kubebuilder:object:generate=true
 // +groupName=zone.cloudflare.crossplane.io
 // +versionName=v1alpha1
