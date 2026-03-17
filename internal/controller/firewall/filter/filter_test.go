@@ -278,7 +278,7 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"Success": {
-			reason: "We should return ExternalNameAssigned: true and no error when a record is created",
+			reason: "We should return  and no error when a record is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateFilters: func(ctx context.Context, zoneID string, firewallFilters []cloudflare.Filter) ([]cloudflare.Filter, error) {
@@ -302,9 +302,7 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},

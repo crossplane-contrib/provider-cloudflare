@@ -59,11 +59,11 @@ const (
 )
 
 // Setup adds a controller that reconciles Record managed resources.
-func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func Setup(mgr ctrl.Manager, l logging.Logger, _ workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.RecordGroupKind)
 
 	o := controller.Options{
-		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter:             ratelimiter.NewController(),
 		MaxConcurrentReconciles: maxConcurrency,
 	}
 
@@ -217,7 +217,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	// Update the external name with the ID of the new DNS Record
 	meta.SetExternalName(cr, res.Result.ID)
 
-	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
+	return managed.ExternalCreation{}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {

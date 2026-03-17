@@ -1,9 +1,9 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.5.0
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: zones.zone.cloudflare.crossplane.io
 spec:
   group: zone.cloudflare.crossplane.io
@@ -43,14 +43,19 @@ spec:
         description: A Zone is a set of common settings applied to one or more domains.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -58,10 +63,15 @@ spec:
             description: A ZoneSpec defines the desired state of a Zone.
             properties:
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying
-                  external when this managed resource is deleted - either "Delete"
-                  or "Orphan" the external resource. The "Delete" policy is the default
-                  when no policy is specified.
+                default: Delete
+                description: |-
+                  DeletionPolicy specifies what will happen to the underlying external
+                  when this managed resource is deleted - either "Delete" or "Orphan" the
+                  external resource.
+                  This field is planned to be deprecated in favor of the ManagementPolicies
+                  field in a future release. Currently, both could be set independently and
+                  non-default values would be honored if the feature flag is enabled.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
                 enum:
                 - Orphan
                 - Delete
@@ -70,20 +80,24 @@ spec:
                 description: ZoneParameters are the configurable fields of a Zone.
                 properties:
                   accountId:
-                    description: AccountID is the account ID under which this Zone
-                      will be created.
+                    description: |-
+                      AccountID is the account ID under which this Zone will be
+                      created.
                     type: string
                   jumpStart:
                     default: false
-                    description: 'JumpStart enables attempting to import existing
-                      DNS records when a new Zone is created. WARNING: JumpStart causes
-                      Cloudflare to automatically create DNS records without the involvement
-                      of Crossplane. This means you will have no Record instances
-                      representing records created in this manner, and you will have
-                      to import them manually if you want to manage them with Crossplane.'
+                    description: |-
+                      JumpStart enables attempting to import existing DNS records
+                      when a new Zone is created.
+                      WARNING: JumpStart causes Cloudflare to automatically create
+                      DNS records without the involvement of Crossplane. This means
+                      you will have no Record instances representing records
+                      created in this manner, and you will have to import them
+                      manually if you want to manage them with Crossplane.
                     type: boolean
                   name:
-                    description: Name is the name of the Zone, which should be a valid
+                    description: |-
+                      Name is the name of the Zone, which should be a valid
                       domain.
                     format: hostname
                     maxLength: 253
@@ -93,11 +107,13 @@ spec:
                       DNS services.
                     type: boolean
                   planId:
-                    description: PlanID indicates the plan that this Zone will be
-                      subscribed to.
+                    description: |-
+                      PlanID indicates the plan that this Zone will be subscribed
+                      to.
                     type: string
                   settings:
-                    description: Settings contains a Zone settings that can be applied
+                    description: |-
+                      Settings contains a Zone settings that can be applied
                       to this zone.
                     properties:
                       advancedDdos:
@@ -134,8 +150,9 @@ spec:
                         - "on"
                         type: string
                       browserCacheTtl:
-                        description: BrowserCacheTTL configures the browser cache
-                          ttl. 0 means respect existing headers
+                        description: |-
+                          BrowserCacheTTL configures the browser cache ttl.
+                          0 means respect existing headers
                         enum:
                         - 0
                         - 30
@@ -509,49 +526,176 @@ spec:
                     type: object
                   type:
                     default: full
-                    description: Type indicates the type of this zone - partial (partner-hosted
+                    description: |-
+                      Type indicates the type of this zone - partial (partner-hosted
                       or CNAME only) or full.
                     enum:
                     - full
                     - partial
                     type: string
                   vanityNameServers:
-                    description: VanityNameServers lists an array of domains to use
-                      for custom nameservers.
+                    description: |-
+                      VanityNameServers lists an array of domains to use for custom
+                      nameservers.
                     items:
                       type: string
                     type: array
                 required:
                 - name
                 type: object
+              managementPolicies:
+                default:
+                - '*'
+                description: |-
+                  THIS IS A BETA FIELD. It is on by default but can be opted out
+                  through a Crossplane feature flag.
+                  ManagementPolicies specify the array of actions Crossplane is allowed to
+                  take on the managed and external resources.
+                  This field is planned to replace the DeletionPolicy field in a future
+                  release. Currently, both could be set independently and non-default
+                  values would be honored if the feature flag is enabled. If both are
+                  custom, the DeletionPolicy field will be ignored.
+                  See the design doc for more information: https://github.com/crossplane/crossplane/blob/499895a25d1a1a0ba1604944ef98ac7a1a71f197/design/design-doc-observe-only-resources.md?plain=1#L223
+                  and this one: https://github.com/crossplane/crossplane/blob/444267e84783136daa93568b364a5f01228cacbe/design/one-pager-ignore-changes.md
+                items:
+                  description: |-
+                    A ManagementAction represents an action that the Crossplane controllers
+                    can take on an external resource.
+                  enum:
+                  - Observe
+                  - Create
+                  - Update
+                  - Delete
+                  - LateInitialize
+                  - '*'
+                  type: string
+                type: array
               providerConfigRef:
-                description: ProviderConfigReference specifies how the provider that
-                  will be used to create, observe, update, and delete this managed
-                  resource should be configured.
+                default:
+                  name: default
+                description: |-
+                  ProviderConfigReference specifies how the provider that will be used to
+                  create, observe, update, and delete this managed resource should be
+                  configured.
                 properties:
                   name:
                     description: Name of the referenced object.
                     type: string
+                  policy:
+                    description: Policies for referencing.
+                    properties:
+                      resolution:
+                        default: Required
+                        description: |-
+                          Resolution specifies whether resolution of this reference is required.
+                          The default is 'Required', which means the reconcile will fail if the
+                          reference cannot be resolved. 'Optional' means this reference will be
+                          a no-op if it cannot be resolved.
+                        enum:
+                        - Required
+                        - Optional
+                        type: string
+                      resolve:
+                        description: |-
+                          Resolve specifies when this reference should be resolved. The default
+                          is 'IfNotPresent', which will attempt to resolve the reference only when
+                          the corresponding field is not present. Use 'Always' to resolve the
+                          reference on every reconcile.
+                        enum:
+                        - Always
+                        - IfNotPresent
+                        type: string
+                    type: object
                 required:
                 - name
                 type: object
-              providerRef:
-                description: 'ProviderReference specifies the provider that will be
-                  used to create, observe, update, and delete this managed resource.
-                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+              publishConnectionDetailsTo:
+                description: |-
+                  PublishConnectionDetailsTo specifies the connection secret config which
+                  contains a name, metadata and a reference to secret store config to
+                  which any connection details for this managed resource should be written.
+                  Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
                 properties:
+                  configRef:
+                    default:
+                      name: default
+                    description: |-
+                      SecretStoreConfigRef specifies which secret store config should be used
+                      for this ConnectionSecret.
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                      policy:
+                        description: Policies for referencing.
+                        properties:
+                          resolution:
+                            default: Required
+                            description: |-
+                              Resolution specifies whether resolution of this reference is required.
+                              The default is 'Required', which means the reconcile will fail if the
+                              reference cannot be resolved. 'Optional' means this reference will be
+                              a no-op if it cannot be resolved.
+                            enum:
+                            - Required
+                            - Optional
+                            type: string
+                          resolve:
+                            description: |-
+                              Resolve specifies when this reference should be resolved. The default
+                              is 'IfNotPresent', which will attempt to resolve the reference only when
+                              the corresponding field is not present. Use 'Always' to resolve the
+                              reference on every reconcile.
+                            enum:
+                            - Always
+                            - IfNotPresent
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  metadata:
+                    description: Metadata is the metadata for connection secret.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          Annotations are the annotations to be added to connection secret.
+                          - For Kubernetes secrets, this will be used as "metadata.annotations".
+                          - It is up to Secret Store implementation for others store types.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          Labels are the labels/tags to be added to connection secret.
+                          - For Kubernetes secrets, this will be used as "metadata.labels".
+                          - It is up to Secret Store implementation for others store types.
+                        type: object
+                      type:
+                        description: |-
+                          Type is the SecretType for the connection secret.
+                          - Only valid for Kubernetes Secret Stores.
+                        type: string
+                    type: object
                   name:
-                    description: Name of the referenced object.
+                    description: Name is the name of the connection secret.
                     type: string
                 required:
                 - name
                 type: object
               writeConnectionSecretToRef:
-                description: WriteConnectionSecretToReference specifies the namespace
-                  and name of a Secret to which any connection details for this managed
-                  resource should be written. Connection details frequently include
-                  the endpoint, username, and password required to connect to the
-                  managed resource.
+                description: |-
+                  WriteConnectionSecretToReference specifies the namespace and name of a
+                  Secret to which any connection details for this managed resource should
+                  be written. Connection details frequently include the endpoint, username,
+                  and password required to connect to the managed resource.
+                  This field is planned to be replaced in a future release in favor of
+                  PublishConnectionDetailsTo. Currently, both could be set independently
+                  and connection details would be published to both without affecting
+                  each other.
                 properties:
                   name:
                     description: Name of the secret.
@@ -586,61 +730,73 @@ spec:
                       type: string
                     type: array
                   deactivationReason:
-                    description: DeactReason indicates the deactivation reason on
+                    description: |-
+                      DeactReason indicates the deactivation reason on
                       this Zone.
                     type: string
                   devModeTimer:
-                    description: DevModeTimer indicates the number of seconds left
-                      in dev mode (if positive), otherwise the number of seconds since
-                      dev mode expired.
+                    description: |-
+                      DevModeTimer indicates the number of seconds left
+                      in dev mode (if positive), otherwise the number
+                      of seconds since dev mode expired.
                     type: integer
                   nameServers:
-                    description: NameServers lists the Name servers that are assigned
+                    description: |-
+                      NameServers lists the Name servers that are assigned
                       to this Zone.
                     items:
                       type: string
                     type: array
                   originalDNSHost:
-                    description: OriginalDNSHost indicates the original DNS host when
-                      this Zone was created.
+                    description: |-
+                      OriginalDNSHost indicates the original DNS host
+                      when this Zone was created.
                     type: string
                   originalNameServers:
-                    description: OriginalNS lists the original nameservers when this
-                      Zone was created.
+                    description: |-
+                      OriginalNS lists the original nameservers when
+                      this Zone was created.
                     items:
                       type: string
                     type: array
                   originalRegistrar:
-                    description: OriginalRegistrar indicates the original registrar
+                    description: |-
+                      OriginalRegistrar indicates the original registrar
                       when this Zone was created.
                     type: string
                   plan:
-                    description: Plan indicates the name of the plan assigned to this
-                      Zone.
+                    description: |-
+                      Plan indicates the name of the plan assigned
+                      to this Zone.
                     type: string
                   planId:
-                    description: PlanID indicates the billing plan ID assigned to
-                      this Zone.
+                    description: |-
+                      PlanID indicates the billing plan ID assigned
+                      to this Zone.
                     type: string
                   planPending:
-                    description: PlanPending indicates the name of the pending plan
+                    description: |-
+                      PlanPending indicates the name of the pending plan
                       assigned to this Zone.
                     type: string
                   planPendingId:
-                    description: PlanPendingID indicates the ID of the pending plan
+                    description: |-
+                      PlanPendingID indicates the ID of the pending plan
                       assigned to this Zone.
                     type: string
                   status:
                     description: Status indicates the status of this Zone.
                     type: string
                   vanityNameServers:
-                    description: VanityNameServers lists the currently assigned vanity
+                    description: |-
+                      VanityNameServers lists the currently assigned vanity
                       name server addresses.
                     items:
                       type: string
                     type: array
                   verificationKey:
-                    description: VerificationKey indicates the Verification key set
+                    description: |-
+                      VerificationKey indicates the Verification key set
                       on this Zone.
                     type: string
                 type: object
@@ -650,14 +806,23 @@ spec:
                   description: A Condition that may apply to a resource.
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition
-                        transitioned from one status to another.
+                      description: |-
+                        LastTransitionTime is the last time this condition transitioned from one
+                        status to another.
                       format: date-time
                       type: string
                     message:
-                      description: A Message containing details about this condition's
-                        last transition from one status to another, if any.
+                      description: |-
+                        A Message containing details about this condition's last transition from
+                        one status to another, if any.
                       type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
                     reason:
                       description: A Reason for this condition's last transition from
                         one status to another.
@@ -667,8 +832,9 @@ spec:
                         False, or Unknown?
                       type: string
                     type:
-                      description: Type of this condition. At most one of each condition
-                        type may apply to a resource at any point in time.
+                      description: |-
+                        Type of this condition. At most one of each condition type may apply to
+                        a resource at any point in time.
                       type: string
                   required:
                   - lastTransitionTime
@@ -677,6 +843,16 @@ spec:
                   - type
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the latest metadata.generation
+                  which resulted in either a ready state, or stalled due to error
+                  it can not recover from without human intervention.
+                format: int64
+                type: integer
             type: object
         required:
         - spec
@@ -685,9 +861,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

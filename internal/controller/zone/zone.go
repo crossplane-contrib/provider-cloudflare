@@ -59,11 +59,11 @@ const (
 )
 
 // Setup adds a controller that reconciles Zone managed resources.
-func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func Setup(mgr ctrl.Manager, l logging.Logger, _ workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.ZoneGroupKind)
 
 	o := controller.Options{
-		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter:             ratelimiter.NewController(),
 		MaxConcurrentReconciles: maxConcurrency,
 	}
 
@@ -206,7 +206,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	meta.SetExternalName(cr, z.ID)
 
-	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
+	return managed.ExternalCreation{}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {

@@ -29,17 +29,19 @@ func (mg *Route) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicies of this Route.
+func (mg *Route) GetManagementPolicies() xpv1.ManagementPolicies {
+	return mg.Spec.ManagementPolicies
+}
+
 // GetProviderConfigReference of this Route.
 func (mg *Route) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
-/*
-GetProviderReference of this Route.
-Deprecated: Use GetProviderConfigReference.
-*/
-func (mg *Route) GetProviderReference() *xpv1.Reference {
-	return mg.Spec.ProviderReference
+// GetPublishConnectionDetailsTo of this Route.
+func (mg *Route) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	return mg.Spec.PublishConnectionDetailsTo
 }
 
 // GetWriteConnectionSecretToReference of this Route.
@@ -57,17 +59,19 @@ func (mg *Route) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
+// SetManagementPolicies of this Route.
+func (mg *Route) SetManagementPolicies(r xpv1.ManagementPolicies) {
+	mg.Spec.ManagementPolicies = r
+}
+
 // SetProviderConfigReference of this Route.
 func (mg *Route) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
-/*
-SetProviderReference of this Route.
-Deprecated: Use SetProviderConfigReference.
-*/
-func (mg *Route) SetProviderReference(r *xpv1.Reference) {
-	mg.Spec.ProviderReference = r
+// SetPublishConnectionDetailsTo of this Route.
+func (mg *Route) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	mg.Spec.PublishConnectionDetailsTo = r
 }
 
 // SetWriteConnectionSecretToReference of this Route.

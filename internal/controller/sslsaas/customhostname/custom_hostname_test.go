@@ -369,7 +369,7 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"Success": {
-			reason: "We should return ExternalNameAssigned: true and no error when a CustomHostname is created",
+			reason: "We should return  and no error when a CustomHostname is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateCustomHostname: func(ctx context.Context, zoneID string, rr cloudflare.CustomHostname) (*cloudflare.CustomHostnameResponse, error) {
@@ -387,9 +387,7 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},

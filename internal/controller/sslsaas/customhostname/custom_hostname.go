@@ -59,11 +59,11 @@ const (
 )
 
 // Setup adds a controller that reconciles CustomHostname managed resources.
-func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func Setup(mgr ctrl.Manager, l logging.Logger, _ workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.CustomHostnameGroupKind)
 
 	o := controller.Options{
-		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter:             ratelimiter.NewController(),
 		MaxConcurrentReconciles: maxConcurrency,
 	}
 
@@ -200,7 +200,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	cr.Status.AtProvider = customhostnames.GenerateObservation(rch.Result)
 	meta.SetExternalName(cr, rch.Result.ID)
 
-	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
+	return managed.ExternalCreation{}, nil
 
 }
 

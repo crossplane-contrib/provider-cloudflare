@@ -29,17 +29,19 @@ func (mg *CustomHostname) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicies of this CustomHostname.
+func (mg *CustomHostname) GetManagementPolicies() xpv1.ManagementPolicies {
+	return mg.Spec.ManagementPolicies
+}
+
 // GetProviderConfigReference of this CustomHostname.
 func (mg *CustomHostname) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
-/*
-GetProviderReference of this CustomHostname.
-Deprecated: Use GetProviderConfigReference.
-*/
-func (mg *CustomHostname) GetProviderReference() *xpv1.Reference {
-	return mg.Spec.ProviderReference
+// GetPublishConnectionDetailsTo of this CustomHostname.
+func (mg *CustomHostname) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	return mg.Spec.PublishConnectionDetailsTo
 }
 
 // GetWriteConnectionSecretToReference of this CustomHostname.
@@ -57,17 +59,19 @@ func (mg *CustomHostname) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
+// SetManagementPolicies of this CustomHostname.
+func (mg *CustomHostname) SetManagementPolicies(r xpv1.ManagementPolicies) {
+	mg.Spec.ManagementPolicies = r
+}
+
 // SetProviderConfigReference of this CustomHostname.
 func (mg *CustomHostname) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
-/*
-SetProviderReference of this CustomHostname.
-Deprecated: Use SetProviderConfigReference.
-*/
-func (mg *CustomHostname) SetProviderReference(r *xpv1.Reference) {
-	mg.Spec.ProviderReference = r
+// SetPublishConnectionDetailsTo of this CustomHostname.
+func (mg *CustomHostname) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	mg.Spec.PublishConnectionDetailsTo = r
 }
 
 // SetWriteConnectionSecretToReference of this CustomHostname.
@@ -85,17 +89,19 @@ func (mg *FallbackOrigin) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicies of this FallbackOrigin.
+func (mg *FallbackOrigin) GetManagementPolicies() xpv1.ManagementPolicies {
+	return mg.Spec.ManagementPolicies
+}
+
 // GetProviderConfigReference of this FallbackOrigin.
 func (mg *FallbackOrigin) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
 }
 
-/*
-GetProviderReference of this FallbackOrigin.
-Deprecated: Use GetProviderConfigReference.
-*/
-func (mg *FallbackOrigin) GetProviderReference() *xpv1.Reference {
-	return mg.Spec.ProviderReference
+// GetPublishConnectionDetailsTo of this FallbackOrigin.
+func (mg *FallbackOrigin) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	return mg.Spec.PublishConnectionDetailsTo
 }
 
 // GetWriteConnectionSecretToReference of this FallbackOrigin.
@@ -113,17 +119,19 @@ func (mg *FallbackOrigin) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
+// SetManagementPolicies of this FallbackOrigin.
+func (mg *FallbackOrigin) SetManagementPolicies(r xpv1.ManagementPolicies) {
+	mg.Spec.ManagementPolicies = r
+}
+
 // SetProviderConfigReference of this FallbackOrigin.
 func (mg *FallbackOrigin) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
 }
 
-/*
-SetProviderReference of this FallbackOrigin.
-Deprecated: Use SetProviderConfigReference.
-*/
-func (mg *FallbackOrigin) SetProviderReference(r *xpv1.Reference) {
-	mg.Spec.ProviderReference = r
+// SetPublishConnectionDetailsTo of this FallbackOrigin.
+func (mg *FallbackOrigin) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	mg.Spec.PublishConnectionDetailsTo = r
 }
 
 // SetWriteConnectionSecretToReference of this FallbackOrigin.

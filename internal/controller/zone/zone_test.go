@@ -426,7 +426,7 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"Success": {
-			reason: "We should return ExternalNameAssigned: true and no error when a zone is created",
+			reason: "We should return  and no error when a zone is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateZone: func(ctx context.Context, name string, jumpstart bool, account cloudflare.Account, zoneType string) (cloudflare.Zone, error) {
@@ -444,9 +444,7 @@ func TestCreate(t *testing.T) {
 				mg: zone(withPaused(ptr.BoolPtr(false)), withType(ptr.StringPtr("full"))),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},

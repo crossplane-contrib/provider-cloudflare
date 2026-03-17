@@ -489,7 +489,7 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"SuccessSpectrumDNS": {
-			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum DNS is created",
+			reason: "We should return  and no error when a Application with Spectrum DNS is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
@@ -518,14 +518,12 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},
 		"SuccessSpectrumDNSPortRange": {
-			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum DNS with port range is created",
+			reason: "We should return  and no error when a Application with Spectrum DNS with port range is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
@@ -555,14 +553,12 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},
 		"SuccessSpectrumEdgeIPsAnycast": {
-			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum Edge IPs Anycast is created",
+			reason: "We should return  and no error when a Application with Spectrum Edge IPs Anycast is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
@@ -590,14 +586,12 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},
 		"SuccessSpectrumEdgeIPsDynamic": {
-			reason: "We should return ExternalNameAssigned: true and no error when a Application with Spectrum Edge IPs Dynamic is created",
+			reason: "We should return  and no error when a Application with Spectrum Edge IPs Dynamic is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
@@ -625,14 +619,12 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},
 		"Success": {
-			reason: "We should return ExternalNameAssigned: true and no error when a Application is created",
+			reason: "We should return  and no error when a Application is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateSpectrumApplication: func(ctx context.Context, zoneID string, appDetails cloudflare.SpectrumApplication) (cloudflare.SpectrumApplication, error) {
@@ -654,9 +646,7 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},

@@ -22,6 +22,7 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -29,6 +30,11 @@ import (
 
 	"github.com/benagricola/provider-cloudflare/apis"
 	"github.com/benagricola/provider-cloudflare/internal/controller"
+)
+
+const (
+	// defaultProviderRPS is the default rate limit for the provider in requests per second.
+	defaultProviderRPS = 10
 )
 
 func main() {
@@ -57,11 +63,13 @@ func main() {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		LeaderElection:   *leaderElection,
 		LeaderElectionID: "crossplane-leader-election-provider-cloudflare",
-		SyncPeriod:       syncPeriod,
+		Cache: cache.Options{
+			SyncPeriod: syncPeriod,
+		},
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
 
-	rl := ratelimiter.NewDefaultProviderRateLimiter(ratelimiter.DefaultProviderRPS)
+	rl := ratelimiter.NewGlobal(defaultProviderRPS)
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add Template APIs to scheme")
 	kingpin.FatalIfError(controller.Setup(mgr, log, rl), "Cannot setup Template controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")

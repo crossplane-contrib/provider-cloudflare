@@ -24,14 +24,14 @@ func (p *ProviderConfigUsage) GetProviderConfigReference() xpv1.Reference {
 	return p.ProviderConfigReference
 }
 
-// GetResourceReference of this ProviderConfigUsage.
-func (p *ProviderConfigUsage) GetResourceReference() xpv1.TypedReference {
-	return p.ResourceReference
-}
-
 // SetProviderConfigReference of this ProviderConfigUsage.
 func (p *ProviderConfigUsage) SetProviderConfigReference(r xpv1.Reference) {
 	p.ProviderConfigReference = r
+}
+
+// GetResourceReference of this ProviderConfigUsage.
+func (p *ProviderConfigUsage) GetResourceReference() xpv1.TypedReference {
+	return p.ResourceReference
 }
 
 // SetResourceReference of this ProviderConfigUsage.

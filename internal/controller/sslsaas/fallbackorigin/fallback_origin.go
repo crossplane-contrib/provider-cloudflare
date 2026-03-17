@@ -59,11 +59,11 @@ const (
 )
 
 // Setup adds a controller that reconciles FallbackOrigin managed resources.
-func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func Setup(mgr ctrl.Manager, l logging.Logger, _ workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.FallbackOriginGroupKind)
 
 	o := controller.Options{
-		RateLimiter:             ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter:             ratelimiter.NewController(),
 		MaxConcurrentReconciles: maxConcurrency,
 	}
 

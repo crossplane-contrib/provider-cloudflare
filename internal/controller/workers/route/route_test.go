@@ -389,7 +389,7 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"Success": {
-			reason: "We should return ExternalNameAssigned: true and no error when a Route is created",
+			reason: "We should return  and no error when a Route is created",
 			fields: fields{
 				client: fake.MockClient{
 					MockCreateWorkerRoute: func(ctx context.Context, zoneID string, route cloudflare.WorkerRoute) (cloudflare.WorkerRouteResponse, error) {
@@ -408,9 +408,7 @@ func TestCreate(t *testing.T) {
 				),
 			},
 			want: want{
-				o: managed.ExternalCreation{
-					ExternalNameAssigned: true,
-				},
+				o: managed.ExternalCreation{},
 				err: nil,
 			},
 		},
